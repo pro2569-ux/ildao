@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signInWithCustomToken } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -8,12 +8,10 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 /**
- * 카카오 OAuth 콜백 페이지
- * - URL의 code 파라미터를 /api/auth/kakao 로 전송
- * - 반환된 customToken으로 Firebase 로그인
- * - 프로필 유무에 따라 / 또는 /register 로 이동
+ * 카카오 OAuth 콜백 - 내부 컴포넌트
+ * useSearchParams()는 Suspense 경계 내에서 사용해야 함
  */
-export default function KakaoCallbackPage() {
+function KakaoCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState('');
@@ -36,7 +34,6 @@ export default function KakaoCallbackPage() {
 
     const handleKakaoCallback = async () => {
       try {
-        // 1. 인증 코드를 API 서버로 전송하여 커스텀 토큰 수신
         const response = await fetch('/api/auth/kakao', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -49,12 +46,9 @@ export default function KakaoCallbackPage() {
         }
 
         const { customToken } = await response.json();
-
-        // 2. Firebase Custom Token으로 로그인
         const userCredential = await signInWithCustomToken(auth, customToken);
         const user = userCredential.user;
 
-        // 3. Firestore 프로필 확인 후 라우팅
         const profileDoc = await getDoc(doc(db, 'users', user.uid));
         if (profileDoc.exists()) {
           router.replace('/');
@@ -87,5 +81,24 @@ export default function KakaoCallbackPage() {
       <div className="animate-spin rounded-full h-10 w-10 border-2 border-yellow-400 border-t-transparent mb-4" />
       <p className="text-gray-500 text-sm">카카오 로그인 처리 중...</p>
     </div>
+  );
+}
+
+/**
+ * 카카오 OAuth 콜백 페이지
+ * Suspense로 감싸서 useSearchParams() 사용 가능하게 함
+ */
+export default function KakaoCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-col items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-yellow-400 border-t-transparent mb-4" />
+          <p className="text-gray-500 text-sm">로딩 중...</p>
+        </div>
+      }
+    >
+      <KakaoCallbackContent />
+    </Suspense>
   );
 }
