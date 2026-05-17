@@ -7,6 +7,9 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   signOut as firebaseSignOut,
+  signInWithPhoneNumber,
+  RecaptchaVerifier,
+  ConfirmationResult,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
@@ -14,12 +17,14 @@ import { UserProfile } from '@/types';
 
 /** 인증 컨텍스트 타입 */
 interface AuthContextType {
-  user: User | null;              // Firebase Auth 사용자
-  userProfile: UserProfile | null; // Firestore 프로필
-  loading: boolean;               // 인증 상태 확인 중
-  signInWithGoogle: () => Promise<void>;  // Google 로그인
-  signOut: () => Promise<void>;          // 로그아웃
-  refreshProfile: () => Promise<void>;   // 프로필 새로고침
+  user: User | null;
+  userProfile: UserProfile | null;
+  loading: boolean;
+  signInWithGoogle: () => Promise<void>;
+  signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
+  sendPhoneVerification: (phoneNumber: string) => Promise<ConfirmationResult>;
+  confirmPhoneCode: (confirmationResult: ConfirmationResult, code: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -51,7 +56,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           updatedAt: data.updatedAt?.toDate?.() || new Date(),
         } as UserProfile);
       } else {
-        // 프로필이 없으면 null (회원가입 필요)
         setUserProfile(null);
       }
     } catch (error) {
@@ -92,6 +96,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  /** 전화번호 인증 SMS 발송 */
+  const sendPhoneVerification = async (phoneNumber: string): Promise<ConfirmationResult> => {
+    try {
+      const recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'invisible',
+      });
+      const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
+      return confirmationResult;
+    } catch (error) {
+      console.error('SMS 발송 실패:', error);
+      throw error;
+    }
+  };
+
+  /** 인증코드 확인 및 로그인 */
+  const confirmPhoneCode = async (confirmationResult: ConfirmationResult, code: string): Promise<void> => {
+    try {
+      await confirmationResult.confirm(code);
+    } catch (error) {
+      console.error('인증코드 확인 실패:', error);
+      throw error;
+    }
+  };
+
   /** 로그아웃 */
   const signOut = async () => {
     try {
@@ -105,7 +133,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, userProfile, loading, signInWithGoogle, signOut, refreshProfile }}
+      value={{
+        user,
+        userProfile,
+        loading,
+        signInWithGoogle,
+        signOut,
+        refreshProfile,
+        sendPhoneVerification,
+        confirmPhoneCode,
+      }}
     >
       {children}
     </AuthContext.Provider>
