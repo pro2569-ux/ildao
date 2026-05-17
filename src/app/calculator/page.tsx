@@ -133,8 +133,9 @@ export default function CalculatorPage() {
       const map = new Map<string, DailyWorkRecord>();
       records.forEach((r) => map.set(r.date, r));
       setMonthlyRecords(map);
-    } catch (err) {
+    } catch (err: any) {
       console.error('월별 공수 로드 실패:', err);
+      alert('공수 로드 에러: ' + (err?.message || JSON.stringify(err)));
       setError('데이터를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
