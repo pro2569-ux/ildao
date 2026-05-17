@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 모바일 우선 기본 스타일 */
+@layer base {
+  html {
+    font-family: 'Pretendard', system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-900 antialiased;
+    /* 모바일에서 바운스 스크롤 방지 */
+    overscroll-behavior: none;
+  }
+}
+
+@layer components {
+  /* 하단 네비게이션 바 높이만큼 콘텐츠 패딩 */
+  .main-content {
+    @apply pb-20;
+  }
+
+  /* 카드 공통 스타일 */
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-gray-100 p-4;
+  }
+
+  /* 버튼 공통 스타일 */
+  .btn-primary {
+    @apply bg-primary-500 text-white font-semibold py-3 px-6 rounded-lg
+           hover:bg-primary-600 active:bg-primary-700 transition-colors;
+  }
+
+  .btn-accent {
+    @apply bg-accent-500 text-white font-semibold py-3 px-6 rounded-lg
+           hover:bg-accent-600 active:bg-accent-600 transition-colors;
+  }
+}
