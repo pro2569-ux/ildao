@@ -16,6 +16,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '인증 코드가 없습니다.' }, { status: 400 });
     }
 
+    if (!adminAuth) {
+      return NextResponse.json({ error: 'Firebase Admin이 초기화되지 않았습니다. 환경 변수를 확인하세요.' }, { status: 500 });
+    }
+
     const redirectUri =
       process.env.NEXT_PUBLIC_KAKAO_REDIRECT_URI ||
       `${request.nextUrl.origin}/auth/kakao/callback`;

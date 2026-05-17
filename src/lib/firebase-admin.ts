@@ -1,5 +1,5 @@
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
+import { getAuth, Auth } from 'firebase-admin/auth';
 
 // Firebase Admin SDK 초기화
 // 필요한 환경 변수:
@@ -7,17 +7,32 @@ import { getAuth } from 'firebase-admin/auth';
 //   FIREBASE_CLIENT_EMAIL - 서비스 계정 이메일
 //   FIREBASE_PRIVATE_KEY  - 서비스 계정 개인 키 (줄바꿈 \n 포함)
 
-let app: App;
-if (!getApps().length) {
-  app = initializeApp({
-    credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    }),
-  });
-} else {
-  app = getApps()[0];
+let adminAuth: Auth | null = null;
+
+try {
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+
+  if (projectId && clientEmail && privateKey) {
+    let app: App;
+    if (!getApps().length) {
+      app = initializeApp({
+        credential: cert({
+          projectId,
+          clientEmail,
+          privateKey: privateKey.replace(/\\n/g, '\n'),
+        }),
+      });
+    } else {
+      app = getApps()[0];
+    }
+    adminAuth = getAuth(app);
+  } else {
+    console.warn('Firebase Admin: 환경 변수 미설정 - 카카오 로그인 비활성화');
+  }
+} catch (error) {
+  console.error('Firebase Admin 초기화 실패:', error);
 }
 
-export const adminAuth = getAuth(app);
+export { adminAuth };

@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import BottomNav from '@/components/layout/BottomNav';
-import Script from 'next/script';
+import KakaoSDK from '@/components/KakaoSDK';
 
 export const metadata: Metadata = {
   title: '일다오 - 건설/일용직 구인구직',
@@ -30,21 +30,8 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body>
-        {/* 카카오 SDK v2 로드 및 초기화
-            NEXT_PUBLIC_KAKAO_JS_KEY 환경 변수 필요 */}
-        <Script
-          src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js"
-          integrity="sha384-TiCUE00h649CAMonG018J2ujOgDKW/kVWlChEuu4jK2vxfAAD0eZxzCKakxg55G4"
-          crossOrigin="anonymous"
-          strategy="afterInteractive"
-          onLoad={() => {
-            const key = process.env.NEXT_PUBLIC_KAKAO_JS_KEY || '80b8cae0927e7a3757684435be41eaf8';
-            if (window.Kakao && !window.Kakao.isInitialized()) {
-              window.Kakao.init(key);
-              console.log('Kakao SDK initialized in layout:', window.Kakao.isInitialized());
-            }
-          }}
-        />
+        {/* 카카오 SDK v2 로드 및 초기화 (Client Component) */}
+        <KakaoSDK />
         <AuthProvider>
           {/* 메인 콘텐츠 영역 */}
           <main className="main-content min-h-screen max-w-lg mx-auto">
