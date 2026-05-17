@@ -2,12 +2,6 @@
 
 import Script from 'next/script';
 
-declare global {
-  interface Window {
-    Kakao: any;
-  }
-}
-
 const KAKAO_JS_KEY = process.env.NEXT_PUBLIC_KAKAO_JS_KEY || '80b8cae0927e7a3757684435be41eaf8';
 
 export default function KakaoSDK() {
