@@ -78,8 +78,9 @@ export default function CreateJobPage() {
       });
 
       router.push('/my-jobs');
-    } catch (err) {
+    } catch (err: any) {
       console.error('구인글 작성 실패:', err);
+      alert('구인글 등록 에러: ' + (err?.message || JSON.stringify(err)));
       setError('저장에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsSaving(false);
