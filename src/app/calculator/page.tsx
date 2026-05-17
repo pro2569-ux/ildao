@@ -154,8 +154,9 @@ export default function CalculatorPage() {
       ]);
       setTeamMembers(members);
       setTeamWorks(works);
-    } catch (err) {
+    } catch (err: any) {
       console.error('팀 데이터 로드 실패:', err);
+      alert('팀 데이터 에러: ' + (err?.message || JSON.stringify(err)));
       setError('팀 데이터를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
