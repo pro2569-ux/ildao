@@ -71,7 +71,7 @@ export default function EmployerHome() {
         </div>
         <div className="card text-center">
           <p className="text-2xl font-bold text-accent-500">{totalApplicants}</p>
-          <p className="text-xs text-gray-500 mt-1">� 지원자</p>
+          <p className="text-xs text-gray-500 mt-1">총 지원자</p>
         </div>
         <div className="card text-center">
           <p className="text-2xl font-bold text-green-500">{recentApps.filter(a => a.status === 'pending').length}</p>
@@ -152,7 +152,7 @@ export default function EmployerHome() {
                   <span className="text-xs text-gray-500">{job.category}</span>
                   <span className="text-xs text-gray-300">·</span>
                   <span className="text-xs text-accent-500 font-medium">
-                    {job.dailyWage.toLocaleString()}�
+                    {job.dailyWage.toLocaleString()}원
                   </span>
                   <span className="text-xs text-gray-300">·</span>
                   <span className="text-xs text-gray-500">{job.numberOfWorkers}늨</span>

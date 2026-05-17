@@ -119,7 +119,7 @@ export default function JobDetailPage() {
 
         {/* 핵심 정보 카냜 */}
         <div className="card mb-4 space-y-3">
-          <InfoRow label="일당" value={`${job.dailyWage.toLocaleString()}�`} accent />
+          <InfoRow label="일당" value={`${job.dailyWage.toLocaleString()}원`} accent />
           <InfoRow label="모집 인원" value={`${job.numberOfWorkers}명`} />
           <InfoRow label="근무 위치" value={job.location.address} />
           <InfoRow
@@ -147,7 +147,7 @@ export default function JobDetailPage() {
         {job.description && (
           <div className="card mb-4">
             <h3 className="font-semibold text-sm text-gray-700 mb-2">상세 설명</h3>
-            <p className="text-sm text-gray-606�whitespace-pre-wrap leading-relaxed">
+            <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">
               {job.description}
             </p>
           </div>
@@ -158,8 +158,8 @@ export default function JobDetailPage() {
           <div className="card mb-4">
             <h3 className="font-semibold text-sm text-gray-700 mb-2">업체 정보</h3>
             <div className="flex items-center gap-3">
-              <div className="w-u�� h-10 rounded-full bg-orange-100 flex items-center justify-center">
-                <svg className="w-u�� h-5 text-accent-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                <svg className="w-5 h-5 text-accent-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
