@@ -3,27 +3,18 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { ConfirmationResult } from 'firebase/auth';
 
-/**
- * 로그인 페이지
- * - Google 로그인 지원
- * - 전화번호 로그인 지원 (Firebase Phone Auth)
- * - 이미 로그인된 경우 홈으로 리다이렉트
- * - 프로필 미설정 시 회원가입 페이지로 이동
- */
+type LoginStep = 'select' | 'phone-input' | 'code-input';
+
 export default function LoginPage() {
   const { user, userProfile, loading, signInWithGoogle, sendPhoneVerification, confirmPhoneCode } = useAuth();
   const router = useRouter();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [error, setError] = useState('');
-
-  // 전화번호 로그인 상태
-  const [showPhoneLogin, setShowPhoneLogin] = useState(false);
+  const [step, setStep] = useState<LoginStep>('select');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
-  const [isSmsSending, setIsSmsSending] = useState(false);
+  const [isSendingSMS, setIsSendingSMS] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [smsSent, setSmsSent] = useState(false);
 
@@ -38,7 +29,7 @@ export default function LoginPage() {
     }
   }, [user, userProfile, loading, router]);
 
-  /** Google 로그인 핸들러 */
+  /** Google 로그인 */
   const handleGoogleSignIn = async () => {
     setIsSigningIn(true);
     setError('');
@@ -53,97 +44,60 @@ export default function LoginPage() {
     }
   };
 
-  /** 전화번호 포맷 변환 (한국 번호 자동 처리) */
-  const formatPhoneNumber = (phone: string): string => {
-    const digits = phone.replace(/[^0-9]/g, '');
-    if (digits.startsWith('010')) {
-      return '+82' + digits.substring(1);
-    }
-    if (digits.startsWith('82')) {
-      return '+' + digits;
-    }
-    if (phone.startsWith('+82')) {
-      return phone;
-    }
-    return '+82' + digits;
-  };
-
-  /** SMS 인증코드 발송 */
-  const handleSendSms = async () => {
+  /** SMS 발송 */
+  const handleSendSMS = async () => {
     if (!phoneNumber.trim()) {
       setError('전화번호를 입력해주세요.');
       return;
     }
 
-    setIsSmsSending(true);
+    setIsSendingSMS(true);
     setError('');
-
     try {
-      const formattedPhone = formatPhoneNumber(phoneNumber);
-      const result = await sendPhoneVerification(formattedPhone);
-      setConfirmationResult(result);
+      await sendPhoneVerification(phoneNumber);
       setSmsSent(true);
+      setStep('code-input');
     } catch (err: any) {
-      if (err?.code === 'auth/invalid-phone-number') {
-        setError('유효하지 않은 전화번호입니다.');
-      } else if (err?.code === 'auth/too-many-requests') {
-        setError('요청이 너무 많습니다. 잠시 후 다시 시도해주세요.');
-      } else {
-        setError('SMS 발송에 실패했습니다. 다시 시도해주세요.');
-      }
+      setError(err.message || 'SMS 발송에 실패했습니다.');
     } finally {
-      setIsSmsSending(false);
+      setIsSendingSMS(false);
     }
   };
 
-  /** 인증코드 확인 */
+  /** 인증번호 확인 */
   const handleVerifyCode = async () => {
     if (!verificationCode.trim()) {
-      setError('인증코드를 입력해주세요.');
-      return;
-    }
-    if (!confirmationResult) {
-      setError('인증 세션이 만료되었습니다. 다시 시도해주세요.');
+      setError('인증번호를 입력해주세요.');
       return;
     }
 
     setIsVerifying(true);
     setError('');
-
     try {
-      await confirmPhoneCode(confirmationResult, verificationCode);
+      await confirmPhoneCode(verificationCode);
     } catch (err: any) {
-      if (err?.code === 'auth/invalid-verification-code') {
-        setError('인증코드가 올바르지 않습니다.');
-      } else if (err?.code === 'auth/code-expired') {
-        setError('인증코드가 만료되었습니다. 다시 발송해주세요.');
-      } else {
-        setError('인증에 실패했습니다. 다시 시도해주세요.');
-      }
+      setError(err.message || '인증에 실패했습니다.');
     } finally {
       setIsVerifying(false);
     }
   };
 
-  /** 전화번호 로그인 초기화 */
-  const handlePhoneLoginBack = () => {
-    setShowPhoneLogin(false);
-    setPhoneNumber('');
-    setVerificationCode('');
-    setConfirmationResult(null);
-    setSmsSent(false);
+  /** SMS 재발송 */
+  const handleResendSMS = async () => {
     setError('');
+    setVerificationCode('');
+    setIsSendingSMS(true);
+    try {
+      await sendPhoneVerification(phoneNumber);
+      setError('');
+    } catch (err: any) {
+      setError(err.message || 'SMS 재발송에 실패했습니다.');
+    } finally {
+      setIsSendingSMS(false);
+    }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent" />
-      </div>
-    );
-  }
-
-  if (user) {
+  if (loading || user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent" />
@@ -156,7 +110,7 @@ export default function LoginPage() {
       {/* reCAPTCHA 컨테이너 (invisible) */}
       <div id="recaptcha-container"></div>
 
-      {/* 로고 & 앱 소개 */}
+      {/* 로고 */}
       <div className="text-center mb-12">
         <div className="w-20 h-20 bg-primary-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
           <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -164,17 +118,16 @@ export default function LoginPage() {
               d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
           </svg>
         </div>
-
         <h1 className="text-3xl font-bold text-gray-900 mb-2">일다오</h1>
         <p className="text-gray-500 text-sm leading-relaxed">
-          건설현장 &middot; 일용직 구인구직<br />
+          건설현장 · 일용직 구인구직<br />
           일자리를 빠르게 찾아보세요
         </p>
       </div>
 
       {/* 로그인 영역 */}
       <div className="w-full max-w-sm space-y-3">
-        {!showPhoneLogin ? (
+        {step === 'select' && (
           <>
             {/* Google 로그인 */}
             <button
@@ -197,8 +150,8 @@ export default function LoginPage() {
 
             {/* 전화번호 로그인 */}
             <button
-              onClick={() => setShowPhoneLogin(true)}
-              className="w-full flex items-center justify-center gap-3 py-3.5 px-6 bg-white border border-gray-300 rounded-xl font-medium text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors shadow-sm"
+              onClick={() => { setStep('phone-input'); setError(''); }}
+              className="w-full flex items-center justify-center gap-3 py-3.5 px-6 bg-blue-50 border border-blue-200 rounded-xl font-medium text-blue-700 hover:bg-blue-100 active:bg-blue-150 transition-colors shadow-sm"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -207,108 +160,100 @@ export default function LoginPage() {
               <span>전화번호로 시작하기</span>
             </button>
           </>
-        ) : (
-          <>
-            {/* 전화번호 로그인 폼 */}
-            {!smsSent ? (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    전화번호
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
-                      +82
-                    </span>
-                    <input
-                      type="tel"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      placeholder="01012345678"
-                      className="w-full py-3.5 pl-14 pr-4 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                      disabled={isSmsSending}
-                    />
-                  </div>
-                  <p className="mt-1.5 text-xs text-gray-400">
-                    &#39;-&#39; 없이 숫자만 입력해주세요
-                  </p>
-                </div>
+        )}
 
-                <button
-                  onClick={handleSendSms}
-                  disabled={isSmsSending || !phoneNumber.trim()}
-                  className="w-full py-3.5 px-6 bg-primary-500 text-white rounded-xl font-medium hover:bg-primary-600 active:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSmsSending ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                      <span>발송 중...</span>
-                    </div>
-                  ) : (
-                    '인증코드 받기'
-                  )}
-                </button>
+        {step === 'phone-input' && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                전화번호 입력
+              </label>
+              <div className="flex gap-2">
+                <span className="flex items-center px-3 bg-gray-100 border border-gray-300 rounded-lg text-sm text-gray-600">
+                  +82
+                </span>
+                <input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="01012345678"
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  autoFocus
+                />
               </div>
-            ) : (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    인증코드
-                  </label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={verificationCode}
-                    onChange={(e) => setVerificationCode(e.target.value.replace(/[^0-9]/g, ''))}
-                    placeholder="6자리 인증코드 입력"
-                    maxLength={6}
-                    className="w-full py-3.5 px-4 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 text-center text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    disabled={isVerifying}
-                  />
-                  <p className="mt-1.5 text-xs text-gray-400">
-                    SMS로 전송된 6자리 코드를 입력해주세요
-                  </p>
-                </div>
+              <p className="mt-1.5 text-xs text-gray-400">
+                하이픈(-) 없이 숫자만 입력해주세요
+              </p>
+            </div>
 
-                <button
-                  onClick={handleVerifyCode}
-                  disabled={isVerifying || verificationCode.length < 6}
-                  className="w-full py-3.5 px-6 bg-primary-500 text-white rounded-xl font-medium hover:bg-primary-600 active:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isVerifying ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                      <span>확인 중...</span>
-                    </div>
-                  ) : (
-                    '로그인'
-                  )}
-                </button>
-
-                <button
-                  onClick={handleSendSms}
-                  disabled={isSmsSending}
-                  className="w-full py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
-                >
-                  인증코드 재발송
-                </button>
-              </div>
-            )}
-
-            {/* 뒤로가기 */}
             <button
-              onClick={handlePhoneLoginBack}
-              className="w-full py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              onClick={handleSendSMS}
+              disabled={isSendingSMS || !phoneNumber.trim()}
+              className="w-full py-3.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 active:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              다른 방법으로 로그인
+              {isSendingSMS ? '발송 중...' : '인증번호 받기'}
             </button>
-          </>
+
+            <button
+              onClick={() => { setStep('select'); setError(''); setPhoneNumber(''); }}
+              className="w-full py-2 text-sm text-gray-500 hover:text-gray-700"
+            >
+              ← 다른 방법으로 로그인
+            </button>
+          </div>
+        )}
+
+        {step === 'code-input' && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                인증번호 입력
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value.replace(/[^0-9]/g, ''))}
+                placeholder="6자리 인증번호"
+                maxLength={6}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl text-gray-900 text-center text-lg tracking-widest placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                autoFocus
+              />
+              <p className="mt-1.5 text-xs text-gray-400">
+                {phoneNumber}로 전송된 6자리 코드를 입력해주세요
+              </p>
+            </div>
+
+            <button
+              onClick={handleVerifyCode}
+              disabled={isVerifying || verificationCode.length < 6}
+              className="w-full py-3.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 active:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isVerifying ? '확인 중...' : '인증하기'}
+            </button>
+
+            <div className="flex justify-between">
+              <button
+                onClick={handleResendSMS}
+                disabled={isSendingSMS}
+                className="text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50"
+              >
+                {isSendingSMS ? '발송 중...' : '인증번호 재발송'}
+              </button>
+              <button
+                onClick={() => { setStep('phone-input'); setError(''); setVerificationCode(''); }}
+                className="text-sm text-gray-500 hover:text-gray-700"
+              >
+                번호 변경
+              </button>
+            </div>
+          </div>
         )}
       </div>
 
       {/* 에러 메시지 */}
       {error && (
-        <div className="mt-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg text-center">
+        <div className="mt-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg text-center max-w-sm w-full">
           {error}
         </div>
       )}
