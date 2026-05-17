@@ -2,14 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Script from 'next/script';
 import { useAuth } from '@/contexts/AuthContext';
 
 type LoginStep = 'select' | 'phone-input' | 'code-input';
 
 export default function LoginPage() {
-  const { user, userProfile, loading, signInWithGoogle, sendPhoneVerification, confirmPhoneCode } = useAuth();
+  const { user, userProfile, loading, signInWithGoogle, signInWithKakao, sendPhoneVerification, confirmPhoneCode } = useAuth();
   const router = useRouter();
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [isKakaoSigningIn, setIsKakaoSigningIn] = useState(false);
   const [error, setError] = useState('');
   const [step, setStep] = useState<LoginStep>('select');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -41,6 +43,24 @@ export default function LoginPage() {
       }
     } finally {
       setIsSigningIn(false);
+    }
+  };
+
+  /** 카카오 로그인 */
+  const handleKakaoSignIn = async () => {
+    setIsKakaoSigningIn(true);
+    setError('');
+    try {
+      await signInWithKakao();
+    } catch (err: any) {
+      // 사용자가 팝업을 닫은 경우는 무시
+      if (err?.message?.includes('popup') || err?.message?.includes('cancelled')) {
+        // ignore
+      } else {
+        setError(err?.message || '카카오 로그인에 실패했습니다. 다시 시도해주세요.');
+      }
+    } finally {
+      setIsKakaoSigningIn(false);
     }
   };
 
@@ -107,6 +127,14 @@ export default function LoginPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-6 pb-20">
+      {/* 카카오 SDK 로드 */}
+      <Script
+        src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js"
+        integrity="sha384-DKYJZ8NLiK8MN4/C5P2ezmFnkl8h0EB5jS3RNcUHa3P6e2nJjMEYXbmdMRyLkM"
+        crossOrigin="anonymous"
+        strategy="afterInteractive"
+      />
+
       {/* reCAPTCHA 컨테이너 (invisible) */}
       <div id="recaptcha-container"></div>
 
@@ -129,6 +157,27 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-3">
         {step === 'select' && (
           <>
+            {/* 카카오 로그인 */}
+            <button
+              onClick={handleKakaoSignIn}
+              disabled={isKakaoSigningIn}
+              className="w-full flex items-center justify-center gap-3 py-3.5 px-6 bg-[#FEE500] border border-[#FEE500] rounded-xl font-medium text-[#191919] hover:bg-[#FDD835] active:bg-[#FBC02D] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+            >
+              {isKakaoSigningIn ? (
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-[#191919] border-t-transparent" />
+              ) : (
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                  <path
+                    fillRule="evenodd"
+                    clipRule="evenodd"
+                    d="M12 4C7.029 4 3 7.13 3 10.95c0 2.41 1.6 4.54 4.013 5.76-.177.66-.64 2.39-.733 2.76-.114.46.17.454.357.33.147-.097 2.346-1.594 3.302-2.24.348.05.702.076 1.061.076 4.971 0 9-3.13 9-6.95S16.971 4 12 4z"
+                    fill="#191919"
+                  />
+                </svg>
+              )}
+              <span>{isKakaoSigningIn ? '로그인 중...' : '카카오로 시작하기'}</span>
+            </button>
+
             {/* Google 로그인 */}
             <button
               onClick={handleGoogleSignIn}

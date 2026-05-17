@@ -5,6 +5,7 @@ import {
   User,
   onAuthStateChanged,
   signInWithPopup,
+  signInWithCustomToken,
   GoogleAuthProvider,
   signOut as firebaseSignOut,
   RecaptchaVerifier,
@@ -15,12 +16,20 @@ import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { UserProfile } from '@/types';
 
+/** 카카오 SDK 타입 선언 */
+declare global {
+  interface Window {
+    Kakao: any;
+  }
+}
+
 /** 인증 컨텍스트 타입 */
 interface AuthContextType {
   user: User | null;
   userProfile: UserProfile | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
+  signInWithKakao: () => Promise<void>;
   sendPhoneVerification: (phoneNumber: string) => Promise<void>;
   confirmPhoneCode: (code: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -34,23 +43,15 @@ const googleProvider = new GoogleAuthProvider();
 /**
  * 전화번호 포맷 변환
  * 010-1234-5678 또는 01012345678 → +821012345678
- * 한국 번호에서 앞의 0을 제거하고 +82를 붙임
  */
 function formatPhoneNumber(phone: string): string {
-  // 숫자만 추출
   const digits = phone.replace(/[^0-9]/g, '');
-
-  // 이미 국제번호 형식이면 그대로
   if (phone.startsWith('+82')) {
     return '+82' + phone.replace(/[^0-9]/g, '').substring(2);
   }
-
-  // 0으로 시작하면 0을 제거하고 +82 붙이기
   if (digits.startsWith('0')) {
     return `+82${digits.substring(1)}`;
   }
-
-  // 그 외
   return `+82${digits}`;
 }
 
@@ -125,21 +126,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const sendPhoneVerification = async (phoneNumber: string) => {
     try {
       const formattedPhone = formatPhoneNumber(phoneNumber);
-      console.log('[Phone Auth] 원본 입력:', phoneNumber);
-      console.log('[Phone Auth] 변환된 번호:', formattedPhone);
-
       const verifier = setupRecaptcha();
       const result = await signInWithPhoneNumber(auth, formattedPhone, verifier);
       setConfirmationResult(result);
-      console.log('[Phone Auth] SMS 발송 성공');
     } catch (error: any) {
-      console.error('[Phone Auth] SMS 발송 실패:', {
-        code: error?.code,
-        message: error?.message,
-        fullError: error,
-      });
+      console.error('[Phone Auth] SMS 발송 실패:', error);
 
-      // reCAPTCHA 리셋 (실패 시 재사용 불가)
       if (recaptchaVerifier) {
         try {
           recaptchaVerifier.clear();
@@ -149,7 +141,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRecaptchaVerifier(null);
       }
 
-      // 사용자 친화적 에러 메시지
       const errorCode = error?.code || 'unknown';
       const errorMessages: Record<string, string> = {
         'auth/invalid-phone-number': '유효하지 않은 전화번호입니다. (예: 01012345678)',
@@ -158,8 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         'auth/captcha-check-failed': 'reCAPTCHA 인증 실패. 페이지를 새로고침해주세요.',
         'auth/missing-phone-number': '전화번호를 입력해주세요.',
         'auth/user-disabled': '비활성화된 계정입니다.',
-        'auth/operation-not-allowed': 'Phone Auth가 활성화되지 않았습니다. (Firebase Console 확인 필요)',
-        'auth/billing-not-enabled': 'Firebase Blaze 플랜이 필요합니다.',
+        'auth/operation-not-allowed': 'Phone Auth가 활성화되지 않았습니다.',
         'auth/network-request-failed': '네트워크 오류. 인터넷 연결을 확인해주세요.',
         'auth/internal-error': '서버 내부 오류. 잠시 후 다시 시도해주세요.',
       };
@@ -178,13 +168,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       await confirmationResult.confirm(code);
-      console.log('[Phone Auth] 인증 성공');
       setConfirmationResult(null);
     } catch (error: any) {
-      console.error('[Phone Auth] 인증 코드 확인 실패:', {
-        code: error?.code,
-        message: error?.message,
-      });
+      console.error('[Phone Auth] 인증 코드 확인 실패:', error);
 
       const errorCode = error?.code || 'unknown';
       const errorMessages: Record<string, string> = {
@@ -208,9 +194,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  /** 카카오 로그인 */
+  const signInWithKakao = async () => {
+    try {
+      // Kakao SDK 초기화 확인
+      if (!window.Kakao) {
+        throw new Error('카카오 SDK가 로드되지 않았습니다.');
+      }
+
+      if (!window.Kakao.isInitialized()) {
+        window.Kakao.init(process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY);
+      }
+
+      // 카카오 로그인 (팝업)
+      const kakaoAccessToken = await new Promise<string>((resolve, reject) => {
+        window.Kakao.Auth.login({
+          success: (authObj: any) => {
+            resolve(authObj.access_token);
+          },
+          fail: (err: any) => {
+            reject(new Error(err?.error_description || '카카오 로그인 실패'));
+          },
+        });
+      });
+
+      // 서버에서 Firebase Custom Token 발급
+      const response = await fetch('/api/auth/kakao', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessToken: kakaoAccessToken }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '카카오 인증 서버 오류');
+      }
+
+      const { customToken } = await response.json();
+
+      // Firebase에 Custom Token으로 로그인
+      await signInWithCustomToken(auth, customToken);
+    } catch (error: any) {
+      console.error('카카오 로그인 실패:', error);
+      throw error;
+    }
+  };
+
   /** 로그아웃 */
   const signOut = async () => {
     try {
+      // 카카오 로그아웃도 처리
+      if (window.Kakao?.Auth?.getAccessToken()) {
+        window.Kakao.Auth.logout();
+      }
       await firebaseSignOut(auth);
       setUserProfile(null);
       setConfirmationResult(null);
@@ -227,6 +263,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         userProfile,
         loading,
         signInWithGoogle,
+        signInWithKakao,
         sendPhoneVerification,
         confirmPhoneCode,
         signOut,
