@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import BottomNav from '@/components/layout/BottomNav';
+import KakaoSDK from '@/components/KakaoSDK';
 
 export const metadata: Metadata = {
   title: '일다오 - 건설/일용직 구인구직',
@@ -30,6 +31,8 @@ export default function RootLayout({
     <html lang="ko">
       <body>
         <AuthProvider>
+          {/* 카카오 SDK 로드 */}
+          <KakaoSDK />
           {/* 메인 콘텐츠 영역 */}
           <main className="main-content min-h-screen max-w-lg mx-auto">
             {children}
