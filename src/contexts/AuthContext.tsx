@@ -112,17 +112,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     if (!window.Kakao.isInitialized()) {
-      const key = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
-      if (!key) {
-        console.error('NEXT_PUBLIC_KAKAO_JS_KEY 환경 변수가 설정되지 않았습니다.');
-        return;
-      }
+      const key = process.env.NEXT_PUBLIC_KAKAO_JS_KEY || '80b8cae0927e7a3757684435be41eaf8';
       window.Kakao.init(key);
     }
 
-    window.Kakao.Auth.authorize({
-      redirectUri: window.location.origin + '/auth/kakao/callback',
-    });
+    // SDK v2는 Kakao.Auth.authorize() 사용 (login()은 deprecated)
+    if (typeof window.Kakao.Auth?.authorize === 'function') {
+      window.Kakao.Auth.authorize({
+        redirectUri: window.location.origin + '/auth/kakao/callback',
+      });
+    } else {
+      // fallback: 직접 카카오 인증 URL로 이동
+      const clientId = process.env.NEXT_PUBLIC_KAKAO_JS_KEY || '80b8cae0927e7a3757684435be41eaf8';
+      const redirectUri = encodeURIComponent(window.location.origin + '/auth/kakao/callback');
+      window.location.href = `https://kauth.kakao.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code`;
+    }
   };
 
   /** 로그아웃 */

@@ -38,9 +38,10 @@ export default function RootLayout({
           crossOrigin="anonymous"
           strategy="afterInteractive"
           onLoad={() => {
-            const key = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
-            if (key && window.Kakao && !window.Kakao.isInitialized()) {
+            const key = process.env.NEXT_PUBLIC_KAKAO_JS_KEY || '80b8cae0927e7a3757684435be41eaf8';
+            if (window.Kakao && !window.Kakao.isInitialized()) {
               window.Kakao.init(key);
+              console.log('Kakao SDK initialized in layout:', window.Kakao.isInitialized());
             }
           }}
         />
