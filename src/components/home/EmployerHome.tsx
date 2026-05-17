@@ -41,7 +41,7 @@ export default function EmployerHome() {
       });
       setMyJobs(jobs);
     } catch (error) {
-      console.error('구인 로드 실패:', error);
+      console.error('구인글 로드 실패:', error);
     } finally {
       setLoading(false);
     }
@@ -92,7 +92,7 @@ export default function EmployerHome() {
           </div>
           <div>
             <p className="font-semibold text-sm">구인글 작성</p>
-            <p className="text-xs opacity-80">새 공 등록</p>
+            <p className="text-xs opacity-80">새 공고 등록</p>
           </div>
         </Link>
         <Link
@@ -116,7 +116,7 @@ export default function EmployerHome() {
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold">내 구인글</h2>
           <Link href="/my-jobs" className="text-sm text-primary-500 font-medium">
-            전체냴기
+            전체보기
           </Link>
         </div>
 
@@ -131,7 +131,7 @@ export default function EmployerHome() {
               href="/jobs/create"
               className="inline-block py-2 px-4 bg-primary-500 text-white text-sm font-medium rounded-lg"
             >
-              첫 구인 작응하기
+              첫 구인글 작성하기
             </Link>
           </div>
         ) : (
