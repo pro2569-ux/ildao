@@ -1,23 +1,23 @@
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 
-let adminApp: App;
+// Firebase Admin SDK 초기화
+// 필요한 환경 변수:
+//   FIREBASE_PROJECT_ID   - Firebase 프로젝트 ID
+//   FIREBASE_CLIENT_EMAIL - 서비스 계정 이메일
+//   FIREBASE_PRIVATE_KEY  - 서비스 계정 개인 키 (줄바꿈 \n 포함)
 
+let app: App;
 if (!getApps().length) {
-  // 서비스 계정 키가 있으면 사용, 없으면 프로젝트 ID만으로 초기화
-  if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-    adminApp = initializeApp({
-      credential: cert(serviceAccount),
-    });
-  } else {
-    // Cloud Run/Vercel 등에서는 GOOGLE_APPLICATION_CREDENTIALS 또는 프로젝트 기본 인증 사용
-    adminApp = initializeApp({
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    });
-  }
+  app = initializeApp({
+    credential: cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    }),
+  });
 } else {
-  adminApp = getApps()[0];
+  app = getApps()[0];
 }
 
-export const adminAuth = getAuth(adminApp);
+export const adminAuth = getAuth(app);
