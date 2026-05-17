@@ -99,8 +99,9 @@ export default function FavoritesPage() {
         );
         setFavoriteJobs(jobsWithDetails);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('즐겨찾기 로드 실패:', err);
+      alert('즐겨찾기 에러: ' + (err?.message || JSON.stringify(err)));
       setError('즐겨찾기 목록을 불러오지 못했습니다. 다시 시도해 주세요.');
     } finally {
       setLoading(false);
