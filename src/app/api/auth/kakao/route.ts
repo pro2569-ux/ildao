@@ -39,7 +39,13 @@ export async function POST(request: NextRequest) {
     if (!tokenResponse.ok) {
       const errorData = await tokenResponse.text();
       console.error('카카오 토큰 교환 실패:', errorData);
-      return NextResponse.json({ error: '카카오 토큰 교환에 실패했습니다.' }, { status: 400 });
+      console.error('사용된 redirect_uri:', redirectUri);
+      console.error('KAKAO_REST_API_KEY 존재:', !!process.env.KAKAO_REST_API_KEY);
+      return NextResponse.json({
+        error: '카카오 토큰 교환에 실패했습니다.',
+        detail: errorData,
+        redirectUri,
+      }, { status: 400 });
     }
 
     const tokenData = await tokenResponse.json();

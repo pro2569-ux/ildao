@@ -42,7 +42,10 @@ function KakaoCallbackContent() {
 
         if (!response.ok) {
           const data = await response.json();
-          throw new Error(data.error || '로그인 처리에 실패했습니다.');
+          console.error('카카오 API 에러 상세:', JSON.stringify(data));
+          throw new Error(
+            `${data.error || '로그인 처리에 실패했습니다.'} ${data.detail ? `(${data.detail})` : ''}`
+          );
         }
 
         const { customToken } = await response.json();
