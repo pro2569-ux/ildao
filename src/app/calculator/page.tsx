@@ -266,6 +266,9 @@ export default function CalculatorPage() {
   const handleSavePersonal = async () => {
     if (!user || !selectedDate) return;
     setIsSaving(true);
+    // 기존 기록에 저장된 그 날의 일당은 보존 — 현재 입력값으로 덮어쓰면 과거 데이터가 손상됨
+    // (0은 일당 미입력 상태로 보고 현재 입력값으로 채움)
+    const savedWage = monthlyRecords.get(selectedDate)?.dailyWage || dailyWageInput;
     try {
       await saveDailyWork(user.uid, selectedDate, {
         manDay: editManDay,
@@ -275,7 +278,7 @@ export default function CalculatorPage() {
         expense: editExpense,
         memo: editMemo,
         weather: editWeather,
-        dailyWage: dailyWageInput,
+        dailyWage: savedWage,
       });
       // 로컬 상태 업데이트
       setMonthlyRecords((prev) => {
@@ -290,7 +293,7 @@ export default function CalculatorPage() {
           expense: editExpense,
           memo: editMemo,
           weather: editWeather,
-          dailyWage: dailyWageInput,
+          dailyWage: savedWage,
         });
         return next;
       });
@@ -312,15 +315,16 @@ export default function CalculatorPage() {
     let extensionCount = 0;
     let totalExpense = 0;
 
+    let estimatedWage = 0;
     monthlyRecords.forEach((record) => {
       totalManDay += record.manDay;
       if (record.overtime) overtimeCount++;
       if (record.dayOff) dayOffCount++;
       if (record.extension) extensionCount++;
       totalExpense += record.expense || 0;
+      // 기록별로 저장된 그 날의 일당 사용 (미입력 기록만 현재 입력값으로 보정)
+      estimatedWage += record.manDay * (record.dailyWage || dailyWageInput);
     });
-
-    const estimatedWage = totalManDay * dailyWageInput;
 
     return { totalManDay, overtimeCount, dayOffCount, extensionCount, totalExpense, estimatedWage };
   }, [monthlyRecords, dailyWageInput]);
@@ -345,11 +349,14 @@ export default function CalculatorPage() {
     if (!periodRecords) return null;
     let totalManDay = 0;
     let totalExpense = 0;
+    let estimatedWage = 0;
     periodRecords.forEach((r) => {
       totalManDay += r.manDay;
       totalExpense += r.expense || 0;
+      // 기록별로 저장된 그 날의 일당 사용 (미입력 기록만 현재 입력값으로 보정)
+      estimatedWage += r.manDay * (r.dailyWage || dailyWageInput);
     });
-    return { totalManDay, totalExpense, estimatedWage: totalManDay * dailyWageInput };
+    return { totalManDay, totalExpense, estimatedWage };
   }, [periodRecords, dailyWageInput]);
 
   // ===== 팀장용: 팀원 추가 =====
