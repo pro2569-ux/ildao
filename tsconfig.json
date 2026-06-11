@@ -12,11 +12,13 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    // next-pwa가 끌어오는 @types/minimatch 빈 스텁이 암묵적 타입 로딩(TS2688)을 깨뜨려 명시적 화이트리스트 사용
+    "types": ["node", "react", "react-dom"],
     "plugins": [{ "name": "next" }],
     "paths": {
       "@/*": ["./src/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "node_modules_broken", "node_modules_old2"]
 }
