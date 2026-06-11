@@ -19,6 +19,12 @@ const REGIONS = [
   '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주',
 ];
 
+/** 로컬 시간대 기준 오늘 날짜 (YYYY-MM-DD) — toISOString()은 UTC라 한국에서 하루 어긋남 */
+const localToday = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
 /**
  * 구인글 작성 페이지
  * - 직종 선택, 일당, 근무 위치, 날짜, 인원 수, 상세 설명
@@ -51,6 +57,9 @@ export default function CreateJobPage() {
     if (!dailyWage) { setError('일당을 입력해주세요.'); return; }
     if (!region) { setError('지역을 선택해주세요.'); return; }
     if (!startDate) { setError('근무 시작일을 선택해주세요.'); return; }
+    // 날짜 검증: 과거 시작일·시작일보다 빠른 종료일 차단
+    if (startDate < localToday()) { setError('근무 시작일은 오늘 이후여야 합니다.'); return; }
+    if (endDate && endDate < startDate) { setError('종료일은 시작일보다 빠를 수 없습니다.'); return; }
     if (!user || !userProfile) { setError('로그인이 필요합니다.'); return; }
 
     setIsSaving(true);
@@ -206,6 +215,7 @@ export default function CreateJobPage() {
             <input
               type="date"
               value={startDate}
+              min={localToday()}
               onChange={(e) => setStartDate(e.target.value)}
               className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
             />
@@ -217,6 +227,7 @@ export default function CreateJobPage() {
             <input
               type="date"
               value={endDate}
+              min={startDate || localToday()}
               onChange={(e) => setEndDate(e.target.value)}
               className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
             />
