@@ -1,0 +1,25 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // users 컬렉션: 본인만 읽기/쓰기
+    match /users/{userId} {
+      // 본인 문서만 읽기 가능
+      allow read: if request.auth != null && request.auth.uid == userId;
+
+      // 본인 문서만 쓰기 가능 (생성/수정)
+      allow create: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.uid == userId;
+
+      allow update: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.uid == userId;
+
+      // 삭제는 불가
+      allow delete: if false;
+    }
+
+    // 다른 사용자의 공개 프로필 읽기 (구인/구직 시 필요)
+    // TODO: 추후 필요 시 공개 프로필 서브컬렉션 또는 별도 컬렉션으로 분리
+  }
+}

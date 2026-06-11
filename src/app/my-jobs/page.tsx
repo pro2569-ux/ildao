@@ -1,0 +1,175 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import { getJobs, updateJob, deleteJob, getApplicationCount } from '@/lib/firestore';
+import { JobPost } from '@/types';
+
+/**
+ * 내 구인글 관리 페이지
+ * - 올린 구인글 목록
+ * - 지원자 수 표시
+ * - 수정/삭제/마감 기능
+ */
+export default function MyJobsPage() {
+  const { user, userProfile, loading: authLoading } = useAuth();
+  const router = useRouter();
+  const [jobs, setJobs] = useState<JobPost[]>([]);
+  const [appCounts, setAppCounts] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(true);
+  const [actionJobId, setActionJobId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace('/login');
+      return;
+    }
+    if (user) loadJobs();
+  }, [user, authLoading]);
+
+  const loadJobs = async () => {
+    setLoading(true);
+    try {
+      const jobsData = await getJobs({ employerId: user!.uid });
+      setJobs(jobsData);
+
+      // 각 구인글의 지원자 수 조회
+      const counts: Record<string, number> = {};
+      await Promise.all(
+        jobsData.map(async (job) => {
+          counts[job.id] = await getApplicationCount(job.id);
+        })
+      );
+      setAppCounts(counts);
+    } catch (error) {
+      console.error('구인글 로드 실패:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /** 구인글 마감 */
+  const handleClose = async (jobId: string) => {
+    if (!confirm('이 구인글을 마감하시겠습니까?')) return;
+    try {
+      await updateJob(jobId, { status: 'closed' });
+      await loadJobs();
+    } catch (error) {
+      console.error('마감 실패:', error);
+    }
+  };
+
+  /** 구인글 삭제 */
+  const handleDelete = async (jobId: string) => {
+    if (!confirm('이 구인글을 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.')) return;
+    try {
+      await deleteJob(jobId);
+      await loadJobs();
+    } catch (error) {
+      console.error('삭제 실패:', error);
+    }
+  };
+
+  /** 날짜 포맷 */
+  const formatDate = (date: Date) => {
+    const d = new Date(date);
+    return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`;
+  };
+
+  if (authLoading || loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-4 pt-6 pb-24">
+      {/* 상단 */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <button onClick={() => router.back()} className="p-1">
+            <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <h1 className="text-xl font-bold">내 구인글</h1>
+        </div>
+        <Link
+          href="/jobs/create"
+          className="py-2 px-4 bg-primary-500 text-white text-sm font-medium rounded-lg"
+        >
+          + 새 구인글
+        </Link>
+      </div>
+
+      {/* 구인글 목록 */}
+      {jobs.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-gray-400 text-sm mb-4">아직 올린 구인글이 없습니다</p>
+          <Link
+            href="/jobs/create"
+            className="inline-block py-2.5 px-6 bg-primary-500 text-white text-sm font-medium rounded-lg"
+          >
+            첫 구인글 작성하기
+          </Link>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {jobs.map((job) => (
+            <div key={job.id} className="card">
+              <Link href={`/jobs/${job.id}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                    job.status === 'open'
+                      ? 'bg-green-100 text-green-600'
+                      : job.status === 'closed'
+                      ? 'bg-gray-100 text-gray-500'
+                      : 'bg-blue-100 text-primary-600'
+                  }`}>
+                    {job.status === 'open' ? '모집중' : job.status === 'closed' ? '마감' : '진행중'}
+                  </span>
+                  <span className="text-xs text-gray-400">{formatDate(job.createdAt)}</span>
+                </div>
+                <h3 className="font-semibold text-sm mb-1">{job.title}</h3>
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <span>{job.category}</span>
+                  <span>·</span>
+                  <span className="text-accent-500 font-medium">{job.dailyWage.toLocaleString()}원</span>
+                  <span>·</span>
+                  <span>{job.location.address}</span>
+                </div>
+              </Link>
+
+              {/* 하단 액션 */}
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                <span className="text-xs text-primary-500 font-medium">
+                  지원자 {appCounts[job.id] || 0}명
+                </span>
+                <div className="flex items-center gap-2">
+                  {job.status === 'open' && (
+                    <button
+                      onClick={() => handleClose(job.id)}
+                      className="text-xs text-gray-500 hover:text-gray-700 py-1 px-2"
+                    >
+                      마감
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleDelete(job.id)}
+                    className="text-xs text-red-500 hover:text-red-700 py-1 px-2"
+                  >
+                    삭제
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
