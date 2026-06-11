@@ -17,6 +17,7 @@ interface AuthContextType {
   user: User | null;              // Firebase Auth 사용자
   userProfile: UserProfile | null; // Firestore 프로필
   loading: boolean;               // 인증 상태 확인 중
+  profileError: boolean;          // 프로필 로드 실패 (네트워크/권한 오류 — '프로필 없음'과 구분)
   signInWithGoogle: () => Promise<void>;  // Google 로그인
   signOut: () => Promise<void>;          // 로그아웃
   refreshProfile: () => Promise<void>;   // 프로필 새로고침
@@ -37,6 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileError, setProfileError] = useState(false);
 
   /** Firestore에서 사용자 프로필 가져오기 */
   const fetchUserProfile = async (uid: string) => {
@@ -54,9 +56,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // 프로필이 없으면 null (회원가입 필요)
         setUserProfile(null);
       }
+      setProfileError(false);
     } catch (error) {
+      // 로드 실패를 '프로필 없음'과 동일 취급하면 기존 회원이 재가입 폼으로
+      // 유도되어 프로필이 덮어써질 수 있으므로 반드시 구분한다
       console.error('프로필 로드 실패:', error);
       setUserProfile(null);
+      setProfileError(true);
     }
   };
 
@@ -97,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await firebaseSignOut(auth);
       setUserProfile(null);
+      setProfileError(false);
     } catch (error) {
       console.error('로그아웃 실패:', error);
       throw error;
@@ -105,7 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, userProfile, loading, signInWithGoogle, signOut, refreshProfile }}
+      value={{ user, userProfile, loading, profileError, signInWithGoogle, signOut, refreshProfile }}
     >
       {children}
     </AuthContext.Provider>

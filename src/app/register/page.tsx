@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserRole, JobCategory } from '@/types';
@@ -19,7 +19,7 @@ const JOB_CATEGORIES: JobCategory[] = [
  * - 유형별 추가 정보 입력
  */
 export default function RegisterPage() {
-  const { user, userProfile, loading, refreshProfile } = useAuth();
+  const { user, userProfile, loading, profileError, refreshProfile } = useAuth();
   const router = useRouter();
 
   // 단계: 1=역할선택, 2=정보입력
@@ -107,6 +107,16 @@ export default function RegisterPage() {
     setError('');
 
     try {
+      // 덮어쓰기 방어: 프로필 로드 실패(profileError) 상태에서 기존 회원이
+      // 이 폼에 도달했을 수 있으므로, 저장 직전에 실제 존재 여부를 재확인한다
+      const existing = await getDoc(doc(db, 'users', user.uid));
+      if (existing.exists()) {
+        await refreshProfile();
+        alert('이미 등록된 프로필이 있어 홈으로 이동합니다.');
+        router.replace('/');
+        return;
+      }
+
       // Firestore에 프로필 저장
       const profileData: Record<string, any> = {
         uid: user.uid,
@@ -145,6 +155,26 @@ export default function RegisterPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent" />
+      </div>
+    );
+  }
+
+  // 프로필 로드 실패: 기존 회원일 수 있으므로 가입 폼 대신 재시도 안내
+  // (실패를 '프로필 없음'으로 취급해 폼을 띄우면 기존 프로필이 덮어써질 위험)
+  if (profileError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center">
+        <p className="text-sm text-gray-600 mb-4">
+          프로필 정보를 불러오지 못했습니다.
+          <br />
+          네트워크 상태를 확인한 뒤 다시 시도해주세요.
+        </p>
+        <button
+          onClick={() => refreshProfile()}
+          className="py-2.5 px-6 bg-primary-500 text-white text-sm font-semibold rounded-xl"
+        >
+          다시 시도
+        </button>
       </div>
     );
   }
