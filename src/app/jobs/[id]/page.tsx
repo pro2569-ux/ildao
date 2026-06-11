@@ -10,7 +10,7 @@ import KakaoMap from '@/components/ui/KakaoMap';
 /**
  * 구인 공고 상세 페이지
  * - 공고 상세 정보
- * - 지원하기 버툼 (구직읐만)
+ * - 지원하기 버튼 (구직자만)
  * - 이미 지원했으면 "지원 완료" 표시
  */
 export default function JobDetailPage() {
@@ -28,7 +28,16 @@ export default function JobDetailPage() {
 
   useEffect(() => {
     loadJobDetail();
-  }, [jobId, user]);
+  }, [jobId]);
+
+  // 지원 여부 확인은 별도 effect로 분리 — 새로고침 직후에는 userProfile이
+  // 비동기로 늦게 도착하므로, 공고 로드 effect에 묶으면 검사가 건너뛰어진다
+  useEffect(() => {
+    if (!user || userProfile?.role !== 'worker') return;
+    hasApplied(jobId, user.uid)
+      .then(setApplied)
+      .catch((error) => console.error('지원 여부 확인 실패:', error));
+  }, [jobId, user, userProfile]);
 
   const loadJobDetail = async () => {
     setLoading(true);
@@ -43,12 +52,6 @@ export default function JobDetailPage() {
       // 구인자 정보 로드
       const employerData = await getUserProfile(jobData.employerId);
       setEmployer(employerData);
-
-      // 이미 지원했는지 확인
-      if (user && userProfile?.role === 'worker') {
-        const alreadyApplied = await hasApplied(jobId, user.uid);
-        setApplied(alreadyApplied);
-      }
     } catch (error) {
       console.error('공고 로드 실패:', error);
     } finally {
@@ -100,13 +103,13 @@ export default function JobDetailPage() {
       </div>
 
       <div className="px-4 pt-4">
-        {/* 상태 뛰지 */}
+        {/* 상태 뱃지 */}
         <span className={`inline-block text-xs font-medium px-2.5 py-1 rounded-full mb-3 ${
           job.status === 'open'
             ? 'bg-green-100 text-green-600'
             : 'bg-gray-100 text-gray-500'
         }`}>
-          {job.status === 'open' ? '모집터' : job.status === 'closed' ? '마감' : '진행터'}
+          {job.status === 'open' ? '모집중' : job.status === 'closed' ? '마감' : '진행중'}
         </span>
 
         {/* 제목 */}
@@ -117,16 +120,16 @@ export default function JobDetailPage() {
           {job.category}
         </span>
 
-        {/* 핵심 정보 카냜 */}
+        {/* 핵심 정보 카드 */}
         <div className="card mb-4 space-y-3">
           <InfoRow label="일당" value={`${job.dailyWage.toLocaleString()}원`} accent />
           <InfoRow label="모집 인원" value={`${job.numberOfWorkers}명`} />
           <InfoRow label="근무 위치" value={job.location.address} />
           <InfoRow
-            label="근워 기간"
+            label="근무 기간"
             value={`${formatDate(job.startDate)}${job.endDate ? ` ~ ${formatDate(job.endDate)}` : ' ~'}`}
           />
-          <InfoRow label="근문 시간" value={job.workHours} />
+          <InfoRow label="근무 시간" value={job.workHours} />
         </div>
 
         {/* 현장 위치 지도 */}
@@ -180,7 +183,7 @@ export default function JobDetailPage() {
         </p>
       </div>
 
-      {/* 하눨 지원 버툼 (구직읐만) */}
+      {/* 하단 지원 버튼 (구직자만) */}
       {userProfile?.role === 'worker' && job.status === 'open' && (
         <div className="fixed bottom-16 left-0 right-0 px-4 pb-4 bg-gradient-to-t from-white via-white pt-4">
           <div className="max-w-lg mx-auto">
