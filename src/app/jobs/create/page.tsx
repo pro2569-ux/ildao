@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { createJob } from '@/lib/firestore';
 import { JobCategory } from '@/types';
 import { Timestamp } from 'firebase/firestore';
@@ -31,7 +31,8 @@ const localToday = () => {
  * - Firestore jobs 컬렉션에 저장
  */
 export default function CreateJobPage() {
-  const { user, userProfile } = useAuth();
+  // 구인자 전용 페이지 — 비로그인/구직자/미가입 사용자는 리다이렉트 (#5)
+  const { user, userProfile, ready } = useRequireAuth('employer');
   const router = useRouter();
 
   const [title, setTitle] = useState('');
@@ -100,6 +101,15 @@ export default function CreateJobPage() {
     const raw = value.replace(/\D/g, '');
     return raw ? Number(raw).toLocaleString() : '';
   };
+
+  // 가드 통과 전에는 폼을 렌더링하지 않음
+  if (!ready) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <div className="px-4 pt-6 pb-24 min-h-screen">

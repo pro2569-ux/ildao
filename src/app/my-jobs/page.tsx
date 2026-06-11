@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { getJobs, updateJob, deleteJob, getApplicationCount } from '@/lib/firestore';
 import { JobPost } from '@/types';
 
@@ -14,7 +14,8 @@ import { JobPost } from '@/types';
  * - 수정/삭제/마감 기능
  */
 export default function MyJobsPage() {
-  const { user, userProfile, loading: authLoading } = useAuth();
+  // 구인자 전용 페이지 — 비로그인/구직자/미가입 사용자는 리다이렉트 (#31)
+  const { user, ready } = useRequireAuth('employer');
   const router = useRouter();
   const [jobs, setJobs] = useState<JobPost[]>([]);
   const [appCounts, setAppCounts] = useState<Record<string, number>>({});
@@ -22,12 +23,8 @@ export default function MyJobsPage() {
   const [actionJobId, setActionJobId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.replace('/login');
-      return;
-    }
-    if (user) loadJobs();
-  }, [user, authLoading]);
+    if (ready) loadJobs();
+  }, [ready]);
 
   const loadJobs = async () => {
     setLoading(true);
@@ -78,7 +75,7 @@ export default function MyJobsPage() {
     return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`;
   };
 
-  if (authLoading || loading) {
+  if (!ready || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent" />

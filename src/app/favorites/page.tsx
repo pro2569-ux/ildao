@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { getFavorites, removeFavorite, getUserProfile, getJob } from '@/lib/firestore';
 import { Favorite, UserProfile, JobPost } from '@/types';
 
@@ -28,7 +28,9 @@ interface FavoriteCompany extends Favorite {
  * - 구직자: 관심 업체 / 관심 공고 탭
  */
 export default function FavoritesPage() {
-  const { user, userProfile, loading: authLoading } = useAuth();
+  // 로그인 + 프로필 등록 필수 — 미가입 사용자가 무한 스피너에 갇히던 문제(#28)는
+  // 훅이 /register로 안내해 해소
+  const { user, userProfile, ready } = useRequireAuth();
   const router = useRouter();
 
   // 구인자용 상태
@@ -46,16 +48,10 @@ export default function FavoritesPage() {
 
   const isEmployer = userProfile?.role === 'employer';
 
-  // 로그인 여부 체크 및 데이터 로드
+  // 가드 통과 후 데이터 로드
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.replace('/login');
-      return;
-    }
-    if (user && userProfile) {
-      loadFavorites();
-    }
-  }, [user, userProfile, authLoading]);
+    if (ready) loadFavorites();
+  }, [ready]);
 
   /** 즐겨찾기 데이터 로드 */
   const loadFavorites = useCallback(async () => {
@@ -159,15 +155,13 @@ export default function FavoritesPage() {
   };
 
   // ===== 로딩 / 인증 처리 =====
-  if (authLoading) {
+  if (!ready) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent" />
       </div>
     );
   }
-
-  if (!user) return null;
 
   // ===== 구인자 탭 구성 =====
   const employerTabs = [{ label: '즐겨찾기 근로자', count: favoriteWorkers.length }];

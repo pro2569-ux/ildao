@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { getApplicationsByWorker, getJob } from '@/lib/firestore';
 import { Application, JobPost } from '@/types';
 
@@ -12,19 +12,16 @@ import { Application, JobPost } from '@/types';
  * - 지원한 공고 목록 + 상태
  */
 export default function MyApplicationsPage() {
-  const { user, loading: authLoading } = useAuth();
+  // 구직자 전용 페이지 — 비로그인/구인자/미가입 사용자는 리다이렉트 (#43)
+  const { user, ready } = useRequireAuth('worker');
   const router = useRouter();
   const [applications, setApplications] = useState<(Application & { job?: JobPost })[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'rejected'>('all');
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.replace('/login');
-      return;
-    }
-    if (user) loadApplications();
-  }, [user, authLoading]);
+    if (ready) loadApplications();
+  }, [ready]);
 
   const loadApplications = async () => {
     setLoading(true);
@@ -70,7 +67,7 @@ export default function MyApplicationsPage() {
     return `${d.getMonth() + 1}/${d.getDate()}`;
   };
 
-  if (authLoading || loading) {
+  if (!ready || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent" />
