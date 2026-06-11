@@ -25,6 +25,10 @@ service cloud.firestore {
     function changedKeys() {
       return request.resource.data.diff(resource.data).affectedKeys();
     }
+    // 요청자의 프로필 역할 확인 (프로필 미등록 시 get 실패 → 거부)
+    function myRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
 
     // ===== users: 사용자 프로필 =====
     match /users/{userId} {
@@ -52,8 +56,9 @@ service cloud.firestore {
       // 구인공고는 비로그인 사용자도 열람 가능
       allow read: if true;
 
-      // 작성: 본인을 employerId로 한 open 상태 공고만
+      // 작성: 구인자(employer) 역할만, 본인을 employerId로 한 open 상태 공고만
       allow create: if isSignedIn()
+                    && myRole() == 'employer'
                     && request.resource.data.employerId == request.auth.uid
                     && request.resource.data.status == 'open';
 
@@ -73,9 +78,10 @@ service cloud.firestore {
                   && (resource.data.workerId == request.auth.uid
                       || resource.data.employerId == request.auth.uid);
 
-      // 지원: 본인(workerId) 명의로만, pending 상태로만,
+      // 지원: 구직자(worker) 역할만, 본인(workerId) 명의로만, pending 상태로만,
       //       employerId는 실제 공고 문서의 작성자와 일치해야 하고, 공고가 모집 중(open)이어야 함
       allow create: if isSignedIn()
+                    && myRole() == 'worker'
                     && request.resource.data.workerId == request.auth.uid
                     && request.resource.data.status == 'pending'
                     && request.resource.data.keys().hasOnly(['jobId', 'workerId', 'employerId', 'status', 'createdAt'])
