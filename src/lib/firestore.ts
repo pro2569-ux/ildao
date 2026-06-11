@@ -3,6 +3,7 @@
 import {
   collection, doc, addDoc, getDoc, getDocs, updateDoc, deleteDoc, setDoc,
   query, where, orderBy, limit, serverTimestamp, Timestamp,
+  getCountFromServer, writeBatch,
   DocumentData, QueryConstraint
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -95,16 +96,17 @@ export async function deleteJob(jobId: string): Promise<void> {
 
 // ===== 지원 관련 =====
 
-/** 구인글에 지원 */
+/** 구인글에 지원 (docId: {jobId}_{workerId} — 중복/동시 지원이 같은 문서로 수렴해 이중 생성 방지) */
 export async function applyToJob(jobId: string, workerId: string, employerId: string): Promise<string> {
-  const docRef = await addDoc(collection(db, 'applications'), {
+  const docId = `${jobId}_${workerId}`;
+  await setDoc(doc(db, 'applications', docId), {
     jobId,
     workerId,
     employerId,
     status: 'pending' as ApplicationStatus,
     createdAt: serverTimestamp(),
   });
-  return docRef.id;
+  return docId;
 }
 
 /** 특정 구인글의 지원 목록 (보안 규칙상 해당 공고의 구인자 본인만 조회 가능) */
@@ -138,15 +140,10 @@ export async function getApplicationsByWorker(workerId: string): Promise<Applica
   } as Application));
 }
 
-/** 이미 지원했는지 확인 */
+/** 이미 지원했는지 확인 (결정적 docId 단건 조회 — 쿼리보다 저렴) */
 export async function hasApplied(jobId: string, workerId: string): Promise<boolean> {
-  const q = query(
-    collection(db, 'applications'),
-    where('jobId', '==', jobId),
-    where('workerId', '==', workerId)
-  );
-  const snapshot = await getDocs(q);
-  return !snapshot.empty;
+  const snapshot = await getDoc(doc(db, 'applications', `${jobId}_${workerId}`));
+  return snapshot.exists();
 }
 
 /** 지원 상태 변경 (구인자가 수락/거절) */
@@ -208,8 +205,9 @@ export async function getApplicationCount(jobId: string, employerId: string): Pr
     where('jobId', '==', jobId),
     where('employerId', '==', employerId)
   );
-  const snapshot = await getDocs(q);
-  return snapshot.size;
+  // 집계 쿼리: 문서를 전부 읽지 않고 서버에서 개수만 계산 (읽기 비용 절감)
+  const snapshot = await getCountFromServer(q);
+  return snapshot.data().count;
 }
 
 // ===== Phase 2: 공수 기록 관련 =====
@@ -418,7 +416,13 @@ export async function getEmployerStats(employerId: string): Promise<{
   const jobsSnap = await getDocs(jobsQuery);
   const activeJobs = jobsSnap.size;
 
-  // 총 지원자 수 & 최근 지원
+  // 총 지원자 수 (집계 쿼리 — limit 걸린 목록의 size를 쓰면 10에서 캡핑됨)
+  const countSnap = await getCountFromServer(
+    query(collection(db, 'applications'), where('employerId', '==', employerId))
+  );
+  const totalApplicants = countSnap.data().count;
+
+  // 최근 지원 10건
   const appsQuery = query(
     collection(db, 'applications'),
     where('employerId', '==', employerId),
@@ -426,7 +430,6 @@ export async function getEmployerStats(employerId: string): Promise<{
     limit(10)
   );
   const appsSnap = await getDocs(appsQuery);
-  const totalApplicants = appsSnap.size;
   const recentApplications = appsSnap.docs.map((d) => ({
     ...d.data(),
     id: d.id,
