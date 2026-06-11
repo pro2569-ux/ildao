@@ -9,6 +9,7 @@ import {
   saveTeamMembers,
   getTeamMembers,
   saveTeamDailyWork,
+  deleteTeamMemberWorks,
   getTeamMonthlyWorks,
 } from '@/lib/firestore';
 import { DailyWorkRecord, WeatherType, TeamMember, TeamDailyWork } from '@/types';
@@ -379,10 +380,14 @@ export default function CalculatorPage() {
 
   const handleDeleteMember = async (memberId: string) => {
     if (!user) return;
+    if (!window.confirm('팀원을 삭제하시겠습니까? 해당 팀원의 공수 기록도 모두 삭제되며, 이 작업은 취소할 수 없습니다.')) return;
     const updatedMembers = teamMembers.filter((m) => m.id !== memberId);
     try {
       await saveTeamMembers(user.uid, updatedMembers);
+      // 고아 레코드 방지: 명단에서 빠진 팀원의 공수 기록까지 정리
+      await deleteTeamMemberWorks(user.uid, memberId);
       setTeamMembers(updatedMembers);
+      setTeamWorks((prev) => prev.filter((w) => w.memberId !== memberId));
       if (selectedMember?.id === memberId) {
         setSelectedMember(null);
       }

@@ -63,9 +63,9 @@ export default function MyJobsPage() {
 
   /** 구인글 삭제 */
   const handleDelete = async (jobId: string) => {
-    if (!confirm('이 구인글을 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.')) return;
+    if (!confirm('이 구인글을 삭제하시겠습니까? 받은 지원 내역도 함께 삭제되며, 이 작업은 취소할 수 없습니다.')) return;
     try {
-      await deleteJob(jobId);
+      await deleteJob(jobId, user!.uid);
       await loadJobs();
     } catch (error) {
       console.error('삭제 실패:', error);

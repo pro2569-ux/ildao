@@ -102,7 +102,8 @@ service cloud.firestore {
                     && changedKeys().hasOnly(['status'])
                     && request.resource.data.status in ['pending', 'accepted', 'rejected'];
 
-      allow delete: if false;
+      // 삭제: 해당 공고의 구인자만 (공고 삭제 시 지원 내역 일괄 정리용)
+      allow delete: if isSignedIn() && resource.data.employerId == request.auth.uid;
     }
 
     // ===== dailyWorks: 개인 공수 기록 (docId: {userId}_{YYYY-MM-DD}) =====

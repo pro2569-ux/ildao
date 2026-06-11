@@ -4,13 +4,23 @@ import {
   collection, doc, addDoc, getDoc, getDocs, updateDoc, deleteDoc, setDoc,
   query, where, orderBy, limit, serverTimestamp, Timestamp,
   getCountFromServer, writeBatch,
-  DocumentData, QueryConstraint
+  DocumentData, DocumentReference, QueryConstraint
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { JobPost, Application, UserProfile, JobCategory, JobStatus, ApplicationStatus, DailyWorkRecord, TeamMember, TeamDailyWork, Favorite } from '@/types';
 
 // ===== 날짜 변환 헬퍼 =====
 const toDate = (ts: any): Date => ts?.toDate?.() || new Date(ts) || new Date();
+
+// ===== 배치 삭제 헬퍼 (Firestore 배치당 500개 제한 대응) =====
+async function deleteInBatches(refs: DocumentReference[]): Promise<void> {
+  const CHUNK = 450;
+  for (let i = 0; i < refs.length; i += CHUNK) {
+    const batch = writeBatch(db);
+    refs.slice(i, i + CHUNK).forEach((r) => batch.delete(r));
+    await batch.commit();
+  }
+}
 
 // ===== 구인글 관련 =====
 
@@ -89,8 +99,18 @@ export async function updateJob(jobId: string, data: Partial<JobPost>): Promise<
   });
 }
 
-/** 구인글 삭제 */
-export async function deleteJob(jobId: string): Promise<void> {
+/** 구인글 삭제 (연관 지원 내역까지 일괄 정리) */
+export async function deleteJob(jobId: string, employerId: string): Promise<void> {
+  // 이 공고에 달린 지원 내역을 먼저 삭제해 고아 데이터·통계 왜곡 방지
+  // (타인 소유의 favorites는 클라이언트에서 정리 불가 — 즐겨찾기 화면이 삭제된 공고를 null 처리)
+  const appsSnap = await getDocs(
+    query(
+      collection(db, 'applications'),
+      where('jobId', '==', jobId),
+      where('employerId', '==', employerId)
+    )
+  );
+  await deleteInBatches(appsSnap.docs.map((d) => d.ref));
   await deleteDoc(doc(db, 'jobs', jobId));
 }
 
@@ -314,6 +334,18 @@ export async function saveTeamDailyWork(teamLeaderId: string, memberId: string, 
       createdAt: serverTimestamp(),
     });
   }
+}
+
+/** 팀원 삭제 시 해당 팀원의 공수 기록 일괄 삭제 (고아 레코드 방지) */
+export async function deleteTeamMemberWorks(teamLeaderId: string, memberId: string): Promise<void> {
+  const snap = await getDocs(
+    query(
+      collection(db, 'teamDailyWorks'),
+      where('teamLeaderId', '==', teamLeaderId),
+      where('memberId', '==', memberId)
+    )
+  );
+  await deleteInBatches(snap.docs.map((d) => d.ref));
 }
 
 /** 팀원들의 월별 공수 조회 */
