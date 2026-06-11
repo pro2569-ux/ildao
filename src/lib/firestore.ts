@@ -107,11 +107,12 @@ export async function applyToJob(jobId: string, workerId: string, employerId: st
   return docRef.id;
 }
 
-/** 특정 구인글의 지원 목록 */
-export async function getApplicationsByJob(jobId: string): Promise<Application[]> {
+/** 특정 구인글의 지원 목록 (보안 규칙상 해당 공고의 구인자 본인만 조회 가능) */
+export async function getApplicationsByJob(jobId: string, employerId: string): Promise<Application[]> {
   const q = query(
     collection(db, 'applications'),
     where('jobId', '==', jobId),
+    where('employerId', '==', employerId),
     orderBy('createdAt', 'desc')
   );
   const snapshot = await getDocs(q);
@@ -200,11 +201,12 @@ export async function toggleProfilePublic(uid: string, isPublic: boolean): Promi
   });
 }
 
-/** 지원자 수 가져오기 (구인글별) */
-export async function getApplicationCount(jobId: string): Promise<number> {
+/** 지원자 수 가져오기 (구인글별, 보안 규칙상 해당 공고의 구인자 본인만 조회 가능) */
+export async function getApplicationCount(jobId: string, employerId: string): Promise<number> {
   const q = query(
     collection(db, 'applications'),
-    where('jobId', '==', jobId)
+    where('jobId', '==', jobId),
+    where('employerId', '==', employerId)
   );
   const snapshot = await getDocs(q);
   return snapshot.size;

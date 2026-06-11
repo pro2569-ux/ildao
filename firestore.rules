@@ -1,25 +1,149 @@
 rules_version = '2';
 
+// 일다오(ildao) Firestore 보안 규칙
+//
+// 설계 원칙
+// - 기본 거부(deny-by-default): 아래에 명시되지 않은 접근은 모두 차단된다.
+// - 모든 권한 검증은 이 규칙이 최종 경계다. 클라이언트 코드의 검사는 UX용일 뿐이다.
+// - 규칙은 쿼리의 필터가 아니다: 목록(list) 쿼리는 조건이 쿼리 제약으로 증명될 때만 허용되므로,
+//   여기의 list 조건과 src/lib/firestore.ts 쿼리의 where 절이 항상 일치해야 한다.
+// - 컬렉션에 필드를 추가하거나 새 쿼리를 만들면 반드시 이 파일을 함께 갱신할 것.
+//
+// 배포: firebase deploy --only firestore:rules (firebase.json에서 이 파일을 참조)
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // users 컬렉션: 본인만 읽기/쓰기
+    // ===== 공통 헬퍼 =====
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isSelf(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    // update 시 변경된 키 집합 (updateDoc 부분 업데이트는 병합 결과로 비교됨)
+    function changedKeys() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    // ===== users: 사용자 프로필 =====
     match /users/{userId} {
-      // 본인 문서만 읽기 가능
-      allow read: if request.auth != null && request.auth.uid == userId;
+      // 읽기: 본인 / 공개 설정한 구직자(isPublic) / 업체 프로필(공고 상세·게시판 노출용, 비로그인 포함)
+      // - getPublicWorkers 쿼리(role=='worker' && isPublic==true)는 isPublic 분기로 통과
+      // - 비공개 구직자(isPublic 미설정 포함)는 본인 외 누구도 읽을 수 없음
+      allow read: if isSelf(userId)
+                  || resource.data.isPublic == true
+                  || resource.data.role == 'employer';
 
-      // 본인 문서만 쓰기 가능 (생성/수정)
-      allow create: if request.auth != null && request.auth.uid == userId
-        && request.resource.data.uid == userId;
+      // 가입: 본인 문서만, uid 필드 일치, 역할은 worker/employer만 허용
+      allow create: if isSelf(userId)
+                    && request.resource.data.uid == userId
+                    && request.resource.data.role in ['worker', 'employer'];
 
-      allow update: if request.auth != null && request.auth.uid == userId
-        && request.resource.data.uid == userId;
+      // 수정: 본인 문서만, 신원·역할 필드(uid/role/email/createdAt)는 변경 불가
+      allow update: if isSelf(userId)
+                    && !changedKeys().hasAny(['uid', 'role', 'email', 'createdAt']);
 
-      // 삭제는 불가
       allow delete: if false;
     }
 
-    // 다른 사용자의 공개 프로필 읽기 (구인/구직 시 필요)
-    // TODO: 추후 필요 시 공개 프로필 서브컬렉션 또는 별도 컬렉션으로 분리
+    // ===== jobs: 구인공고 (공개 게시판) =====
+    match /jobs/{jobId} {
+      // 구인공고는 비로그인 사용자도 열람 가능
+      allow read: if true;
+
+      // 작성: 본인을 employerId로 한 open 상태 공고만
+      allow create: if isSignedIn()
+                    && request.resource.data.employerId == request.auth.uid
+                    && request.resource.data.status == 'open';
+
+      // 수정(마감 등)/삭제: 작성자만, 소유자(employerId)와 작성일은 변경 불가
+      allow update: if isSignedIn()
+                    && resource.data.employerId == request.auth.uid
+                    && !changedKeys().hasAny(['employerId', 'createdAt']);
+      allow delete: if isSignedIn()
+                    && resource.data.employerId == request.auth.uid;
+    }
+
+    // ===== applications: 지원 내역 =====
+    match /applications/{applicationId} {
+      // 조회: 지원자 본인 또는 해당 공고의 구인자만
+      // (목록 쿼리는 where workerId==본인 또는 where employerId==본인 조건이 있어야 통과)
+      allow read: if isSignedIn()
+                  && (resource.data.workerId == request.auth.uid
+                      || resource.data.employerId == request.auth.uid);
+
+      // 지원: 본인(workerId) 명의로만, pending 상태로만,
+      //       employerId는 실제 공고 문서의 작성자와 일치해야 하고, 공고가 모집 중(open)이어야 함
+      allow create: if isSignedIn()
+                    && request.resource.data.workerId == request.auth.uid
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.keys().hasOnly(['jobId', 'workerId', 'employerId', 'status', 'createdAt'])
+                    && request.resource.data.employerId
+                       == get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.employerId
+                    && get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.status == 'open';
+
+      // 상태 변경(수락/거절): 해당 공고의 구인자만, status 필드만 변경 가능
+      allow update: if isSignedIn()
+                    && resource.data.employerId == request.auth.uid
+                    && changedKeys().hasOnly(['status'])
+                    && request.resource.data.status in ['pending', 'accepted', 'rejected'];
+
+      allow delete: if false;
+    }
+
+    // ===== dailyWorks: 개인 공수 기록 (docId: {userId}_{YYYY-MM-DD}) =====
+    match /dailyWorks/{workId} {
+      // 단건 조회: 본인 docId 접두사만 (upsert의 존재 확인용 — 문서가 없어도 거부되지 않도록 docId로 판정)
+      allow get: if isSignedIn() && workId.matches(request.auth.uid + '_.*');
+      // 목록 조회: where userId==본인 쿼리만
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      // 생성: docId가 본인uid_날짜 형식이어야 하고 userId 필드도 본인
+      allow create: if isSignedIn()
+                    && request.resource.data.userId == request.auth.uid
+                    && workId == request.auth.uid + '_' + request.resource.data.date;
+      // 수정: 본인 기록만, 키 필드(userId/date)는 변경 불가
+      allow update: if isSignedIn()
+                    && resource.data.userId == request.auth.uid
+                    && !changedKeys().hasAny(['userId', 'date']);
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // ===== teamDailyWorks: 팀장용 팀원 공수 기록 (docId: {leaderId}_{memberId}_{date}) =====
+    match /teamDailyWorks/{workId} {
+      allow get: if isSignedIn() && workId.matches(request.auth.uid + '_.*');
+      allow list: if isSignedIn() && resource.data.teamLeaderId == request.auth.uid;
+
+      allow create: if isSignedIn()
+                    && request.resource.data.teamLeaderId == request.auth.uid
+                    && workId == request.auth.uid + '_' + request.resource.data.memberId
+                                 + '_' + request.resource.data.date;
+      allow update: if isSignedIn()
+                    && resource.data.teamLeaderId == request.auth.uid
+                    && !changedKeys().hasAny(['teamLeaderId', 'memberId', 'date']);
+      allow delete: if isSignedIn() && resource.data.teamLeaderId == request.auth.uid;
+    }
+
+    // ===== teams: 팀원 명단 (docId == 팀장 uid) =====
+    match /teams/{userId} {
+      allow read, write: if isSelf(userId);
+    }
+
+    // ===== favorites: 즐겨찾기 =====
+    match /favorites/{favoriteId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      allow create: if isSignedIn()
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.targetType in ['user', 'job'];
+      allow update: if false;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // 위에 명시되지 않은 모든 경로는 기본 거부된다 (명시적 표기)
+    match /{document=**} {
+      allow read, write: if false;
+    }
   }
 }

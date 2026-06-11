@@ -69,7 +69,8 @@ export default function FavoritesPage() {
         const favs = await getFavorites(user.uid, 'user');
         const withProfiles = await Promise.all(
           favs.map(async (fav) => {
-            const worker = await getUserProfile(fav.targetId);
+            // 탈퇴(null) 또는 비공개 전환(권한 거부) 모두 목록 전체를 깨뜨리지 않도록 null 처리
+            const worker = await getUserProfile(fav.targetId).catch(() => null);
             return { ...fav, worker };
           })
         );
@@ -84,7 +85,7 @@ export default function FavoritesPage() {
         // 관심 업체 프로필 로드
         const companiesWithProfiles = await Promise.all(
           userFavs.map(async (fav) => {
-            const company = await getUserProfile(fav.targetId);
+            const company = await getUserProfile(fav.targetId).catch(() => null);
             return { ...fav, company };
           })
         );
@@ -257,7 +258,7 @@ export default function FavoritesPage() {
                     if (!w) {
                       return (
                         <div key={fav.targetId} className="card">
-                          <p className="text-sm text-gray-400">탈퇴한 사용자</p>
+                          <p className="text-sm text-gray-400">탈퇴했거나 프로필을 비공개한 사용자</p>
                           <button
                             onClick={() => handleRemoveFavorite(fav.targetId, '해당 사용자')}
                             disabled={removingId === fav.targetId}

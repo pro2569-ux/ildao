@@ -39,7 +39,7 @@ export default function MyJobsPage() {
       const counts: Record<string, number> = {};
       await Promise.all(
         jobsData.map(async (job) => {
-          counts[job.id] = await getApplicationCount(job.id);
+          counts[job.id] = await getApplicationCount(job.id, user!.uid);
         })
       );
       setAppCounts(counts);
