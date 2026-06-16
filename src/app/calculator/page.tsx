@@ -257,12 +257,16 @@ export default function CalculatorPage() {
     // 기존 기록에 저장된 그 날의 일당은 보존 — 현재 입력값으로 덮어쓰면 과거 데이터가 손상됨
     // (0은 일당 미입력 상태로 보고 현재 입력값으로 채움)
     const savedWage = monthlyRecords.get(selectedDate)?.dailyWage || dailyWageInput;
+    // 휴무일은 공수/잔업/연장과 모순되지 않도록 정규화 (#39 — 월간 요약 수치 자기모순 방지)
+    const normManDay = editDayOff ? 0 : editManDay;
+    const normOvertime = editDayOff ? false : editOvertime;
+    const normExtension = editDayOff ? false : editExtension;
     try {
       await saveDailyWork(user.uid, selectedDate, {
-        manDay: editManDay,
-        overtime: editOvertime,
+        manDay: normManDay,
+        overtime: normOvertime,
         dayOff: editDayOff,
-        extension: editExtension,
+        extension: normExtension,
         expense: editExpense,
         memo: editMemo,
         weather: editWeather,
@@ -274,10 +278,10 @@ export default function CalculatorPage() {
         next.set(selectedDate, {
           userId: user.uid,
           date: selectedDate,
-          manDay: editManDay,
-          overtime: editOvertime,
+          manDay: normManDay,
+          overtime: normOvertime,
           dayOff: editDayOff,
-          extension: editExtension,
+          extension: normExtension,
           expense: editExpense,
           memo: editMemo,
           weather: editWeather,
@@ -439,13 +443,17 @@ export default function CalculatorPage() {
   const handleSaveTeamWork = async () => {
     if (!user || !selectedMember || !teamSelectedDate) return;
     setIsSaving(true);
+    // 휴무일 정규화 (#39)
+    const normManDay = teamEditDayOff ? 0 : teamEditManDay;
+    const normOvertime = teamEditDayOff ? false : teamEditOvertime;
+    const normExtension = teamEditDayOff ? false : teamEditExtension;
     try {
       await saveTeamDailyWork(user.uid, selectedMember.id, teamSelectedDate, {
         memberName: selectedMember.name,
-        manDay: teamEditManDay,
-        overtime: teamEditOvertime,
+        manDay: normManDay,
+        overtime: normOvertime,
         dayOff: teamEditDayOff,
-        extension: teamEditExtension,
+        extension: normExtension,
         memo: teamEditMemo,
       });
       // 로컬 상태 업데이트
@@ -458,10 +466,10 @@ export default function CalculatorPage() {
           memberId: selectedMember.id,
           memberName: selectedMember.name,
           date: teamSelectedDate,
-          manDay: teamEditManDay,
-          overtime: teamEditOvertime,
+          manDay: normManDay,
+          overtime: normOvertime,
           dayOff: teamEditDayOff,
-          extension: teamEditExtension,
+          extension: normExtension,
           memo: teamEditMemo,
         };
         if (idx >= 0) {
@@ -708,8 +716,9 @@ export default function CalculatorPage() {
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₩</span>
                 <input
                   type="number"
+                  min="0"
                   value={editExpense || ''}
-                  onChange={(e) => setEditExpense(Number(e.target.value) || 0)}
+                  onChange={(e) => setEditExpense(Math.max(0, Number(e.target.value) || 0))}
                   placeholder="0"
                   className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
@@ -935,8 +944,9 @@ export default function CalculatorPage() {
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₩</span>
                 <input
                   type="number"
+                  min="0"
                   value={dailyWageInput || ''}
-                  onChange={(e) => setDailyWageInput(Number(e.target.value) || 0)}
+                  onChange={(e) => setDailyWageInput(Math.max(0, Number(e.target.value) || 0))}
                   placeholder="일당을 입력하세요"
                   className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
@@ -1055,8 +1065,9 @@ export default function CalculatorPage() {
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₩</span>
                       <input
                         type="number"
+                        min="0"
                         value={newMemberWage || ''}
-                        onChange={(e) => setNewMemberWage(Number(e.target.value) || 0)}
+                        onChange={(e) => setNewMemberWage(Math.max(0, Number(e.target.value) || 0))}
                         placeholder="일당"
                         className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                       />
