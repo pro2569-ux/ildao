@@ -5,12 +5,8 @@ import { useRouter } from 'next/navigation';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
+import { JOB_CATEGORIES } from '@/lib/constants';
 import { UserRole, JobCategory } from '@/types';
-
-/** 사용 가능한 직종 목록 */
-const JOB_CATEGORIES: JobCategory[] = [
-  '철근', '목공', '설비', '전기', '도장', '용접', '타일', '미장', '방수', '조적', '비계', '잡역', '기타',
-];
 
 /**
  * 회원가입 (프로필 설정) 페이지

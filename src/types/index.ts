@@ -1,3 +1,5 @@
+import { JOB_CATEGORIES } from '@/lib/constants';
+
 // ===== 사용자 관련 타입 =====
 
 /** 사용자 역할 */
@@ -59,21 +61,8 @@ export interface Application {
 /** 구인 게시글 상태 */
 export type JobStatus = 'open' | 'closed' | 'in_progress' | 'completed';
 
-/** 직종 카테고리 */
-export type JobCategory =
-  | '철근'
-  | '목공'
-  | '설비'
-  | '전기'
-  | '도장'
-  | '용접'
-  | '타일'
-  | '미장'
-  | '방수'
-  | '조적'
-  | '비계'
-  | '잡역'
-  | '기타';
+/** 직종 카테고리 (단일 소스: lib/constants.ts의 JOB_CATEGORIES에서 파생) */
+export type JobCategory = (typeof JOB_CATEGORIES)[number];
 
 /** 구인 게시글 */
 export interface JobPost {

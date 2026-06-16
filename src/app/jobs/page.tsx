@@ -3,13 +3,11 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getJobs } from '@/lib/firestore';
-import { REGIONS } from '@/lib/constants';
+import { REGIONS, JOB_CATEGORIES } from '@/lib/constants';
 import { JobPost, JobCategory } from '@/types';
 
-/** 직종 필터 목록 */
-const CATEGORIES: (JobCategory | '전체')[] = [
-  '전체', '철근', '목공', '설비', '전기', '도장', '용접', '타일', '미장', '방수', '조적', '비계', '잡역', '기타',
-];
+/** 직종 필터 목록 ('전체' + 공용 직종 상수) */
+const CATEGORIES: (JobCategory | '전체')[] = ['전체', ...JOB_CATEGORIES];
 
 /** 정렬 옵션 */
 type SortOption = 'latest' | 'highWage';

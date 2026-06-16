@@ -4,14 +4,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { createJob } from '@/lib/firestore';
-import { REGIONS } from '@/lib/constants';
+import { REGIONS, JOB_CATEGORIES } from '@/lib/constants';
 import { JobCategory } from '@/types';
 import KakaoMap from '@/components/ui/KakaoMap';
-
-/** 사용 가능한 직종 목록 */
-const JOB_CATEGORIES: JobCategory[] = [
-  '철근', '목공', '설비', '전기', '도장', '용접', '타일', '미장', '방수', '조적', '비계', '잡역', '기타',
-];
 
 /** 로컬 시간대 기준 오늘 날짜 (YYYY-MM-DD) — toISOString()은 UTC라 한국에서 하루 어긋남 */
 const localToday = () => {

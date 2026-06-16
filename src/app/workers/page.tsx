@@ -4,12 +4,11 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getPublicWorkers, getFavorites, addFavorite, removeFavorite } from '@/lib/firestore';
+import { JOB_CATEGORIES } from '@/lib/constants';
 import { UserProfile, JobCategory } from '@/types';
 
-/** 직종 필터 목록 */
-const FILTER_CATEGORIES: (JobCategory | '전체')[] = [
-  '전체', '철근', '목공', '설비', '전기', '도장', '용접', '타일', '미장', '방수', '조적', '비계', '잡역',
-];
+/** 직종 필터 목록 ('전체' + 공용 직종 상수 — 기존엔 '기타'가 누락돼 '기타' 구직자가 검색 안 됨) */
+const FILTER_CATEGORIES: (JobCategory | '전체')[] = ['전체', ...JOB_CATEGORIES];
 
 /**
  * 구직자 목록 페이지
