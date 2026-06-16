@@ -8,6 +8,8 @@ import { getFavorites, removeFavorite, getUserProfile, getJob } from '@/lib/fire
 import { formatDate, formatWon } from '@/lib/format';
 import { Favorite, UserProfile, JobPost } from '@/types';
 import { Spinner, PageLoader } from '@/components/ui/Spinner';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorState } from '@/components/ui/ErrorState';
 
 /** 즐겨찾기한 근로자 (구인자용) */
 interface FavoriteWorker extends Favorite {
@@ -196,20 +198,7 @@ export default function FavoritesPage() {
       )}
 
       {/* 에러 상태 */}
-      {error && (
-        <div className="text-center py-8">
-          <svg className="w-12 h-12 mx-auto text-red-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <p className="text-gray-500 text-sm mb-3">{error}</p>
-          <button
-            onClick={loadFavorites}
-            className="py-2 px-4 bg-primary-500 text-white text-sm font-medium rounded-lg"
-          >
-            다시 시도
-          </button>
-        </div>
-      )}
+      {error && <ErrorState message={error} onRetry={loadFavorites} />}
 
       {/* 로딩 상태 */}
       {loading && !error && (
@@ -226,7 +215,7 @@ export default function FavoritesPage() {
             <>
               {favoriteWorkers.length === 0 ? (
                 <EmptyState
-                  icon="worker"
+                  icon={WORKER_ICON}
                   message="즐겨찾기한 근로자가 없습니다"
                   subMessage="마음에 드는 구직자를 즐겨찾기에 추가해보세요"
                   linkHref="/workers"
@@ -316,7 +305,7 @@ export default function FavoritesPage() {
             <>
               {favoriteCompanies.length === 0 ? (
                 <EmptyState
-                  icon="company"
+                  icon={COMPANY_ICON}
                   message="관심 업체가 없습니다"
                   subMessage="마음에 드는 업체를 즐겨찾기에 추가해보세요"
                   linkHref="/jobs"
@@ -396,7 +385,7 @@ export default function FavoritesPage() {
             <>
               {favoriteJobs.length === 0 ? (
                 <EmptyState
-                  icon="job"
+                  icon={JOB_ICON}
                   message="관심 공고가 없습니다"
                   subMessage="마음에 드는 공고를 즐겨찾기에 추가해보세요"
                   linkHref="/jobs"
@@ -466,47 +455,20 @@ export default function FavoritesPage() {
   );
 }
 
-// ===== 빈 상태 컴포넌트 =====
+// ===== 빈 상태 아이콘 (공용 EmptyState에 prop으로 주입) =====
 
-function EmptyState({
-  icon,
-  message,
-  subMessage,
-  linkHref,
-  linkText,
-}: {
-  icon: 'worker' | 'company' | 'job';
-  message: string;
-  subMessage: string;
-  linkHref: string;
-  linkText: string;
-}) {
-  return (
-    <div className="text-center py-16">
-      {/* 아이콘 */}
-      {icon === 'worker' && (
-        <svg className="w-16 h-16 mx-auto text-gray-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-        </svg>
-      )}
-      {icon === 'company' && (
-        <svg className="w-16 h-16 mx-auto text-gray-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-        </svg>
-      )}
-      {icon === 'job' && (
-        <svg className="w-16 h-16 mx-auto text-gray-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-        </svg>
-      )}
-      <p className="text-gray-500 text-sm font-medium">{message}</p>
-      <p className="text-gray-400 text-xs mt-1">{subMessage}</p>
-      <Link
-        href={linkHref}
-        className="inline-block mt-4 py-2.5 px-5 bg-primary-500 text-white text-sm font-medium rounded-lg"
-      >
-        {linkText}
-      </Link>
-    </div>
-  );
-}
+const WORKER_ICON = (
+  <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+  </svg>
+);
+const COMPANY_ICON = (
+  <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+  </svg>
+);
+const JOB_ICON = (
+  <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+  </svg>
+);

@@ -8,6 +8,7 @@ import { getJobs, updateJob, deleteJob, getApplicationCount } from '@/lib/firest
 import { formatDateFull } from '@/lib/format';
 import { JobPost } from '@/types';
 import { PageLoader } from '@/components/ui/Spinner';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 /**
  * 내 구인글 관리 페이지
@@ -99,15 +100,11 @@ export default function MyJobsPage() {
 
       {/* 구인글 목록 */}
       {jobs.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-400 text-sm mb-4">아직 올린 구인글이 없습니다</p>
-          <Link
-            href="/jobs/create"
-            className="inline-block py-2.5 px-6 bg-primary-500 text-white text-sm font-medium rounded-lg"
-          >
-            첫 구인글 작성하기
-          </Link>
-        </div>
+        <EmptyState
+          message="아직 올린 구인글이 없습니다"
+          linkHref="/jobs/create"
+          linkText="첫 구인글 작성하기"
+        />
       ) : (
         <div className="space-y-3">
           {jobs.map((job) => (

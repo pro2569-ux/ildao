@@ -7,6 +7,7 @@ import { getPublicWorkers, getFavorites, addFavorite, removeFavorite } from '@/l
 import { JOB_CATEGORIES } from '@/lib/constants';
 import { UserProfile, JobCategory } from '@/types';
 import { Spinner } from '@/components/ui/Spinner';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 /** 직종 필터 목록 ('전체' + 공용 직종 상수 — 기존엔 '기타'가 누락돼 '기타' 구직자가 검색 안 됨) */
 const FILTER_CATEGORIES: (JobCategory | '전체')[] = ['전체', ...JOB_CATEGORIES];
@@ -120,13 +121,13 @@ export default function WorkersPage() {
           <Spinner size="sm" />
         </div>
       ) : workers.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-400 text-sm">
-            {selectedCategory === '전체'
+        <EmptyState
+          message={
+            selectedCategory === '전체'
               ? '공개된 구직자 프로필이 없습니다'
-              : `${selectedCategory} 분야 구직자가 없습니다`}
-          </p>
-        </div>
+              : `${selectedCategory} 분야 구직자가 없습니다`
+          }
+        />
       ) : (
         <div className="space-y-3">
           {workers.map((worker) => (

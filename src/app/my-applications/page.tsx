@@ -8,6 +8,7 @@ import { getApplicationsByWorker, getJob, getUserProfile } from '@/lib/firestore
 import { formatDate } from '@/lib/format';
 import { Application, JobPost, UserProfile } from '@/types';
 import { PageLoader } from '@/components/ui/Spinner';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 /**
  * 내 지원 내역 페이지
@@ -110,19 +111,11 @@ export default function MyApplicationsPage() {
 
       {/* 지원 내역 목록 */}
       {filteredApps.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-400 text-sm">
-            {filter === 'all' ? '아직 지원한 공고가 없습니다' : `${filter === 'pending' ? '대기중인' : filter === 'accepted' ? '수락된' : '거절된'} 지원이 없습니다`}
-          </p>
-          {filter === 'all' && (
-            <Link
-              href="/jobs"
-              className="inline-block mt-3 py-2 px-4 bg-primary-500 text-white text-sm font-medium rounded-lg"
-            >
-              구인공고 보러가기
-            </Link>
-          )}
-        </div>
+        <EmptyState
+          message={filter === 'all' ? '아직 지원한 공고가 없습니다' : `${filter === 'pending' ? '대기중인' : filter === 'accepted' ? '수락된' : '거절된'} 지원이 없습니다`}
+          linkHref={filter === 'all' ? '/jobs' : undefined}
+          linkText={filter === 'all' ? '구인공고 보러가기' : undefined}
+        />
       ) : (
         <div className="space-y-3">
           {filteredApps.map((app) => {

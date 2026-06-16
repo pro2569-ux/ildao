@@ -6,6 +6,7 @@ import { getJobs } from '@/lib/firestore';
 import { REGIONS, JOB_CATEGORIES } from '@/lib/constants';
 import { formatDate } from '@/lib/format';
 import { Spinner } from '@/components/ui/Spinner';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { JobPost, JobCategory } from '@/types';
 
 /** 직종 필터 목록 ('전체' + 공용 직종 상수) */
@@ -125,15 +126,15 @@ export default function JobsPage() {
           <Spinner size="sm" />
         </div>
       ) : jobs.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-400 text-sm">
-            {selectedRegion !== '전체'
+        <EmptyState
+          message={
+            selectedRegion !== '전체'
               ? `${selectedRegion} 지역의 ${selectedCategory === '전체' ? '' : selectedCategory + ' '}공고가 없습니다`
               : selectedCategory === '전체'
               ? '등록된 구인공고가 없습니다'
-              : `${selectedCategory} 관련 공고가 없습니다`}
-          </p>
-        </div>
+              : `${selectedCategory} 관련 공고가 없습니다`
+          }
+        />
       ) : (
         <div className="space-y-3">
           {jobs.map((job) => (
