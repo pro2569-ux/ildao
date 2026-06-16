@@ -131,8 +131,9 @@ export default function RegisterPage() {
 
       if (role === 'worker') {
         profileData.skills = skills;
-        profileData.experience = experience ? Number(experience) : 0;
-        profileData.desiredWage = desiredWage ? Number(desiredWage.replace(/,/g, '')) : 0;
+        // 경력 정규화 (#34): 음수·비현실 값 차단 (0~50년)
+        profileData.experience = Math.max(0, Math.min(50, Math.floor(Number(experience) || 0)));
+        profileData.desiredWage = Math.max(0, Number(desiredWage.replace(/,/g, '')) || 0);
       } else {
         profileData.companyName = companyName.trim();
         profileData.representativeName = representativeName.trim();

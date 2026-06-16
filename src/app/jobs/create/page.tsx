@@ -63,11 +63,27 @@ export default function CreateJobPage() {
     if (endDate && endDate < startDate) { setError('종료일은 시작일보다 빠를 수 없습니다.'); return; }
     if (!user || !userProfile) { setError('로그인이 필요합니다.'); return; }
 
+    // 일당 범위 검증 (#32): 0원·음수 차단, 상한으로 입력 실수/악용 방지
+    const wageNumber = Number(dailyWage.replace(/,/g, ''));
+    if (!Number.isFinite(wageNumber) || wageNumber < 10000) {
+      setError('일당을 10,000원 이상으로 입력해주세요.');
+      return;
+    }
+    if (wageNumber > 10000000) {
+      setError('일당이 너무 큽니다. 다시 확인해주세요.');
+      return;
+    }
+    // 필요 인원 검증 (#33): 1~100명만 허용
+    const workerCount = Number(numberOfWorkers);
+    if (!Number.isInteger(workerCount) || workerCount < 1 || workerCount > 100) {
+      setError('필요 인원은 1명에서 100명 사이로 입력해주세요.');
+      return;
+    }
+
     setIsSaving(true);
     setError('');
 
     try {
-      const wageNumber = Number(dailyWage.replace(/,/g, ''));
       const fullAddress = `${region} ${addressDetail}`.trim();
 
       await createJob({
@@ -75,7 +91,7 @@ export default function CreateJobPage() {
         title: title.trim(),
         category: category as JobCategory,
         dailyWage: wageNumber,
-        numberOfWorkers: Number(numberOfWorkers) || 1,
+        numberOfWorkers: workerCount,
         startDate: new Date(startDate),
         endDate: endDate ? new Date(endDate) : undefined,
         workHours,
@@ -133,6 +149,7 @@ export default function CreateJobPage() {
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            maxLength={50}
             placeholder="예: 철근공 3명 급구"
             className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
           />
@@ -195,6 +212,7 @@ export default function CreateJobPage() {
               type="text"
               value={addressDetail}
               onChange={(e) => setAddressDetail(e.target.value)}
+              maxLength={100}
               placeholder="상세 주소"
               className="col-span-2 py-3 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
             />
@@ -253,6 +271,7 @@ export default function CreateJobPage() {
             type="text"
             value={workHours}
             onChange={(e) => setWorkHours(e.target.value)}
+            maxLength={30}
             placeholder="08:00~17:00"
             className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
           />
@@ -281,10 +300,12 @@ export default function CreateJobPage() {
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            maxLength={1000}
             placeholder="근무 조건, 우대 사항, 현장 정보 등을 자유롭게 작성해주세요."
             rows={4}
             className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm resize-none"
           />
+          <p className="text-right text-xs text-gray-400 mt-1">{description.length}/1000</p>
         </div>
 
         {/* 에러 메시지 */}

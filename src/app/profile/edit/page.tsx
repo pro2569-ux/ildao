@@ -129,9 +129,10 @@ export default function ProfileEditPage() {
 
       if (userProfile.role === 'worker') {
         updateData.skills = skills;
-        updateData.experience = experience ? Number(experience) : 0;
+        // 경력 정규화 (#34): 음수·비현실 값 차단 (0~50년)
+        updateData.experience = Math.max(0, Math.min(50, Math.floor(Number(experience) || 0)));
         updateData.region = region;
-        updateData.desiredWage = desiredWage ? Number(desiredWage.replace(/,/g, '')) : 0;
+        updateData.desiredWage = Math.max(0, Number(desiredWage.replace(/,/g, '')) || 0);
         updateData.introduction = introduction.trim();
       } else {
         updateData.companyName = companyName.trim();
