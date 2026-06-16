@@ -28,6 +28,7 @@ export default function JobDetailPage() {
   const [favBusy, setFavBusy] = useState(false);
   const [companyFav, setCompanyFav] = useState(false);
   const [companyFavBusy, setCompanyFavBusy] = useState(false);
+  const [applyMessage, setApplyMessage] = useState('');
 
   const jobId = params.id as string;
 
@@ -96,7 +97,15 @@ export default function JobDetailPage() {
         alert('이미 마감된 공고입니다.');
         return;
       }
-      await applyToJob(jobId, user.uid, job.employerId);
+      // 지원자 스냅샷을 함께 저장 — 구인자가 비공개 프로필도 확인 가능 (연락처는 수락 후 노출)
+      await applyToJob(jobId, user.uid, job.employerId, {
+        name: userProfile?.name ?? '',
+        phone: userProfile?.phone ?? '',
+        skills: userProfile?.skills,
+        experience: userProfile?.experience,
+        desiredWage: userProfile?.desiredWage,
+        message: applyMessage,
+      });
       setApplied(true);
     } catch (error) {
       console.error('지원 실패:', error);
@@ -319,13 +328,23 @@ export default function JobDetailPage() {
                 지원 완료
               </button>
             ) : (
-              <button
-                onClick={handleApply}
-                disabled={applying}
-                className="w-full py-3.5 btn-primary rounded-xl font-semibold disabled:opacity-50"
-              >
-                {applying ? '지원 중...' : '지원하기'}
-              </button>
+              <>
+                <textarea
+                  value={applyMessage}
+                  onChange={(e) => setApplyMessage(e.target.value)}
+                  maxLength={200}
+                  rows={2}
+                  placeholder="간단한 자기소개나 메시지를 남겨보세요 (선택)"
+                  className="w-full mb-2 py-2 px-3 border border-gray-300 rounded-xl text-sm resize-none bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+                <button
+                  onClick={handleApply}
+                  disabled={applying}
+                  className="w-full py-3.5 btn-primary rounded-xl font-semibold disabled:opacity-50"
+                >
+                  {applying ? '지원 중...' : '지원하기'}
+                </button>
+              </>
             )}
           </div>
         </div>

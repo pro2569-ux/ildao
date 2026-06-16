@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
-import { getApplicationsByWorker, getJob } from '@/lib/firestore';
-import { Application, JobPost } from '@/types';
+import { getApplicationsByWorker, getJob, getUserProfile } from '@/lib/firestore';
+import { Application, JobPost, UserProfile } from '@/types';
 
 /**
  * 내 지원 내역 페이지
@@ -15,7 +15,7 @@ export default function MyApplicationsPage() {
   // 구직자 전용 페이지 — 비로그인/구인자/미가입 사용자는 리다이렉트 (#43)
   const { user, ready } = useRequireAuth('worker');
   const router = useRouter();
-  const [applications, setApplications] = useState<(Application & { job?: JobPost })[]>([]);
+  const [applications, setApplications] = useState<(Application & { job?: JobPost; employer?: UserProfile })[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'rejected'>('all');
 
@@ -27,11 +27,16 @@ export default function MyApplicationsPage() {
     setLoading(true);
     try {
       const apps = await getApplicationsByWorker(user!.uid);
-      // 각 지원에 대한 구인글 정보 로드
+      // 각 지원에 대한 구인글 정보 로드 + 수락된 건은 업체 프로필(연락처)도 로드
+      // (업체 프로필은 보안 규칙상 공개 읽기 허용)
       const appsWithJobs = await Promise.all(
         apps.map(async (app) => {
           const job = await getJob(app.jobId);
-          return { ...app, job: job || undefined };
+          const employer =
+            app.status === 'accepted'
+              ? (await getUserProfile(app.employerId).catch(() => null)) || undefined
+              : undefined;
+          return { ...app, job: job || undefined, employer };
         })
       );
       setApplications(appsWithJobs);
@@ -129,32 +134,44 @@ export default function MyApplicationsPage() {
           {filteredApps.map((app) => {
             const badge = statusBadge(app.status);
             return (
-              <Link key={app.id} href={`/jobs/${app.jobId}`} className="card block">
-                <div className="flex items-center justify-between mb-2">
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${badge.className}`}>
-                    {badge.text}
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    지원일 {formatDate(app.createdAt)}
-                  </span>
-                </div>
-                {app.job ? (
-                  <>
-                    <h3 className="font-semibold text-sm">{app.job.title}</h3>
-                    <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
-                      <span>{app.job.category}</span>
-                      <span>·</span>
-                      <span className="text-accent-500 font-medium">
-                        {app.job.dailyWage.toLocaleString()}원
-                      </span>
-                      <span>·</span>
-                      <span>{app.job.location.address}</span>
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-sm text-gray-400">삭제된 공고</p>
+              <div key={app.id} className="card">
+                <Link href={`/jobs/${app.jobId}`} className="block">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${badge.className}`}>
+                      {badge.text}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      지원일 {formatDate(app.createdAt)}
+                    </span>
+                  </div>
+                  {app.job ? (
+                    <>
+                      <h3 className="font-semibold text-sm">{app.job.title}</h3>
+                      <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                        <span>{app.job.category}</span>
+                        <span>·</span>
+                        <span className="text-accent-500 font-medium">
+                          {app.job.dailyWage.toLocaleString()}원
+                        </span>
+                        <span>·</span>
+                        <span>{app.job.location.address}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-sm text-gray-400">삭제된 공고</p>
+                  )}
+                </Link>
+
+                {/* 수락됨: 업체 연락처 노출 */}
+                {app.status === 'accepted' && app.employer?.phone && (
+                  <a
+                    href={`tel:${app.employer.phone}`}
+                    className="block mt-3 py-2 text-center text-sm font-medium bg-primary-500 text-white rounded-lg"
+                  >
+                    {app.employer.companyName || app.employer.name}에 전화하기
+                  </a>
                 )}
-              </Link>
+              </div>
             );
           })}
         </div>
