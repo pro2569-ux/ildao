@@ -26,6 +26,8 @@ export default function JobDetailPage() {
   const [applying, setApplying] = useState(false);
   const [favorited, setFavorited] = useState(false);
   const [favBusy, setFavBusy] = useState(false);
+  const [companyFav, setCompanyFav] = useState(false);
+  const [companyFavBusy, setCompanyFavBusy] = useState(false);
 
   const jobId = params.id as string;
 
@@ -40,11 +42,19 @@ export default function JobDetailPage() {
     hasApplied(jobId, user.uid)
       .then(setApplied)
       .catch((error) => console.error('지원 여부 확인 실패:', error));
-    // 즐겨찾기 상태 로드 (#24)
+    // 공고 즐겨찾기 상태 로드 (#24)
     isFavorited(user.uid, jobId)
       .then(setFavorited)
       .catch((error) => console.error('즐겨찾기 상태 확인 실패:', error));
   }, [jobId, user, userProfile]);
+
+  // 업체(관심 업체) 즐겨찾기 상태 — 공고 로드 후 employerId 기준 (#24)
+  useEffect(() => {
+    if (!user || userProfile?.role !== 'worker' || !job) return;
+    isFavorited(user.uid, job.employerId)
+      .then(setCompanyFav)
+      .catch((error) => console.error('업체 즐겨찾기 상태 확인 실패:', error));
+  }, [job, user, userProfile]);
 
   const loadJobDetail = async () => {
     setLoading(true);
@@ -113,6 +123,26 @@ export default function JobDetailPage() {
       alert('즐겨찾기 처리에 실패했습니다.');
     } finally {
       setFavBusy(false);
+    }
+  };
+
+  /** 관심 업체 토글 (#24 — 구직자만) */
+  const toggleCompanyFavorite = async () => {
+    if (!user || !job) return;
+    setCompanyFavBusy(true);
+    try {
+      if (companyFav) {
+        await removeFavorite(user.uid, job.employerId);
+        setCompanyFav(false);
+      } else {
+        await addFavorite(user.uid, job.employerId, 'user');
+        setCompanyFav(true);
+      }
+    } catch (error) {
+      console.error('업체 즐겨찾기 처리 실패:', error);
+      alert('즐겨찾기 처리에 실패했습니다.');
+    } finally {
+      setCompanyFavBusy(false);
     }
   };
 
@@ -248,12 +278,25 @@ export default function JobDetailPage() {
                     d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
               </div>
-              <div>
+              <div className="flex-1">
                 <p className="font-semibold text-sm">{employer.companyName || employer.name}</p>
                 {employer.representativeName && (
                   <p className="text-xs text-gray-500">대표 {employer.representativeName}</p>
                 )}
               </div>
+              {userProfile?.role === 'worker' && (
+                <button
+                  onClick={toggleCompanyFavorite}
+                  disabled={companyFavBusy}
+                  className={`text-xs font-medium px-3 py-1.5 rounded-full border disabled:opacity-50 ${
+                    companyFav
+                      ? 'bg-accent-50 text-accent-500 border-accent-200'
+                      : 'bg-white text-gray-500 border-gray-200'
+                  }`}
+                >
+                  {companyFav ? '관심 업체 ✓' : '관심 업체'}
+                </button>
+              )}
             </div>
           </div>
         )}
