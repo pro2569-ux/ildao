@@ -143,9 +143,12 @@ export default function MyJobsPage() {
 
               {/* 하단 액션 */}
               <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-                <span className="text-xs text-primary-500 font-medium">
-                  지원자 {appCounts[job.id] || 0}명
-                </span>
+                <Link
+                  href={`/my-jobs/${job.id}/applicants`}
+                  className="text-xs text-primary-500 font-medium hover:underline"
+                >
+                  지원자 {appCounts[job.id] || 0}명 보기 →
+                </Link>
                 <div className="flex items-center gap-2">
                   {job.status === 'open' && (
                     <button
