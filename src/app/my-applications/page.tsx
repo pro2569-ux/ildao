@@ -7,6 +7,7 @@ import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { getApplicationsByWorker, getJob, getUserProfile } from '@/lib/firestore';
 import { formatDate } from '@/lib/format';
 import { Application, JobPost, UserProfile } from '@/types';
+import { PageLoader } from '@/components/ui/Spinner';
 
 /**
  * 내 지원 내역 페이지
@@ -69,9 +70,7 @@ export default function MyApplicationsPage() {
 
   if (!ready || loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent" />
-      </div>
+      <PageLoader />
     );
   }
 

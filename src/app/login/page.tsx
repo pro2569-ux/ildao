@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { Spinner, PageLoader } from '@/components/ui/Spinner';
 
 /**
  * 로그인 페이지 본문
@@ -53,18 +54,14 @@ function LoginContent() {
   // 로딩 중
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent" />
-      </div>
+      <PageLoader />
     );
   }
 
   // 이미 로그인된 상태면 빈 화면 (리다이렉트 대기)
   if (user) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent" />
-      </div>
+      <PageLoader />
     );
   }
 
@@ -96,7 +93,7 @@ function LoginContent() {
           className="w-full flex items-center justify-center gap-3 py-3.5 px-6 bg-white border border-gray-300 rounded-xl font-medium text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
         >
           {isSigningIn ? (
-            <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-400 border-t-transparent" />
+            <Spinner size="xs" className="text-gray-400" />
           ) : (
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
@@ -146,11 +143,7 @@ function LoginContent() {
 export default function LoginPage() {
   return (
     <Suspense
-      fallback={
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent" />
-        </div>
-      }
+      fallback={<PageLoader />}
     >
       <LoginContent />
     </Suspense>

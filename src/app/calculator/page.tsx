@@ -13,6 +13,7 @@ import {
   getTeamMonthlyWorks,
 } from '@/lib/firestore';
 import { formatWon } from '@/lib/format';
+import { Spinner, PageLoader } from '@/components/ui/Spinner';
 import { DailyWorkRecord, WeatherType, TeamMember, TeamDailyWork } from '@/types';
 
 // ===== 상수 정의 =====
@@ -505,9 +506,7 @@ export default function CalculatorPage() {
 
   if (authLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500" />
-      </div>
+      <PageLoader />
     );
   }
 
@@ -892,7 +891,7 @@ export default function CalculatorPage() {
       {/* 로딩 표시 */}
       {isLoading && (
         <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500" />
+          <Spinner size="sm" />
         </div>
       )}
 

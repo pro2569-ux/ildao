@@ -7,6 +7,7 @@ import { getJob, hasApplied, applyToJob, getUserProfile, isFavorited, addFavorit
 import { formatDateFull } from '@/lib/format';
 import { JobPost, UserProfile } from '@/types';
 import KakaoMap from '@/components/ui/KakaoMap';
+import { PageLoader } from '@/components/ui/Spinner';
 
 /**
  * 구인 공고 상세 페이지
@@ -158,9 +159,7 @@ export default function JobDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent" />
-      </div>
+      <PageLoader />
     );
   }
 

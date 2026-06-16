@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import EmployerHome from '@/components/home/EmployerHome';
 import WorkerHome from '@/components/home/WorkerHome';
 import GuestHome from '@/components/home/GuestHome';
+import { PageLoader } from '@/components/ui/Spinner';
 
 /** 홈 페이지 - 역할별 분기 */
 export default function HomePage() {
@@ -23,9 +24,7 @@ export default function HomePage() {
   // 로딩 중이거나 register로 이동 대기 중
   if (loading || (user && !userProfile && !profileError)) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent" />
-      </div>
+      <PageLoader />
     );
   }
 

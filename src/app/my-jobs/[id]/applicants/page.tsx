@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { getJob, getApplicationsByJob, updateApplicationStatus } from '@/lib/firestore';
 import { Application, JobPost, ApplicationStatus } from '@/types';
+import { PageLoader } from '@/components/ui/Spinner';
 
 /**
  * 지원자 관리 페이지 (구인자 전용)
@@ -79,9 +80,7 @@ export default function ApplicantsPage() {
 
   if (!ready || loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent" />
-      </div>
+      <PageLoader />
     );
   }
 

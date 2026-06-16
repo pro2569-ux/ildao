@@ -7,6 +7,7 @@ import { createJob } from '@/lib/firestore';
 import { REGIONS, JOB_CATEGORIES } from '@/lib/constants';
 import { JobCategory } from '@/types';
 import KakaoMap from '@/components/ui/KakaoMap';
+import { PageLoader } from '@/components/ui/Spinner';
 
 /** 로컬 시간대 기준 오늘 날짜 (YYYY-MM-DD) — toISOString()은 UTC라 한국에서 하루 어긋남 */
 const localToday = () => {
@@ -111,9 +112,7 @@ export default function CreateJobPage() {
   // 가드 통과 전에는 폼을 렌더링하지 않음
   if (!ready) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent" />
-      </div>
+      <PageLoader />
     );
   }
 

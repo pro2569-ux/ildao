@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { getJobs } from '@/lib/firestore';
 import { REGIONS, JOB_CATEGORIES } from '@/lib/constants';
 import { formatDate } from '@/lib/format';
+import { Spinner } from '@/components/ui/Spinner';
 import { JobPost, JobCategory } from '@/types';
 
 /** 직종 필터 목록 ('전체' + 공용 직종 상수) */
@@ -121,7 +122,7 @@ export default function JobsPage() {
       {/* 공고 목록 */}
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary-500 border-t-transparent" />
+          <Spinner size="sm" />
         </div>
       ) : jobs.length === 0 ? (
         <div className="text-center py-12">

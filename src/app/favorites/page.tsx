@@ -7,6 +7,7 @@ import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { getFavorites, removeFavorite, getUserProfile, getJob } from '@/lib/firestore';
 import { formatDate, formatWon } from '@/lib/format';
 import { Favorite, UserProfile, JobPost } from '@/types';
+import { Spinner, PageLoader } from '@/components/ui/Spinner';
 
 /** 즐겨찾기한 근로자 (구인자용) */
 interface FavoriteWorker extends Favorite {
@@ -145,9 +146,7 @@ export default function FavoritesPage() {
   // ===== 로딩 / 인증 처리 =====
   if (!ready) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent" />
-      </div>
+      <PageLoader />
     );
   }
 
@@ -215,7 +214,7 @@ export default function FavoritesPage() {
       {/* 로딩 상태 */}
       {loading && !error && (
         <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary-500 border-t-transparent" />
+          <Spinner size="sm" />
         </div>
       )}
 

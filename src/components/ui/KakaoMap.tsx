@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { Spinner } from '@/components/ui/Spinner';
 
 /** 카카오맵 API 키 (없으면 지도 대신 주소 텍스트만 표시) */
 const KAKAO_MAP_KEY = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
@@ -275,7 +276,7 @@ export default function KakaoMap({ mode, address, lat, lng, onSelect, height = '
         style={{ height }}
       >
         <div className="flex items-center gap-2 text-gray-400 text-sm">
-          <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-primary-500" />
+          <Spinner size="xs" className="text-primary-500" />
           <span>지도 로딩 중...</span>
         </div>
       </div>

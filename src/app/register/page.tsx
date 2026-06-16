@@ -7,6 +7,7 @@ import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { JOB_CATEGORIES } from '@/lib/constants';
 import { UserRole, JobCategory } from '@/types';
+import { PageLoader } from '@/components/ui/Spinner';
 
 /**
  * 회원가입 (프로필 설정) 페이지
@@ -153,9 +154,7 @@ export default function RegisterPage() {
   // 로딩 중
   if (loading || !user) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent" />
-      </div>
+      <PageLoader />
     );
   }
 

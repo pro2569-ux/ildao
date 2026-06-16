@@ -6,6 +6,7 @@ import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { updateUserProfile } from '@/lib/firestore';
 import { REGIONS, JOB_CATEGORIES } from '@/lib/constants';
 import { JobCategory } from '@/types';
+import { Spinner, PageLoader } from '@/components/ui/Spinner';
 
 /**
  * 프로필 편집 페이지
@@ -166,9 +167,7 @@ export default function ProfileEditPage() {
   // 가드 통과 전(로딩·리다이렉트 대기)에는 스피너만 표시
   if (!ready || !user || !userProfile) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent" />
-      </div>
+      <PageLoader />
     );
   }
 
@@ -466,7 +465,7 @@ export default function ProfileEditPage() {
           >
             {isSaving ? (
               <span className="flex items-center justify-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                <Spinner size="xs" className="text-white" />
                 저장 중...
               </span>
             ) : success ? (

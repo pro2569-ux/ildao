@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getPublicWorkers, getFavorites, addFavorite, removeFavorite } from '@/lib/firestore';
 import { JOB_CATEGORIES } from '@/lib/constants';
 import { UserProfile, JobCategory } from '@/types';
+import { Spinner } from '@/components/ui/Spinner';
 
 /** 직종 필터 목록 ('전체' + 공용 직종 상수 — 기존엔 '기타'가 누락돼 '기타' 구직자가 검색 안 됨) */
 const FILTER_CATEGORIES: (JobCategory | '전체')[] = ['전체', ...JOB_CATEGORIES];
@@ -116,7 +117,7 @@ export default function WorkersPage() {
       {/* 구직자 목록 */}
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary-500 border-t-transparent" />
+          <Spinner size="sm" />
         </div>
       ) : workers.length === 0 ? (
         <div className="text-center py-12">

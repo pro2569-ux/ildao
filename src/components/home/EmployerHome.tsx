@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { getJobs, getEmployerStats } from '@/lib/firestore';
 import { formatDate } from '@/lib/format';
+import { Spinner } from '@/components/ui/Spinner';
 import { JobPost, Application } from '@/types';
 
 /** 구인자 전용 홈 화면 */
@@ -117,7 +118,7 @@ export default function EmployerHome() {
 
         {loading ? (
           <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary-500 border-t-transparent" />
+            <Spinner size="sm" />
           </div>
         ) : myJobs.length === 0 ? (
           <div className="card text-center py-8">
