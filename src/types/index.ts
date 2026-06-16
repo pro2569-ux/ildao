@@ -90,10 +90,11 @@ export interface JobPost {
   workHours: string;        // 근무 시간 (예: "08:00~17:00")
   // 현장 정보
   location: {
-    address: string;        // 주소
+    address: string;        // 주소 (시/도 + 상세 주소)
     lat: number;            // 위도
     lng: number;            // 경도
   };
+  region?: string;          // 시/도 (지역 필터용 — location.address와 별도 저장)
   // 상태
   status: JobStatus;
   isPremium: boolean;       // 프리미엄 (상위 노출)

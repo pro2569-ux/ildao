@@ -56,6 +56,7 @@ export async function getJobs(filters?: {
   const constraints: QueryConstraint[] = [];
 
   if (filters?.category) constraints.push(where('category', '==', filters.category));
+  if (filters?.region) constraints.push(where('region', '==', filters.region));
   if (filters?.status) constraints.push(where('status', '==', filters.status));
   if (filters?.employerId) constraints.push(where('employerId', '==', filters.employerId));
 
