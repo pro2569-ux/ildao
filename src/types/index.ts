@@ -33,13 +33,24 @@ export interface UserProfile {
 /** 지원 상태 */
 export type ApplicationStatus = 'pending' | 'accepted' | 'rejected';
 
-/** 지원 내역 */
+/** 지원 내역
+ * 지원자 정보는 지원 시점에 비정규화 저장한다 — 구인자가 비공개(isPublic=false) 지원자도
+ * 프로필 읽기 권한 없이 지원 문서만으로 확인할 수 있게 하기 위함. 연락처(workerPhone)는
+ * 저장하되 UI에서는 수락(accepted) 후에만 노출한다.
+ */
 export interface Application {
   id: string;
   jobId: string;
   workerId: string;
   employerId: string;
   status: ApplicationStatus;
+  // 지원 시점 스냅샷
+  workerName: string;
+  workerPhone: string;
+  workerSkills?: string[];
+  workerExperience?: number | null;
+  workerDesiredWage?: number | null;
+  message?: string;          // 지원 시 한 줄 소개 (선택)
   createdAt: Date;
 }
 

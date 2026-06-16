@@ -122,14 +122,35 @@ export async function deleteJob(jobId: string, employerId: string): Promise<void
 
 // ===== 지원 관련 =====
 
+/** 지원 시 함께 저장하는 지원자 스냅샷 (구인자가 비공개 프로필도 확인 가능하도록 비정규화) */
+export interface ApplicantSnapshot {
+  name: string;
+  phone: string;
+  skills?: string[];
+  experience?: number;
+  desiredWage?: number;
+  message?: string;
+}
+
 /** 구인글에 지원 (docId: {jobId}_{workerId} — 중복/동시 지원이 같은 문서로 수렴해 이중 생성 방지) */
-export async function applyToJob(jobId: string, workerId: string, employerId: string): Promise<string> {
+export async function applyToJob(
+  jobId: string,
+  workerId: string,
+  employerId: string,
+  applicant: ApplicantSnapshot
+): Promise<string> {
   const docId = `${jobId}_${workerId}`;
   await setDoc(doc(db, 'applications', docId), {
     jobId,
     workerId,
     employerId,
     status: 'pending' as ApplicationStatus,
+    workerName: applicant.name,
+    workerPhone: applicant.phone,
+    workerSkills: applicant.skills ?? [],
+    workerExperience: applicant.experience ?? null,
+    workerDesiredWage: applicant.desiredWage ?? null,
+    message: (applicant.message ?? '').trim(),
     createdAt: serverTimestamp(),
   });
   return docId;

@@ -85,13 +85,17 @@ service cloud.firestore {
 
       // 지원: 구직자(worker) 역할만, 본인(workerId) 명의로만, pending 상태로만,
       //       docId는 {jobId}_{본인uid} 형식이어야 하고(중복 지원은 update로 분류되어 거부됨),
-      //       employerId는 실제 공고 문서의 작성자와 일치해야 하며, 공고가 모집 중(open)이어야 함
+      //       employerId는 실제 공고 문서의 작성자와 일치해야 하며, 공고가 모집 중(open)이어야 함.
+      //       지원자 스냅샷(workerName/Phone/Skills/Experience/DesiredWage/message)은 본인이 직접 기록.
       allow create: if isSignedIn()
                     && myRole() == 'worker'
                     && request.resource.data.workerId == request.auth.uid
                     && request.resource.data.status == 'pending'
                     && applicationId == request.resource.data.jobId + '_' + request.auth.uid
-                    && request.resource.data.keys().hasOnly(['jobId', 'workerId', 'employerId', 'status', 'createdAt'])
+                    && request.resource.data.keys().hasAll(['jobId', 'workerId', 'employerId', 'status', 'createdAt', 'workerName', 'workerPhone'])
+                    && request.resource.data.keys().hasOnly(['jobId', 'workerId', 'employerId', 'status', 'createdAt', 'workerName', 'workerPhone', 'workerSkills', 'workerExperience', 'workerDesiredWage', 'message'])
+                    && request.resource.data.workerName is string
+                    && request.resource.data.workerPhone is string
                     && request.resource.data.employerId
                        == get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.employerId
                     && get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.status == 'open';
