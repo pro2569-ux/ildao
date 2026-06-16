@@ -1,33 +1,38 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
 /**
- * 로그인 페이지
+ * 로그인 페이지 본문
  * - Google 로그인 지원
- * - 이미 로그인된 경우 홈으로 리다이렉트
+ * - 이미 로그인된 경우 next(또는 홈)로 리다이렉트
  * - 프로필 미설정 시 회원가입 페이지로 이동
  */
-export default function LoginPage() {
+function LoginContent() {
   const { user, userProfile, loading, signInWithGoogle } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [error, setError] = useState('');
+
+  // 복귀 경로 (#45): 오픈 리다이렉트 방지를 위해 내부 절대경로(// 제외)만 허용
+  const rawNext = searchParams.get('next');
+  const nextPath = rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/';
 
   // 로그인 상태에 따른 리다이렉트
   useEffect(() => {
     if (!loading && user) {
       if (userProfile) {
-        // 프로필 있으면 홈으로
-        router.replace('/');
+        // 프로필 있으면 원래 가려던 곳(또는 홈)으로
+        router.replace(nextPath);
       } else {
         // 프로필 없으면 회원가입으로
         router.replace('/register');
       }
     }
-  }, [user, userProfile, loading, router]);
+  }, [user, userProfile, loading, router, nextPath]);
 
   /** Google 로그인 핸들러 */
   const handleGoogleSignIn = async () => {
@@ -131,5 +136,23 @@ export default function LoginPage() {
         동의하는 것으로 간주됩니다.
       </p>
     </div>
+  );
+}
+
+/**
+ * 로그인 페이지
+ * - useSearchParams 사용을 위해 Suspense 경계로 감싼다 (Next.js 14 정적 생성 요건)
+ */
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent" />
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }

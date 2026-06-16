@@ -89,8 +89,11 @@ export default function RegisterPage() {
       setError('이름을 입력해주세요.');
       return;
     }
-    if (!phone.trim() || phone.replace(/\D/g, '').length < 10) {
-      setError('연락처를 올바르게 입력해주세요.');
+    // 한국 휴대폰/유선 번호 형식 검증 (#47 — 자릿수만 맞는 가짜 번호 차단)
+    const phoneDigits = phone.replace(/\D/g, '');
+    const isValidPhone = /^01[016789]\d{7,8}$/.test(phoneDigits) || /^0[2-6]\d{7,9}$/.test(phoneDigits);
+    if (!isValidPhone) {
+      setError('올바른 전화번호를 입력해주세요.');
       return;
     }
 

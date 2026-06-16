@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import {
   User,
   onAuthStateChanged,
@@ -39,12 +39,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileError, setProfileError] = useState(false);
+  // 인증 이벤트가 연속 발생(로그인 직후 로그아웃/계정 전환)할 때, 뒤늦게 끝난 이전 fetch가
+  // 최신 상태를 덮어쓰지 않도록 세대 카운터로 최신 요청 결과만 반영한다 (#42)
+  const fetchGenerationRef = useRef(0);
 
   /** Firestore에서 사용자 프로필 가져오기 */
-  const fetchUserProfile = async (uid: string) => {
+  const fetchUserProfile = async (uid: string, generation: number) => {
     try {
       const docRef = doc(db, 'users', uid);
       const docSnap = await getDoc(docRef);
+      if (generation !== fetchGenerationRef.current) return; // stale 응답 무시
       if (docSnap.exists()) {
         const data = docSnap.data();
         setUserProfile({
@@ -58,6 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setProfileError(false);
     } catch (error) {
+      if (generation !== fetchGenerationRef.current) return; // stale 응답 무시
       // 로드 실패를 '프로필 없음'과 동일 취급하면 기존 회원이 재가입 폼으로
       // 유도되어 프로필이 덮어써질 수 있으므로 반드시 구분한다
       console.error('프로필 로드 실패:', error);
@@ -69,20 +74,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   /** 프로필 새로고침 */
   const refreshProfile = async () => {
     if (user) {
-      await fetchUserProfile(user.uid);
+      await fetchUserProfile(user.uid, ++fetchGenerationRef.current);
     }
   };
 
   // Firebase Auth 상태 변화 감지
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      const generation = ++fetchGenerationRef.current;
       setUser(firebaseUser);
       if (firebaseUser) {
-        await fetchUserProfile(firebaseUser.uid);
+        await fetchUserProfile(firebaseUser.uid, generation);
       } else {
         setUserProfile(null);
+        setProfileError(false);
       }
-      setLoading(false);
+      if (generation === fetchGenerationRef.current) setLoading(false);
     });
 
     return () => unsubscribe();

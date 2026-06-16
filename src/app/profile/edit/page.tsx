@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { updateUserProfile } from '@/lib/firestore';
 import { JobCategory } from '@/types';
 
@@ -24,7 +24,9 @@ const REGIONS = [
  * - 저장 시 Firestore 업데이트 후 이전 페이지로 이동
  */
 export default function ProfileEditPage() {
-  const { user, userProfile, loading, refreshProfile } = useAuth();
+  // 로그인 + 프로필 등록 필수 — 미가입/로드실패 사용자가 빈 화면에 갇히던 문제(#44)는
+  // 훅이 /register·/login·홈으로 안내해 해소
+  const { user, userProfile, ready, refreshProfile } = useRequireAuth();
   const router = useRouter();
 
   const [isSaving, setIsSaving] = useState(false);
@@ -35,6 +37,7 @@ export default function ProfileEditPage() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [profileImage, setProfileImage] = useState('');
+  const [imgError, setImgError] = useState(false);
 
   // 구직자(근로자) 전용 필드
   const [skills, setSkills] = useState<JobCategory[]>([]);
@@ -49,12 +52,7 @@ export default function ProfileEditPage() {
   const [mainJobCategories, setMainJobCategories] = useState<JobCategory[]>([]);
   const [companyIntro, setCompanyIntro] = useState('');
 
-  // 비로그인 시 로그인 페이지로 리다이렉트
-  useEffect(() => {
-    if (!loading && !user) {
-      router.replace('/login');
-    }
-  }, [user, loading, router]);
+  // 인증/프로필 가드는 useRequireAuth가 담당 (#44)
 
   // 기존 프로필 정보로 필드 초기화
   useEffect(() => {
@@ -111,9 +109,27 @@ export default function ProfileEditPage() {
       setError('이름을 입력해주세요.');
       return;
     }
-    if (!phone.trim() || phone.replace(/\D/g, '').length < 10) {
-      setError('연락처를 올바르게 입력해주세요.');
+    // 한국 휴대폰/유선 번호 형식 검증 (#47)
+    const phoneDigits = phone.replace(/\D/g, '');
+    const isValidPhone = /^01[016789]\d{7,8}$/.test(phoneDigits) || /^0[2-6]\d{7,9}$/.test(phoneDigits);
+    if (!isValidPhone) {
+      setError('올바른 전화번호를 입력해주세요.');
       return;
+    }
+    // 프로필 이미지 URL 형식 검증 (#48 — http/https만 허용)
+    const trimmedImage = profileImage.trim();
+    if (trimmedImage) {
+      let validUrl = false;
+      try {
+        const parsed = new URL(trimmedImage);
+        validUrl = parsed.protocol === 'http:' || parsed.protocol === 'https:';
+      } catch {
+        validUrl = false;
+      }
+      if (!validUrl) {
+        setError('프로필 사진 URL이 올바르지 않습니다. (http/https)');
+        return;
+      }
     }
 
     setIsSaving(true);
@@ -157,16 +173,14 @@ export default function ProfileEditPage() {
     }
   };
 
-  // 로딩 중
-  if (loading) {
+  // 가드 통과 전(로딩·리다이렉트 대기)에는 스피너만 표시
+  if (!ready || !user || !userProfile) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent" />
       </div>
     );
   }
-
-  if (!user || !userProfile) return null;
 
   return (
     <div className="px-4 pt-4 pb-28 min-h-screen">
@@ -189,15 +203,13 @@ export default function ProfileEditPage() {
         <div className="flex flex-col items-center gap-3">
           {/* 현재 프로필 이미지 또는 플레이스홀더 */}
           <div className="w-20 h-20 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
-            {profileImage ? (
+            {profileImage && !imgError ? (
               <img
                 src={profileImage}
                 alt="프로필"
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
+                onError={() => setImgError(true)}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-primary-100">
@@ -217,7 +229,10 @@ export default function ProfileEditPage() {
             <input
               type="url"
               value={profileImage}
-              onChange={(e) => setProfileImage(e.target.value)}
+              onChange={(e) => {
+                setProfileImage(e.target.value);
+                setImgError(false); // URL 수정 시 미리보기 복원 (#48)
+              }}
               placeholder="https://example.com/photo.jpg"
               className="w-full py-2.5 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
             />

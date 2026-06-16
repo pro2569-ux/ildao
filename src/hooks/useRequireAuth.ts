@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/types';
 
@@ -18,11 +18,14 @@ export function useRequireAuth(requiredRole?: UserRole) {
   const auth = useAuth();
   const { user, userProfile, loading, profileError } = auth;
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (loading) return;
     if (!user) {
-      router.replace('/login');
+      // 로그인 후 원래 가려던 페이지로 복귀할 수 있도록 next 전달 (#45)
+      const next = pathname && pathname !== '/login' ? `?next=${encodeURIComponent(pathname)}` : '';
+      router.replace(`/login${next}`);
       return;
     }
     if (profileError) {
@@ -36,7 +39,7 @@ export function useRequireAuth(requiredRole?: UserRole) {
     if (requiredRole && userProfile.role !== requiredRole) {
       router.replace('/');
     }
-  }, [user, userProfile, loading, profileError, requiredRole, router]);
+  }, [user, userProfile, loading, profileError, requiredRole, router, pathname]);
 
   const ready =
     !loading &&
