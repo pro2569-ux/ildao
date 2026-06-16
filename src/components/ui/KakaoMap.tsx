@@ -103,6 +103,18 @@ export default function KakaoMap({ mode, address, lat, lng, onSelect, height = '
       const position = new kakao.maps.LatLng(lat, lng);
       const marker = new kakao.maps.Marker({ position, map });
       markerRef.current = marker;
+    } else if (mode === 'view' && address) {
+      // 좌표 없이 저장된 공고(#49): 주소를 지오코딩해 실제 위치에 마커 표시
+      // (좌표 0 → 서울 시청 중심에 마커 없이 떠 위치를 오인하던 문제 해소)
+      const geocoder = new kakao.maps.services.Geocoder();
+      geocoder.addressSearch(address, (result: any, status: any) => {
+        if (status === kakao.maps.services.Status.OK && result[0]) {
+          const position = new kakao.maps.LatLng(parseFloat(result[0].y), parseFloat(result[0].x));
+          map.setCenter(position);
+          const marker = new kakao.maps.Marker({ position, map });
+          markerRef.current = marker;
+        }
+      });
     }
 
     // select 모드: 지도 클릭 시 마커 이동 + 주소 역변환
