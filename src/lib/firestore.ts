@@ -10,7 +10,14 @@ import { db } from '@/lib/firebase';
 import { JobPost, Application, UserProfile, JobCategory, JobStatus, ApplicationStatus, DailyWorkRecord, TeamMember, TeamDailyWork, Favorite } from '@/types';
 
 // ===== 날짜 변환 헬퍼 =====
-const toDate = (ts: any): Date => ts?.toDate?.() || new Date(ts) || new Date();
+// Firestore Timestamp → Date. serverTimestamp 펜딩(null)·undefined·Invalid Date를
+// 모두 현재 시각으로 안전하게 폴백한다(#41 — new Date(null)=1970, new Date(undefined)=Invalid 회피).
+const toDate = (ts: any): Date => {
+  if (ts?.toDate) return ts.toDate();
+  if (ts == null) return new Date();
+  const d = new Date(ts);
+  return isNaN(d.getTime()) ? new Date() : d;
+};
 
 // ===== 배치 삭제 헬퍼 (Firestore 배치당 500개 제한 대응) =====
 async function deleteInBatches(refs: DocumentReference[]): Promise<void> {
@@ -25,11 +32,10 @@ async function deleteInBatches(refs: DocumentReference[]): Promise<void> {
 // ===== 구인글 관련 =====
 
 /** 구인글 생성 */
-export async function createJob(data: Omit<JobPost, 'id' | 'createdAt' | 'updatedAt' | 'applicants' | 'status' | 'isPremium'>): Promise<string> {
+export async function createJob(data: Omit<JobPost, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'isPremium'>): Promise<string> {
   const docRef = await addDoc(collection(db, 'jobs'), {
     ...data,
     status: 'open',
-    applicants: [],
     isPremium: false,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -370,38 +376,27 @@ export async function getTeamMonthlyWorks(teamLeaderId: string, year: number, mo
 
 // ===== Phase 2: 즐겨찾기 관련 =====
 
-/** 즐겨찾기 추가 */
+/** 즐겨찾기 추가 (docId: {userId}_{targetId} — 중복 추가/동시 호출이 같은 문서로 수렴해 중복 생성 방지) */
 export async function addFavorite(userId: string, targetId: string, targetType: 'user' | 'job'): Promise<string> {
-  const docRef = await addDoc(collection(db, 'favorites'), {
+  const docId = `${userId}_${targetId}`;
+  await setDoc(doc(db, 'favorites', docId), {
     userId,
     targetId,
     targetType,
     createdAt: serverTimestamp(),
   });
-  return docRef.id;
+  return docId;
 }
 
-/** 즐겨찾기 삭제 */
+/** 즐겨찾기 삭제 (결정적 docId 단건 삭제) */
 export async function removeFavorite(userId: string, targetId: string): Promise<void> {
-  const q = query(
-    collection(db, 'favorites'),
-    where('userId', '==', userId),
-    where('targetId', '==', targetId)
-  );
-  const snapshot = await getDocs(q);
-  const deletePromises = snapshot.docs.map((d) => deleteDoc(doc(db, 'favorites', d.id)));
-  await Promise.all(deletePromises);
+  await deleteDoc(doc(db, 'favorites', `${userId}_${targetId}`));
 }
 
-/** 즐겨찾기 여부 확인 */
+/** 즐겨찾기 여부 확인 (결정적 docId 단건 조회 — 쿼리보다 저렴) */
 export async function isFavorited(userId: string, targetId: string): Promise<boolean> {
-  const q = query(
-    collection(db, 'favorites'),
-    where('userId', '==', userId),
-    where('targetId', '==', targetId)
-  );
-  const snapshot = await getDocs(q);
-  return !snapshot.empty;
+  const snapshot = await getDoc(doc(db, 'favorites', `${userId}_${targetId}`));
+  return snapshot.exists();
 }
 
 /** 내 즐겨찾기 목록 조회 */

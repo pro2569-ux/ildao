@@ -85,7 +85,6 @@ export interface JobPost {
   };
   // 상태
   status: JobStatus;
-  applicants: string[];     // 지원자 UID 목록
   isPremium: boolean;       // 프리미엄 (상위 노출)
   createdAt: Date;
   updatedAt: Date;
