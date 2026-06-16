@@ -12,6 +12,7 @@ import {
   deleteTeamMemberWorks,
   getTeamMonthlyWorks,
 } from '@/lib/firestore';
+import { formatWon } from '@/lib/format';
 import { DailyWorkRecord, WeatherType, TeamMember, TeamDailyWork } from '@/types';
 
 // ===== 상수 정의 =====
@@ -47,11 +48,6 @@ function getFirstDayOfMonth(year: number, month: number): number {
 /** 날짜를 YYYY-MM-DD 형식으로 변환 */
 function formatDateKey(year: number, month: number, day: number): string {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-}
-
-/** 숫자를 한국 원화 형식으로 포맷 */
-function formatWon(amount: number): string {
-  return amount.toLocaleString('ko-KR') + '원';
 }
 
 // ===== 메인 컴포넌트 =====

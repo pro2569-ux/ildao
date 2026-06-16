@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { getJobs, getEmployerStats } from '@/lib/firestore';
+import { formatDate } from '@/lib/format';
 import { JobPost, Application } from '@/types';
 
 /** 구인자 전용 홈 화면 */
@@ -45,12 +46,6 @@ export default function EmployerHome() {
     } finally {
       setLoading(false);
     }
-  };
-
-  /** 날짜 포맷 */
-  const formatDate = (date: Date) => {
-    const d = new Date(date);
-    return `${d.getMonth() + 1}/${d.getDate()}`;
   };
 
   return (

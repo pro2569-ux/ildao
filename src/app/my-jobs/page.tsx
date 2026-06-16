@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { getJobs, updateJob, deleteJob, getApplicationCount } from '@/lib/firestore';
+import { formatDateFull } from '@/lib/format';
 import { JobPost } from '@/types';
 
 /**
@@ -69,12 +70,6 @@ export default function MyJobsPage() {
     }
   };
 
-  /** 날짜 포맷 */
-  const formatDate = (date: Date) => {
-    const d = new Date(date);
-    return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`;
-  };
-
   if (!ready || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -129,7 +124,7 @@ export default function MyJobsPage() {
                   }`}>
                     {job.status === 'open' ? '모집중' : job.status === 'closed' ? '마감' : '진행중'}
                   </span>
-                  <span className="text-xs text-gray-400">{formatDate(job.createdAt)}</span>
+                  <span className="text-xs text-gray-400">{formatDateFull(job.createdAt)}</span>
                 </div>
                 <h3 className="font-semibold text-sm mb-1">{job.title}</h3>
                 <div className="flex items-center gap-2 text-xs text-gray-500">

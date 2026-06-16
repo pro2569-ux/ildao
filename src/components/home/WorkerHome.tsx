@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { getJobs, getApplicationsByWorker } from '@/lib/firestore';
+import { formatDate } from '@/lib/format';
 import { JobPost, Application, JobCategory } from '@/types';
 
 /** 직종 카테고리 목록 */
@@ -54,12 +55,6 @@ export default function WorkerHome() {
       cancelled = true;
     };
   }, [selectedCategory, userProfile?.uid]);
-
-  /** 날짜 포맷 */
-  const formatDate = (date: Date) => {
-    const d = new Date(date);
-    return `${d.getMonth() + 1}/${d.getDate()}`;
-  };
 
   /** 지원 상태 카운트 */
   const pendingCount = applications.filter((a) => a.status === 'pending').length;

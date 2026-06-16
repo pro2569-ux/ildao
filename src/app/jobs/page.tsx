@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getJobs } from '@/lib/firestore';
 import { REGIONS, JOB_CATEGORIES } from '@/lib/constants';
+import { formatDate } from '@/lib/format';
 import { JobPost, JobCategory } from '@/types';
 
 /** 직종 필터 목록 ('전체' + 공용 직종 상수) */
@@ -52,12 +53,6 @@ export default function JobsPage() {
       cancelled = true;
     };
   }, [selectedCategory, selectedRegion, sortBy]);
-
-  /** 날짜 포맷 */
-  const formatDate = (date: Date) => {
-    const d = new Date(date);
-    return `${d.getMonth() + 1}/${d.getDate()}`;
-  };
 
   return (
     <div className="px-4 pt-6 pb-24">

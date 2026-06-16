@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { getFavorites, removeFavorite, getUserProfile, getJob } from '@/lib/firestore';
+import { formatDate, formatWon } from '@/lib/format';
 import { Favorite, UserProfile, JobPost } from '@/types';
 
 /** 즐겨찾기한 근로자 (구인자용) */
@@ -123,19 +124,6 @@ export default function FavoritesPage() {
     } finally {
       setRemovingId(null);
     }
-  };
-
-  /** 날짜 포맷 */
-  const formatDate = (date?: Date) => {
-    if (!date) return '';
-    const d = new Date(date);
-    return `${d.getMonth() + 1}/${d.getDate()}`;
-  };
-
-  /** 일당 포맷 */
-  const formatWage = (wage?: number) => {
-    if (!wage) return '-';
-    return `${wage.toLocaleString()}원`;
   };
 
   /** 공고 상태 뼉지 */
@@ -289,7 +277,7 @@ export default function FavoritesPage() {
                               {w.experience != null && w.desiredWage && <span>·</span>}
                               {w.desiredWage && (
                                 <span className="text-accent-500 font-medium">
-                                  희망 {formatWage(w.desiredWage)}
+                                  희망 {formatWon(w.desiredWage)}
                                 </span>
                               )}
                             </div>
@@ -450,7 +438,7 @@ export default function FavoritesPage() {
                             <span>{j.category}</span>
                             <span>·</span>
                             <span className="text-accent-500 font-medium">
-                              {formatWage(j.dailyWage)}
+                              {formatWon(j.dailyWage)}
                             </span>
                             <span>·</span>
                             <span className="truncate">{j.location.address}</span>

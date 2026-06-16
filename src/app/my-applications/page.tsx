@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { getApplicationsByWorker, getJob, getUserProfile } from '@/lib/firestore';
+import { formatDate } from '@/lib/format';
 import { Application, JobPost, UserProfile } from '@/types';
 
 /**
@@ -64,12 +65,6 @@ export default function MyApplicationsPage() {
       default:
         return { text: status, className: 'bg-gray-100 text-gray-500' };
     }
-  };
-
-  /** 날짜 포맷 */
-  const formatDate = (date: Date) => {
-    const d = new Date(date);
-    return `${d.getMonth() + 1}/${d.getDate()}`;
   };
 
   if (!ready || loading) {

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getJob, hasApplied, applyToJob, getUserProfile, isFavorited, addFavorite, removeFavorite } from '@/lib/firestore';
+import { formatDateFull } from '@/lib/format';
 import { JobPost, UserProfile } from '@/types';
 import KakaoMap from '@/components/ui/KakaoMap';
 
@@ -155,12 +156,6 @@ export default function JobDetailPage() {
     }
   };
 
-  /** 날짜 포맷 */
-  const formatDate = (date: Date) => {
-    const d = new Date(date);
-    return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`;
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -247,7 +242,7 @@ export default function JobDetailPage() {
           <InfoRow label="근무 위치" value={job.location.address} />
           <InfoRow
             label="근무 기간"
-            value={`${formatDate(job.startDate)}${job.endDate ? ` ~ ${formatDate(job.endDate)}` : ' ~'}`}
+            value={`${formatDateFull(job.startDate)}${job.endDate ? ` ~ ${formatDateFull(job.endDate)}` : ' ~'}`}
           />
           <InfoRow label="근무 시간" value={job.workHours} />
         </div>
@@ -312,7 +307,7 @@ export default function JobDetailPage() {
 
         {/* 등록일 */}
         <p className="text-xs text-gray-400 text-center mb-4">
-          등록일: {formatDate(job.createdAt)}
+          등록일: {formatDateFull(job.createdAt)}
         </p>
       </div>
 
