@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   saveDailyWork,
@@ -66,8 +66,9 @@ export default function CalculatorPage() {
 
   // ===== 공통 상태 =====
   const [activeTab, setActiveTab] = useState<TabMode>('personal');
-  const [currentYear, setCurrentYear] = useState(2026);
-  const [currentMonth, setCurrentMonth] = useState(5);
+  // 현재 연/월로 초기화 (lazy initializer — 하드코딩 값으로 인한 이중 로드 방지)
+  const [currentYear, setCurrentYear] = useState(() => new Date().getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(() => new Date().getMonth() + 1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -99,6 +100,7 @@ export default function CalculatorPage() {
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberPhone, setNewMemberPhone] = useState('');
   const [newMemberWage, setNewMemberWage] = useState(0);
+  const [isAddingMember, setIsAddingMember] = useState(false);
 
   // 팀원용 일별 입력 모달 상태
   const [teamSelectedDate, setTeamSelectedDate] = useState<string | null>(null);
@@ -110,13 +112,6 @@ export default function CalculatorPage() {
 
   // ===== 초기 데이터 로드 =====
 
-  /** 현재 날짜로 초기화 */
-  useEffect(() => {
-    const now = new Date();
-    setCurrentYear(now.getFullYear());
-    setCurrentMonth(now.getMonth() + 1);
-  }, []);
-
   /** 일당 초기값 설정 (사용자 프로필에서) */
   useEffect(() => {
     if (userProfile?.desiredWage) {
@@ -124,53 +119,46 @@ export default function CalculatorPage() {
     }
   }, [userProfile]);
 
-  /** 개인 월별 공수 로드 */
-  const loadPersonalMonthly = useCallback(async () => {
-    if (!user) return;
-    setIsLoading(true);
-    setError(null);
-    try {
-      const records = await getMonthlyWorks(user.uid, currentYear, currentMonth);
-      const map = new Map<string, DailyWorkRecord>();
-      records.forEach((r) => map.set(r.date, r));
-      setMonthlyRecords(map);
-    } catch (err) {
-      console.error('월별 공수 로드 실패:', err);
-      setError('데이터를 불러오는 중 오류가 발생했습니다.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user, currentYear, currentMonth]);
-
-  /** 팀 데이터 로드 */
-  const loadTeamData = useCallback(async () => {
-    if (!user) return;
-    setIsLoading(true);
-    setError(null);
-    try {
-      const [members, works] = await Promise.all([
-        getTeamMembers(user.uid),
-        getTeamMonthlyWorks(user.uid, currentYear, currentMonth),
-      ]);
-      setTeamMembers(members);
-      setTeamWorks(works);
-    } catch (err) {
-      console.error('팀 데이터 로드 실패:', err);
-      setError('팀 데이터를 불러오는 중 오류가 발생했습니다.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user, currentYear, currentMonth]);
-
   /** 탭/월 변경 시 데이터 로드 */
   useEffect(() => {
     if (!user) return;
-    if (activeTab === 'personal') {
-      loadPersonalMonthly();
-    } else {
-      loadTeamData();
-    }
-  }, [activeTab, currentYear, currentMonth, user, loadPersonalMonthly, loadTeamData]);
+    // 월을 빠르게 전환하면 이전 달 응답이 현재 달 화면을 덮어쓸 수 있으므로
+    // cleanup으로 stale 응답을 무시한다
+    let cancelled = false;
+    setIsLoading(true);
+    setError(null);
+
+    const load =
+      activeTab === 'personal'
+        ? getMonthlyWorks(user.uid, currentYear, currentMonth).then((records) => {
+            if (cancelled) return;
+            const map = new Map<string, DailyWorkRecord>();
+            records.forEach((r) => map.set(r.date, r));
+            setMonthlyRecords(map);
+          })
+        : Promise.all([
+            getTeamMembers(user.uid),
+            getTeamMonthlyWorks(user.uid, currentYear, currentMonth),
+          ]).then(([members, works]) => {
+            if (cancelled) return;
+            setTeamMembers(members);
+            setTeamWorks(works);
+          });
+
+    load
+      .catch((err) => {
+        if (cancelled) return;
+        console.error('공수 데이터 로드 실패:', err);
+        setError('데이터를 불러오는 중 오류가 발생했습니다.');
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, currentYear, currentMonth, user]);
 
   // ===== 월 네비게이션 =====
 
@@ -362,9 +350,12 @@ export default function CalculatorPage() {
   // ===== 팀장용: 팀원 추가 =====
 
   const handleAddMember = async () => {
-    if (!user || !newMemberName.trim()) return;
+    // 중복 제출 방지 — 저장 중 재클릭 무시
+    if (!user || !newMemberName.trim() || isAddingMember) return;
+    setIsAddingMember(true);
     const newMember: TeamMember = {
-      id: Date.now().toString(),
+      // crypto.randomUUID로 충돌 없는 id 생성 (Date.now()는 동시 추가 시 충돌 가능)
+      id: crypto.randomUUID(),
       name: newMemberName.trim(),
       phone: newMemberPhone.trim() || undefined,
       dailyWage: newMemberWage || undefined,
@@ -380,6 +371,8 @@ export default function CalculatorPage() {
     } catch (err) {
       console.error('팀원 추가 실패:', err);
       setError('팀원 추가에 실패했습니다.');
+    } finally {
+      setIsAddingMember(false);
     }
   };
 
@@ -1077,10 +1070,10 @@ export default function CalculatorPage() {
                       </button>
                       <button
                         onClick={handleAddMember}
-                        disabled={!newMemberName.trim()}
+                        disabled={!newMemberName.trim() || isAddingMember}
                         className="flex-1 btn-primary py-2 text-sm font-medium disabled:opacity-50"
                       >
-                        추가
+                        {isAddingMember ? '추가 중...' : '추가'}
                       </button>
                     </div>
                   </div>

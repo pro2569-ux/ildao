@@ -26,25 +26,29 @@ export default function JobsPage() {
   const [sortBy, setSortBy] = useState<SortOption>('latest');
 
   useEffect(() => {
-    loadJobs();
-  }, [selectedCategory, sortBy]);
-
-  const loadJobs = async () => {
+    // 필터/정렬을 빠르게 전환하면 이전 요청 응답이 최신 결과를 덮어쓸 수 있으므로
+    // cleanup으로 stale 응답을 무시한다
+    let cancelled = false;
     setLoading(true);
-    try {
-      const data = await getJobs({
-        status: 'open',
-        category: selectedCategory === '전체' ? undefined : selectedCategory,
-        sortBy: sortBy === 'highWage' ? 'dailyWage' : 'createdAt',
-        sortDir: 'desc',
+    getJobs({
+      status: 'open',
+      category: selectedCategory === '전체' ? undefined : selectedCategory,
+      sortBy: sortBy === 'highWage' ? 'dailyWage' : 'createdAt',
+      sortDir: 'desc',
+    })
+      .then((data) => {
+        if (!cancelled) setJobs(data);
+      })
+      .catch((error) => {
+        if (!cancelled) console.error('구인 공고 로드 실패:', error);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
       });
-      setJobs(data);
-    } catch (error) {
-      console.error('구인 공고 로드 실패:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCategory, sortBy]);
 
   /** 날짜 포맷 */
   const formatDate = (date: Date) => {

@@ -27,28 +27,33 @@ export default function WorkerHome() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadData();
-  }, [selectedCategory]);
-
-  const loadData = async () => {
+    // 직종 필터를 빠르게 전환하면 이전 응답이 최신 화면을 덮어쓸 수 있으므로
+    // cleanup으로 stale 응답을 무시한다
+    let cancelled = false;
     setLoading(true);
-    try {
-      const [jobsData, appsData] = await Promise.all([
-        getJobs({
-          status: 'open',
-          category: selectedCategory === '전체' ? undefined : selectedCategory,
-          limitCount: 10,
-        }),
-        userProfile?.uid ? getApplicationsByWorker(userProfile.uid) : Promise.resolve([]),
-      ]);
-      setJobs(jobsData);
-      setApplications(appsData);
-    } catch (error) {
-      console.error('데이터 로드 실패:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    Promise.all([
+      getJobs({
+        status: 'open',
+        category: selectedCategory === '전체' ? undefined : selectedCategory,
+        limitCount: 10,
+      }),
+      userProfile?.uid ? getApplicationsByWorker(userProfile.uid) : Promise.resolve([]),
+    ])
+      .then(([jobsData, appsData]) => {
+        if (cancelled) return;
+        setJobs(jobsData);
+        setApplications(appsData);
+      })
+      .catch((error) => {
+        if (!cancelled) console.error('데이터 로드 실패:', error);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCategory, userProfile?.uid]);
 
   /** 날짜 포맷 */
   const formatDate = (date: Date) => {
