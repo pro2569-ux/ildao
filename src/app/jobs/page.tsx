@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getJobs } from '@/lib/firestore';
+import { REGIONS } from '@/lib/constants';
 import { JobPost, JobCategory } from '@/types';
 
 /** 직종 필터 목록 */
@@ -23,6 +24,7 @@ export default function JobsPage() {
   const [jobs, setJobs] = useState<JobPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<JobCategory | '전체'>('전체');
+  const [selectedRegion, setSelectedRegion] = useState<string>('전체');
   const [sortBy, setSortBy] = useState<SortOption>('latest');
 
   useEffect(() => {
@@ -33,6 +35,7 @@ export default function JobsPage() {
     getJobs({
       status: 'open',
       category: selectedCategory === '전체' ? undefined : selectedCategory,
+      region: selectedRegion === '전체' ? undefined : selectedRegion,
       sortBy: sortBy === 'highWage' ? 'dailyWage' : 'createdAt',
       sortDir: 'desc',
       // 첫 화면 로드량·읽기 비용을 제한 (#40 — 전체 fetch 방지). 추후 커서 페이지네이션 여지
@@ -50,7 +53,7 @@ export default function JobsPage() {
     return () => {
       cancelled = true;
     };
-  }, [selectedCategory, sortBy]);
+  }, [selectedCategory, selectedRegion, sortBy]);
 
   /** 날짜 포맷 */
   const formatDate = (date: Date) => {
@@ -61,6 +64,23 @@ export default function JobsPage() {
   return (
     <div className="px-4 pt-6 pb-24">
       <h1 className="text-xl font-bold mb-4">구인공고</h1>
+
+      {/* 지역 필터 */}
+      <div className="flex gap-2 overflow-x-auto pb-3 mb-2 scrollbar-hide">
+        {['전체', ...REGIONS].map((r) => (
+          <button
+            key={r}
+            onClick={() => setSelectedRegion(r)}
+            className={`flex-shrink-0 py-2 px-3 rounded-full text-sm font-medium transition-colors ${
+              selectedRegion === r
+                ? 'bg-accent-500 text-white'
+                : 'bg-white border border-gray-200 text-gray-600'
+            }`}
+          >
+            {r}
+          </button>
+        ))}
+      </div>
 
       {/* 직종 필터 */}
       <div className="flex gap-2 overflow-x-auto pb-3 mb-3 scrollbar-hide">
@@ -113,7 +133,9 @@ export default function JobsPage() {
       ) : jobs.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-400 text-sm">
-            {selectedCategory === '전체'
+            {selectedRegion !== '전체'
+              ? `${selectedRegion} 지역의 ${selectedCategory === '전체' ? '' : selectedCategory + ' '}공고가 없습니다`
+              : selectedCategory === '전체'
               ? '등록된 구인공고가 없습니다'
               : `${selectedCategory} 관련 공고가 없습니다`}
           </p>

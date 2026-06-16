@@ -4,17 +4,12 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { updateUserProfile } from '@/lib/firestore';
+import { REGIONS } from '@/lib/constants';
 import { JobCategory } from '@/types';
 
 /** 사용 가능한 직종 목록 */
 const JOB_CATEGORIES: JobCategory[] = [
   '철근', '목공', '설비', '전기', '도장', '용접', '타일', '미장', '방수', '조적', '비계', '잡역', '기타',
-];
-
-/** 지역 목록 */
-const REGIONS = [
-  '서울', '경기', '인천', '부산', '대구', '광주', '대전', '울산', '세종',
-  '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주',
 ];
 
 /**
