@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { getJob, hasApplied, applyToJob, getUserProfile } from '@/lib/firestore';
+import { getJob, hasApplied, applyToJob, getUserProfile, isFavorited, addFavorite, removeFavorite } from '@/lib/firestore';
 import { JobPost, UserProfile } from '@/types';
 import KakaoMap from '@/components/ui/KakaoMap';
 
@@ -24,6 +24,8 @@ export default function JobDetailPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [applying, setApplying] = useState(false);
+  const [favorited, setFavorited] = useState(false);
+  const [favBusy, setFavBusy] = useState(false);
 
   const jobId = params.id as string;
 
@@ -38,6 +40,10 @@ export default function JobDetailPage() {
     hasApplied(jobId, user.uid)
       .then(setApplied)
       .catch((error) => console.error('지원 여부 확인 실패:', error));
+    // 즐겨찾기 상태 로드 (#24)
+    isFavorited(user.uid, jobId)
+      .then(setFavorited)
+      .catch((error) => console.error('즐겨찾기 상태 확인 실패:', error));
   }, [jobId, user, userProfile]);
 
   const loadJobDetail = async () => {
@@ -67,6 +73,19 @@ export default function JobDetailPage() {
     if (!user || !job) return;
     setApplying(true);
     try {
+      // stale 화면 방어(#20): 페이지를 열어둔 사이 마감/삭제됐을 수 있으므로 지원 직전 최신 상태 재확인
+      // (서버 규칙도 open 공고만 허용하지만, 사용자에게 명확한 안내를 위해 클라이언트에서도 확인)
+      const fresh = await getJob(jobId);
+      if (!fresh) {
+        alert('삭제된 공고입니다.');
+        router.replace('/jobs');
+        return;
+      }
+      if (fresh.status !== 'open') {
+        setJob(fresh);
+        alert('이미 마감된 공고입니다.');
+        return;
+      }
       await applyToJob(jobId, user.uid, job.employerId);
       setApplied(true);
     } catch (error) {
@@ -74,6 +93,26 @@ export default function JobDetailPage() {
       alert('지원에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setApplying(false);
+    }
+  };
+
+  /** 즐겨찾기 토글 (#24 — 구직자만) */
+  const toggleFavorite = async () => {
+    if (!user) return;
+    setFavBusy(true);
+    try {
+      if (favorited) {
+        await removeFavorite(user.uid, jobId);
+        setFavorited(false);
+      } else {
+        await addFavorite(user.uid, jobId, 'job');
+        setFavorited(true);
+      }
+    } catch (error) {
+      console.error('즐겨찾기 처리 실패:', error);
+      alert('즐겨찾기 처리에 실패했습니다.');
+    } finally {
+      setFavBusy(false);
     }
   };
 
@@ -124,6 +163,24 @@ export default function JobDetailPage() {
           </svg>
         </button>
         <h1 className="text-lg font-bold truncate flex-1">공고 상세</h1>
+        {userProfile?.role === 'worker' && (
+          <button
+            onClick={toggleFavorite}
+            disabled={favBusy}
+            aria-label={favorited ? '즐겨찾기 해제' : '즐겨찾기 추가'}
+            className="p-1 disabled:opacity-50"
+          >
+            <svg
+              className={`w-6 h-6 ${favorited ? 'text-accent-500' : 'text-gray-300'}`}
+              fill={favorited ? 'currentColor' : 'none'}
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.196-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+            </svg>
+          </button>
+        )}
       </div>
 
       <div className="px-4 pt-4">

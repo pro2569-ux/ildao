@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getPublicWorkers } from '@/lib/firestore';
+import { useAuth } from '@/contexts/AuthContext';
+import { getPublicWorkers, getFavorites, addFavorite, removeFavorite } from '@/lib/firestore';
 import { UserProfile, JobCategory } from '@/types';
 
 /** 직종 필터 목록 */
@@ -17,25 +18,70 @@ const FILTER_CATEGORIES: (JobCategory | '전체')[] = [
  */
 export default function WorkersPage() {
   const router = useRouter();
+  const { user, userProfile } = useAuth();
+  const isEmployer = userProfile?.role === 'employer';
+
   const [workers, setWorkers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<JobCategory | '전체'>('전체');
 
+  // 즐겨찾기 상태 (#24 — 구인자만 사용)
+  const [favoritedIds, setFavoritedIds] = useState<Set<string>>(new Set());
+  const [favBusy, setFavBusy] = useState<string | null>(null);
+
   useEffect(() => {
-    loadWorkers();
+    // 필터 빠른 전환 시 stale 응답이 최신 결과를 덮어쓰지 않도록 무시 플래그 사용
+    let cancelled = false;
+    setLoading(true);
+    getPublicWorkers({
+      skills: selectedCategory === '전체' ? undefined : selectedCategory,
+    })
+      .then((data) => {
+        if (!cancelled) setWorkers(data);
+      })
+      .catch((error) => {
+        if (!cancelled) console.error('구직자 목록 로드 실패:', error);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [selectedCategory]);
 
-  const loadWorkers = async () => {
-    setLoading(true);
+  // 구인자의 기존 즐겨찾기 근로자 목록 로드
+  useEffect(() => {
+    if (!user || !isEmployer) {
+      setFavoritedIds(new Set());
+      return;
+    }
+    getFavorites(user.uid, 'user')
+      .then((favs) => setFavoritedIds(new Set(favs.map((f) => f.targetId))))
+      .catch((error) => console.error('즐겨찾기 로드 실패:', error));
+  }, [user, isEmployer]);
+
+  /** 즐겨찾기 토글 (#24) */
+  const toggleFavorite = async (workerId: string) => {
+    if (!user) return;
+    setFavBusy(workerId);
     try {
-      const data = await getPublicWorkers({
-        skills: selectedCategory === '전체' ? undefined : selectedCategory,
-      });
-      setWorkers(data);
+      if (favoritedIds.has(workerId)) {
+        await removeFavorite(user.uid, workerId);
+        setFavoritedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(workerId);
+          return next;
+        });
+      } else {
+        await addFavorite(user.uid, workerId, 'user');
+        setFavoritedIds((prev) => new Set(prev).add(workerId));
+      }
     } catch (error) {
-      console.error('구직자 목록 로드 실패:', error);
+      console.error('즐겨찾기 처리 실패:', error);
+      alert('즐겨찾기 처리에 실패했습니다.');
     } finally {
-      setLoading(false);
+      setFavBusy(null);
     }
   };
 
@@ -135,6 +181,26 @@ export default function WorkersPage() {
                     )}
                   </div>
                 </div>
+
+                {/* 즐겨찾기 토글 (구인자만) */}
+                {isEmployer && (
+                  <button
+                    onClick={() => toggleFavorite(worker.uid)}
+                    disabled={favBusy === worker.uid}
+                    aria-label={favoritedIds.has(worker.uid) ? '즐겨찾기 해제' : '즐겨찾기 추가'}
+                    className="p-1 flex-shrink-0 disabled:opacity-50"
+                  >
+                    <svg
+                      className={`w-5 h-5 ${favoritedIds.has(worker.uid) ? 'text-accent-500' : 'text-gray-300'}`}
+                      fill={favoritedIds.has(worker.uid) ? 'currentColor' : 'none'}
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.196-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                    </svg>
+                  </button>
+                )}
               </div>
             </div>
           ))}

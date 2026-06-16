@@ -35,6 +35,8 @@ export default function JobsPage() {
       category: selectedCategory === '전체' ? undefined : selectedCategory,
       sortBy: sortBy === 'highWage' ? 'dailyWage' : 'createdAt',
       sortDir: 'desc',
+      // 첫 화면 로드량·읽기 비용을 제한 (#40 — 전체 fetch 방지). 추후 커서 페이지네이션 여지
+      limitCount: 50,
     })
       .then((data) => {
         if (!cancelled) setJobs(data);
