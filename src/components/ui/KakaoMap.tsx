@@ -70,6 +70,16 @@ export default function KakaoMap({ mode, address, lat, lng, onSelect, height = '
     };
 
     document.head.appendChild(script);
+
+    // 잘못된 키 등으로 콜백이 영영 안 오는 경우를 대비한 타임아웃 (무한 스피너 방지)
+    const timeoutId = window.setTimeout(() => {
+      setSdkLoaded((loaded) => {
+        if (!loaded) setError('지도를 불러오지 못했습니다. 주소만 표시합니다.');
+        return loaded;
+      });
+    }, 10000);
+
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   /** 지도 초기화 */
@@ -218,6 +228,28 @@ export default function KakaoMap({ mode, address, lat, lng, onSelect, height = '
               className="w-full py-2 px-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
+        )}
+      </div>
+    );
+  }
+
+  // === SDK 로드 실패 → 주소 텍스트 fallback (무한 스피너 방지, #35) ===
+  if (!sdkLoaded && error) {
+    return (
+      <div
+        className="bg-gray-100 rounded-xl flex flex-col items-center justify-center border border-gray-200 px-4 text-center"
+        style={{ height }}
+      >
+        <svg className="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+        {address ? (
+          <p className="text-sm text-gray-600">{address}</p>
+        ) : (
+          <p className="text-xs text-gray-400">지도를 표시할 수 없습니다</p>
         )}
       </div>
     );

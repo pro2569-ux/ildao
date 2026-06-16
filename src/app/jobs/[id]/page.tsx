@@ -22,6 +22,7 @@ export default function JobDetailPage() {
   const [employer, setEmployer] = useState<UserProfile | null>(null);
   const [applied, setApplied] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [applying, setApplying] = useState(false);
 
   const jobId = params.id as string;
@@ -41,6 +42,7 @@ export default function JobDetailPage() {
 
   const loadJobDetail = async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       const jobData = await getJob(jobId);
       if (!jobData) {
@@ -49,11 +51,12 @@ export default function JobDetailPage() {
       }
       setJob(jobData);
 
-      // 구인자 정보 로드
-      const employerData = await getUserProfile(jobData.employerId);
+      // 구인자 정보 로드 (실패해도 공고 자체는 표시되도록 분리 처리)
+      const employerData = await getUserProfile(jobData.employerId).catch(() => null);
       setEmployer(employerData);
     } catch (error) {
       console.error('공고 로드 실패:', error);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -88,7 +91,28 @@ export default function JobDetailPage() {
     );
   }
 
-  if (!job) return null;
+  // 로드 실패 → 빈 화면 대신 안내 + 재시도/뒤로 (#37)
+  if (loadError || !job) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center">
+        <p className="text-sm text-gray-600 mb-4">공고 정보를 불러오지 못했습니다.</p>
+        <div className="flex gap-2">
+          <button
+            onClick={() => loadJobDetail()}
+            className="py-2.5 px-6 btn-primary rounded-xl text-sm font-semibold"
+          >
+            다시 시도
+          </button>
+          <button
+            onClick={() => router.replace('/jobs')}
+            className="py-2.5 px-6 bg-gray-100 text-gray-600 rounded-xl text-sm font-semibold"
+          >
+            목록으로
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="pb-24 min-h-screen">
