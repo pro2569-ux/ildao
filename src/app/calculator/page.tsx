@@ -304,6 +304,12 @@ export default function CalculatorPage() {
 
   const handlePeriodQuery = async () => {
     if (!user || !periodStart || !periodEnd) return;
+    // 시작일이 종료일보다 늦으면 항상 빈 결과(0공/0원)가 나오므로 사전 차단 (CALC-03, YYYY-MM-DD 문자열 비교)
+    if (periodStart > periodEnd) {
+      setError('시작일은 종료일보다 늦을 수 없습니다.');
+      return;
+    }
+    setError('');
     setIsLoading(true);
     try {
       const records = await getWorksByDateRange(user.uid, periodStart, periodEnd);
@@ -915,6 +921,7 @@ export default function CalculatorPage() {
                 <input
                   type="date"
                   value={periodStart}
+                  max={periodEnd || undefined}
                   onChange={(e) => setPeriodStart(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
@@ -924,6 +931,7 @@ export default function CalculatorPage() {
                 <input
                   type="date"
                   value={periodEnd}
+                  min={periodStart || undefined}
                   onChange={(e) => setPeriodEnd(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
