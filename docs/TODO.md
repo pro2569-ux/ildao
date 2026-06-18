@@ -17,10 +17,10 @@
 - [x] #157 `saveDailyWork`/`saveTeamDailyWork`를 단일 `setDoc(merge)`로 (getDoc 분기·race 제거, createdAt→updatedAt 일원화)
 - [x] #163 잔여 — `WEATHER_OPTIONS`·`jobStatusBadge`를 `lib/constants.ts`로 이동 (calculator/favorites 공용화)
 - [x] #282 프로필 이미지 next/image 전환 + remotePatterns(lh3) — profile은 최적화, 임의 URL(workers/edit)은 unoptimized로 회귀 방지
+- [x] #246 일부 — `src/app/robots.ts` 추가 (개인화/개인정보 경로 Disallow, 공개 경로 Allow). sitemap은 도메인 필요로 잔여
 - (결함 캠페인 부산물: PWA PNG 아이콘, 지원·즐겨찾기 결정적 docId, 룰/인덱스 작성, useRequireAuth, toDate/대시보드 캡 등)
 
 ## ⏳ 자동 진행 가능 (우선순위 순)
-- [ ] [자동가능] #246 `src/app/robots.ts` 추가 (개인화 경로 Disallow / `/jobs` Allow). sitemap은 배포 도메인 필요 → 부분
 - [ ] [자동가능] #328 Vitest 도입 + 공수/급여 계산 순수함수(`lib/calculator.ts`) 추출·단위 테스트 → 이후 `npx vitest run`이 검증에 포함됨
 - [ ] [자동가능] #199 잔여 — BottomSheet(calculator 모달 2개 동일 구조)·Button/Input 컴포넌트 추출
 - [ ] [자동가능] 피드 `startAfter` 커서 페이지네이션 (현재 `limitCount`만 적용)
@@ -30,4 +30,5 @@
 - [ ] [사용자필요] #316 GitHub 원격 연결 + GitHub Actions CI (현재 원격 미연결)
 - [ ] [사용자필요] FCM 푸시(#79, Cloud Functions), Firebase App Check(#322), Sentry(#334), GA4(#358)
 - [ ] [사용자필요] 공고 상세 SSR + generateMetadata(#234, firebase-admin 도입), TanStack Query(#169)
+- [ ] [사용자필요] #246 잔여 — `sitemap.ts` + layout `metadataBase` (배포 도메인 확정 필요)
 - [ ] [사용자필요] Pretendard 폰트 self-host(#264, 폰트 에셋), 시니어 접근성 정책(#352)
