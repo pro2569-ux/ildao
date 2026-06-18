@@ -31,7 +31,7 @@
 - [x] [자동가능] **UI-02** 프로필 보기 `profileImage` 미반영 — `profile/page.tsx` `profileImage||photoURL` 폴백 + `unoptimized` + onError 플레이스홀더 폴백(편집 #48 패턴). verify 통과
 - [x] [자동가능] **DATA-02** 즐겨찾기 공고 로드 `.catch` 부재 — `favorites/page.tsx:98` `getJob().catch(()=>null)` (프로필 로드와 동일 패턴, 한 건 실패가 목록 전체 깨뜨리지 않음). verify 통과
 - [x] [자동가능] **REACT-01** EmployerHome stale 가드 부재 — `EmployerHome.tsx:20-50` 두 로드 함수를 effect 안으로 이동+`cancelled` 가드+cleanup(WorkerHome 패턴 통일, HOME-01 동일 해소). verify 통과
-- [ ] [자동가능] **AUTH-01** 가입 시 `next` 복귀 경로 분실 — `register/page.tsx` `useSearchParams`(Suspense 경계)
+- [x] [자동가능] **AUTH-01** 가입 시 `next` 복귀 경로 분실 — login이 `/register?next=`로 전달, register가 `useSearchParams`로 next 읽어(내부경로 검증) 가입 완료 시 복귀, Suspense 경계 추가. verify 통과
 - [ ] [자동가능] **DATA-01** region 오염(지도 선택) — `jobs/create/page.tsx:214` 덮어쓰기 제거 또는 정규화 매핑(기존 문서 백필은 사용자)
 
 ### B. 조용한 실패 / 검증 / 일관성

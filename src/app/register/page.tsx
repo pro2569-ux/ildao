@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,9 +15,15 @@ import { PageLoader } from '@/components/ui/Spinner';
  * - 사용자 유형(구인자/구직자) 선택
  * - 유형별 추가 정보 입력
  */
-export default function RegisterPage() {
+function RegisterContent() {
   const { user, userProfile, loading, profileError, refreshProfile } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // 복귀 경로 (#45/AUTH-01): 로그인→가입 진입 시 보존된 next를 가입 완료 후 복귀에 사용.
+  // 오픈 리다이렉트 방지를 위해 내부 절대경로(// 제외)만 허용 (login과 동일 규칙)
+  const rawNext = searchParams.get('next');
+  const nextPath = rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/';
 
   // 단계: 1=역할선택, 2=정보입력
   const [step, setStep] = useState(1);
@@ -142,7 +148,7 @@ export default function RegisterPage() {
 
       await setDoc(doc(db, 'users', user.uid), profileData);
       await refreshProfile();
-      router.replace('/');
+      router.replace(nextPath);
     } catch (err) {
       console.error('프로필 저장 실패:', err);
       setError('프로필 저장에 실패했습니다. 다시 시도해주세요.');
@@ -423,5 +429,17 @@ export default function RegisterPage() {
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * 회원가입 페이지
+ * - useSearchParams 사용을 위해 Suspense 경계로 감싼다 (Next.js 14 정적 생성 요건, login과 동일)
+ */
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <RegisterContent />
+    </Suspense>
   );
 }

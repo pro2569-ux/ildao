@@ -29,8 +29,8 @@ function LoginContent() {
         // 프로필 있으면 원래 가려던 곳(또는 홈)으로
         router.replace(nextPath);
       } else {
-        // 프로필 없으면 회원가입으로
-        router.replace('/register');
+        // 프로필 없으면 회원가입으로 — 복귀 경로(next)를 보존해 가입 완료 후 원래 위치로 돌아가게 함 (AUTH-01)
+        router.replace(nextPath !== '/' ? `/register?next=${encodeURIComponent(nextPath)}` : '/register');
       }
     }
   }, [user, userProfile, loading, router, nextPath]);
