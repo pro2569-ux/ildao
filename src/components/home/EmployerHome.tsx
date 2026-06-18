@@ -16,6 +16,9 @@ export default function EmployerHome() {
   const [activeJobCount, setActiveJobCount] = useState(0);
   const [totalApplicants, setTotalApplicants] = useState(0);
   const [recentApps, setRecentApps] = useState<Application[]>([]);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     if (!userProfile?.uid) return;
@@ -35,6 +38,7 @@ export default function EmployerHome() {
     };
 
     const loadStats = async () => {
+      if (!cancelled) { setStatsLoading(true); setStatsError(false); }
       try {
         const stats = await getEmployerStats(uid);
         if (!cancelled) {
@@ -43,7 +47,12 @@ export default function EmployerHome() {
           setRecentApps(stats.recentApplications);
         }
       } catch (error) {
-        if (!cancelled) console.error('통계 로드 실패:', error);
+        if (!cancelled) {
+          console.error('통계 로드 실패:', error);
+          setStatsError(true);
+        }
+      } finally {
+        if (!cancelled) setStatsLoading(false);
       }
     };
 
@@ -53,7 +62,7 @@ export default function EmployerHome() {
     return () => {
       cancelled = true;
     };
-  }, [userProfile?.uid]);
+  }, [userProfile?.uid, retryKey]);
 
   return (
     <div className="px-4 pt-6 pb-24">
@@ -65,20 +74,30 @@ export default function EmployerHome() {
         </h1>
       </header>
 
-      {/* 대시보드 통계 */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <div className="card text-center">
-          <p className="text-2xl font-bold text-primary-500">{activeJobCount}</p>
-          <p className="text-xs text-gray-500 mt-1">진행중 공고</p>
+      {/* 대시보드 통계 — 로딩 중/실패는 0과 구분되게 대시(–)로 표시 (UI-03) */}
+      <div className="mb-6">
+        <div className="grid grid-cols-3 gap-3">
+          <div className="card text-center">
+            <p className="text-2xl font-bold text-primary-500">{statsLoading || statsError ? '–' : activeJobCount}</p>
+            <p className="text-xs text-gray-500 mt-1">진행중 공고</p>
+          </div>
+          <div className="card text-center">
+            <p className="text-2xl font-bold text-accent-500">{statsLoading || statsError ? '–' : totalApplicants}</p>
+            <p className="text-xs text-gray-500 mt-1">총 지원자</p>
+          </div>
+          <div className="card text-center">
+            <p className="text-2xl font-bold text-green-500">{statsLoading || statsError ? '–' : recentApps.filter((a) => a.status === 'pending').length}</p>
+            <p className="text-xs text-gray-500 mt-1">대기중</p>
+          </div>
         </div>
-        <div className="card text-center">
-          <p className="text-2xl font-bold text-accent-500">{totalApplicants}</p>
-          <p className="text-xs text-gray-500 mt-1">총 지원자</p>
-        </div>
-        <div className="card text-center">
-          <p className="text-2xl font-bold text-green-500">{recentApps.filter(a => a.status === 'pending').length}</p>
-          <p className="text-xs text-gray-500 mt-1">대기중</p>
-        </div>
+        {statsError && (
+          <p className="mt-2 text-xs text-center text-red-500">
+            통계를 불러오지 못했습니다.{' '}
+            <button onClick={() => setRetryKey((k) => k + 1)} className="text-primary-500 font-medium underline">
+              다시 시도
+            </button>
+          </p>
+        )}
       </div>
 
       {/* 빠른 액션 버튼 */}
