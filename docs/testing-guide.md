@@ -23,7 +23,7 @@
 | 키 | 상태 |
 |---|---|
 | Firebase 6종 (API_KEY·AUTH_DOMAIN·PROJECT_ID·STORAGE_BUCKET·MESSAGING_SENDER_ID·APP_ID) | ✅ 코드와 이름 일치, 설정됨 |
-| Kakao 지도 키 | ⚠️ **이름 불일치** — 코드는 `NEXT_PUBLIC_KAKAO_MAP_KEY`, 파일엔 `NEXT_PUBLIC_KAKAO_MAP_API_KEY` → 지도 미표시(주소 텍스트만) |
+| Kakao 지도 키 | ✅ 코드·env 변수명 일치(`NEXT_PUBLIC_KAKAO_MAP_API_KEY`), 설정됨 |
 - Firebase 프로젝트: `ildao-fcbf6`
 
 ---
@@ -75,7 +75,7 @@ npm run dev
 
 ## 4. 알려진 제약 / 주의
 1. **Firestore 미배포** → 0단계 안 하면 지역필터·지원 등이 에러날 수 있음. (특히 이번에 추가한 지역 복합 인덱스 4종, 지원 스냅샷 룰)
-2. **Kakao 지도** → env 변수명 불일치로 현재 **지도 대신 주소 텍스트만** 표시. 고치려면 `.env.local`의 `NEXT_PUBLIC_KAKAO_MAP_API_KEY` → `NEXT_PUBLIC_KAKAO_MAP_KEY`로 이름 변경 후 dev 재시작.
+2. **Kakao 지도** → 변수명 정렬 완료(코드·env 모두 `NEXT_PUBLIC_KAKAO_MAP_API_KEY`). 유효 키면 지도 표시, 없거나 카카오 콘솔에 도메인(localhost) 미등록이면 주소 텍스트 fallback. dev 재시작 후 확인.
 3. **PWA**는 개발 모드에서 비활성(`next.config.js`에서 dev disable) → 설치/오프라인은 `npm run build && npm run start`로 확인.
 4. **테스트 데이터가 없음** → 처음엔 공고/지원이 비어 있으니, 구인자로 공고 몇 개 올린 뒤 구직자로 지원해야 흐름이 보입니다.
 

@@ -98,7 +98,7 @@ npm run lint    # 코드 검사
 ## 환경 설정
 1. `.env.local.example`을 `.env.local`로 복사
 2. Firebase 콘솔에서 프로젝트 생성 후 키 입력
-3. 카카오 개발자 센터에서 지도 API 키 발급 → `.env.local`에 `NEXT_PUBLIC_KAKAO_MAP_KEY` 추가 (없으면 주소 텍스트만 표시)
+3. 카카오 개발자 센터에서 지도 API 키 발급 → `.env.local`에 `NEXT_PUBLIC_KAKAO_MAP_API_KEY` 추가 (없으면 주소 텍스트만 표시)
 
 ## 디자인 원칙
 - **모바일 우선**: max-w-lg (512px) 기준, 하단 네비게이션

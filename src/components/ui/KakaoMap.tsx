@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Spinner } from '@/components/ui/Spinner';
 
 /** 카카오맵 API 키 (없으면 지도 대신 주소 텍스트만 표시) */
-const KAKAO_MAP_KEY = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
+const KAKAO_MAP_KEY = process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY;
 
 interface KakaoMapProps {
   /** 표시 모드: view=읽기전용, select=위치선택 */
