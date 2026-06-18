@@ -38,7 +38,7 @@
 - [x] [자동가능] **EMP-01** 마감/삭제 실패 알림 없음+dead state — `my-jobs/page.tsx` 실패 시 alert(applicants와 일관)+미사용 actionJobId를 처리 중 버튼 disabled에 활용. verify 통과
 - [x] [자동가능] **PROF-02** 공개 토글 실패 피드백 — `profile/page.tsx` catch에 alert 추가(중복클릭 방지·aria는 PROF-01). verify 통과
 - [x] [자동가능] **UI-03** 통계 로드 실패 시 0 표시 — `EmployerHome.tsx` statsLoading/statsError/retryKey 추가, 로딩·실패 시 대시(–) 표시 + 재시도 버튼(0과 구분). verify 통과
-- [ ] [자동가능] **VALID-01** 계산기 입력 상한 없음 — `calculator/page.tsx:661,876,997` 상한+정수화(jobs/create와 통일)
+- [x] [자동가능] **VALID-01** 계산기 입력 상한 없음 — `calculator/page.tsx` clampMoney(0~1천만+Math.floor) 헬퍼로 경비/일당/팀원일당 통일 + max 속성(jobs/create 상한과 일치). verify 통과
 - [ ] [자동가능] **VALID-02** workHours 형식 미검증 — `jobs/create/page.tsx:259`
 - [ ] [자동가능] **CALC-03** 기간 합계 시작>종료 미검증 — `calculator/page.tsx:300` 검증/input min·max
 - [ ] [자동가능] **CALC-05** 빈 기록 저장 — `calculator/page.tsx:244` 의미있는 입력 검증

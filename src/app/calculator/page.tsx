@@ -44,6 +44,11 @@ function formatDateKey(year: number, month: number, day: number): string {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
+/** 금액 입력 정규화: 음수·소수·1천만원 초과를 차단해 비현실적 값 방지 (jobs/create와 동일 상한, VALID-01) */
+function clampMoney(value: string): number {
+  return Math.min(10_000_000, Math.max(0, Math.floor(Number(value) || 0)));
+}
+
 // ===== 메인 컴포넌트 =====
 
 /**
@@ -657,8 +662,9 @@ export default function CalculatorPage() {
                 <input
                   type="number"
                   min="0"
+                  max="10000000"
                   value={editExpense || ''}
-                  onChange={(e) => setEditExpense(Math.max(0, Number(e.target.value) || 0))}
+                  onChange={(e) => setEditExpense(clampMoney(e.target.value))}
                   placeholder="0"
                   className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
@@ -872,8 +878,9 @@ export default function CalculatorPage() {
                 <input
                   type="number"
                   min="0"
+                  max="10000000"
                   value={dailyWageInput || ''}
-                  onChange={(e) => setDailyWageInput(Math.max(0, Number(e.target.value) || 0))}
+                  onChange={(e) => setDailyWageInput(clampMoney(e.target.value))}
                   placeholder="일당을 입력하세요"
                   className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
@@ -993,8 +1000,9 @@ export default function CalculatorPage() {
                       <input
                         type="number"
                         min="0"
+                        max="10000000"
                         value={newMemberWage || ''}
-                        onChange={(e) => setNewMemberWage(Math.max(0, Number(e.target.value) || 0))}
+                        onChange={(e) => setNewMemberWage(clampMoney(e.target.value))}
                         placeholder="일당"
                         className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                       />
