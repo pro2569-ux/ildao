@@ -17,6 +17,7 @@ export default function ProfilePage() {
   const { user, userProfile, loading, signOut, refreshProfile } = useAuth();
   const router = useRouter();
   const [imgError, setImgError] = useState(false);
+  const [togglingPublic, setTogglingPublic] = useState(false);
 
   // 비로그인 시 로그인 페이지로 리다이렉트
   useEffect(() => {
@@ -33,7 +34,8 @@ export default function ProfilePage() {
 
   /** 프로필 공개 토글 */
   const handleTogglePublic = async () => {
-    if (!user || !userProfile) return;
+    if (!user || !userProfile || togglingPublic) return;
+    setTogglingPublic(true);
     try {
       const newValue = !userProfile.isPublic;
       await toggleProfilePublic(user.uid, newValue);
@@ -41,6 +43,8 @@ export default function ProfilePage() {
     } catch (error) {
       console.error('프로필 공개 설정 실패:', error);
       alert('공개 설정 변경에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setTogglingPublic(false);
     }
   };
 
@@ -159,7 +163,11 @@ export default function ProfilePage() {
             </div>
             <button
               onClick={handleTogglePublic}
-              className={`relative w-12 h-7 rounded-full transition-colors ${
+              disabled={togglingPublic}
+              role="switch"
+              aria-checked={!!userProfile.isPublic}
+              aria-label="프로필 공개"
+              className={`relative w-12 h-7 rounded-full transition-colors disabled:opacity-60 ${
                 userProfile.isPublic ? 'bg-primary-500' : 'bg-gray-300'
               }`}
             >
