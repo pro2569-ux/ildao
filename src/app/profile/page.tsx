@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,6 +16,7 @@ import { PageLoader } from '@/components/ui/Spinner';
 export default function ProfilePage() {
   const { user, userProfile, loading, signOut, refreshProfile } = useAuth();
   const router = useRouter();
+  const [imgError, setImgError] = useState(false);
 
   // 비로그인 시 로그인 페이지로 리다이렉트
   useEffect(() => {
@@ -51,6 +52,9 @@ export default function ProfilePage() {
 
   if (!user) return null;
 
+  // 편집 화면에서 저장한 profileImage(임의 URL) 우선, 없으면 소셜 로그인 photoURL (#UI-02)
+  const profileImageSrc = userProfile?.profileImage || user.photoURL;
+
   return (
     <div className="px-4 pt-6 pb-24">
       <h1 className="text-xl font-bold mb-6">내 정보</h1>
@@ -60,14 +64,16 @@ export default function ProfilePage() {
         <div className="flex items-center gap-4">
           {/* 프로필 이미지 */}
           <div className="relative w-16 h-16 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
-            {user.photoURL ? (
+            {profileImageSrc && !imgError ? (
               <Image
-                src={user.photoURL}
+                src={profileImageSrc}
                 alt="프로필"
                 fill
                 sizes="64px"
+                unoptimized
                 className="object-cover"
                 referrerPolicy="no-referrer"
+                onError={() => setImgError(true)}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-primary-100">

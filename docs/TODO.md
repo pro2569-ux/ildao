@@ -28,7 +28,7 @@
 
 ### A. 실제 동작 버그 (먼저)
 - [x] [자동가능] **UI-01** 경력 0년 미표시 — `workers/page.tsx:163` `experience && `→`experience != null &&`(신입 0년 표시, VALID-03 동일 해소). verify 통과
-- [ ] [자동가능] **UI-02** 프로필 보기 `profileImage` 미반영 — `profile/page.tsx` `profileImage||photoURL` 폴백(`unoptimized`)
+- [x] [자동가능] **UI-02** 프로필 보기 `profileImage` 미반영 — `profile/page.tsx` `profileImage||photoURL` 폴백 + `unoptimized` + onError 플레이스홀더 폴백(편집 #48 패턴). verify 통과
 - [ ] [자동가능] **DATA-02** 즐겨찾기 공고 로드 `.catch` 부재 — `favorites/page.tsx:96` `getJob().catch(()=>null)`
 - [ ] [자동가능] **REACT-01** EmployerHome stale 가드 부재 — `EmployerHome.tsx:20-50` `cancelled` 플래그+cleanup(HOME-01 동일)
 - [ ] [자동가능] **AUTH-01** 가입 시 `next` 복귀 경로 분실 — `register/page.tsx` `useSearchParams`(Suspense 경계)
