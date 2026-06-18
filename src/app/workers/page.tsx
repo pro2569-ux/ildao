@@ -160,7 +160,7 @@ export default function WorkersPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="font-semibold text-sm">{worker.name}</h3>
-                    {worker.experience && (
+                    {worker.experience != null && (
                       <span className="text-xs text-gray-500">경력 {worker.experience}년</span>
                     )}
                   </div>

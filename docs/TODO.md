@@ -27,7 +27,7 @@
 > 한 반복=한 ID. 상세·근거는 `docs/audit-report.md`. `⚠️배포필요`는 코드 수정 후 룰/인덱스 배포(사용자) 전까지 실효 안 됨.
 
 ### A. 실제 동작 버그 (먼저)
-- [ ] [자동가능] **UI-01** 경력 0년 미표시 — `workers/page.tsx:163` `experience != null`로 변경(VALID-03 동일)
+- [x] [자동가능] **UI-01** 경력 0년 미표시 — `workers/page.tsx:163` `experience && `→`experience != null &&`(신입 0년 표시, VALID-03 동일 해소). verify 통과
 - [ ] [자동가능] **UI-02** 프로필 보기 `profileImage` 미반영 — `profile/page.tsx` `profileImage||photoURL` 폴백(`unoptimized`)
 - [ ] [자동가능] **DATA-02** 즐겨찾기 공고 로드 `.catch` 부재 — `favorites/page.tsx:96` `getJob().catch(()=>null)`
 - [ ] [자동가능] **REACT-01** EmployerHome stale 가드 부재 — `EmployerHome.tsx:20-50` `cancelled` 플래그+cleanup(HOME-01 동일)
