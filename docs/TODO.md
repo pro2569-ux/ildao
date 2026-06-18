@@ -45,7 +45,7 @@
 - [x] [자동가능] **CONST-01** 상태 뱃지 인라인 삼항(completed 오표시) — EmployerHome·my-jobs·jobs/[id] 3곳을 공용 jobStatusBadge로 통일(completed→'완료', in_progress→파랑 정상화). verify 통과
 
 ### C. 접근성 / 성능 / 게스트 전환
-- [ ] [자동가능] **CFG-03** 핀치 줌 차단(WCAG 1.4.4) — `layout.tsx:16` `userScalable`/`maximumScale` 제거
+- [x] [자동가능] **CFG-03** 핀치 줌 차단(WCAG 1.4.4) — `layout.tsx` `maximumScale:1`·`userScalable:false` 제거(확대 허용). verify 통과
 - [ ] [자동가능] **PROF-01** 공개 토글 aria + 중복클릭 — `profile/page.tsx:153`
 - [ ] [자동가능] **CALC-04** BottomSheet a11y(Esc/포커스/aria/스크롤잠금) — `BottomSheet.tsx:11`
 - [ ] [자동가능] **GUEST-01** 죽은 직종 버튼 — `GuestHome.tsx:45` Link화 또는 hover 제거

@@ -16,8 +16,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // 사용자 확대 허용 (WCAG 1.4.4 Resize Text) — 저시력·고령 현장 사용자 가독성 보장 (CFG-03)
   themeColor: '#2563eb',
 };
 
