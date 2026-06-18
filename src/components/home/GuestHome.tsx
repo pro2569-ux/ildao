@@ -43,13 +43,14 @@ export default function GuestHome() {
             { name: '타일', icon: '🧱' },
             { name: '더보기', icon: '➕' },
           ].map((category) => (
-            <button
+            <Link
               key={category.name}
+              href="/login"
               className="flex flex-col items-center gap-1 p-3 bg-white rounded-xl border border-gray-100 hover:border-primary-300 transition-colors"
             >
               <span className="text-2xl">{category.icon}</span>
               <span className="text-xs font-medium text-gray-700">{category.name}</span>
-            </button>
+            </Link>
           ))}
         </div>
       </section>
