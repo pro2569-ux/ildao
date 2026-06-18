@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   saveDailyWork,
+  deleteDailyWork,
   getMonthlyWorks,
   getWorksByDateRange,
   saveTeamMembers,
@@ -248,7 +249,6 @@ export default function CalculatorPage() {
 
   const handleSavePersonal = async () => {
     if (!user || !selectedDate) return;
-    setIsSaving(true);
     // 기존 기록에 저장된 그 날의 일당은 보존 — 현재 입력값으로 덮어쓰면 과거 데이터가 손상됨
     // (0은 일당 미입력 상태로 보고 현재 입력값으로 채움)
     const savedWage = monthlyRecords.get(selectedDate)?.dailyWage || dailyWageInput;
@@ -256,7 +256,23 @@ export default function CalculatorPage() {
     const normManDay = editDayOff ? 0 : editManDay;
     const normOvertime = editDayOff ? false : editOvertime;
     const normExtension = editDayOff ? false : editExtension;
+    // 의미 있는 입력이 하나도 없으면 빈 기록을 만들지 않는다 (CALC-05)
+    const hasContent = normManDay > 0 || editDayOff || editExpense > 0 || editMemo.trim() !== '';
+    setIsSaving(true);
     try {
+      if (!hasContent) {
+        // 기존 기록이 있으면 삭제(그 날을 비움), 없으면 아무 것도 쓰지 않음
+        if (monthlyRecords.has(selectedDate)) {
+          await deleteDailyWork(user.uid, selectedDate);
+          setMonthlyRecords((prev) => {
+            const next = new Map(prev);
+            next.delete(selectedDate);
+            return next;
+          });
+        }
+        closeDayModal();
+        return;
+      }
       await saveDailyWork(user.uid, selectedDate, {
         manDay: normManDay,
         overtime: normOvertime,

@@ -272,6 +272,11 @@ export async function saveDailyWork(userId: string, date: string, data: Partial<
   );
 }
 
+/** 일별 공수 삭제 (빈 기록 정리용 — 존재하지 않는 문서 삭제는 멱등) */
+export async function deleteDailyWork(userId: string, date: string): Promise<void> {
+  await deleteDoc(doc(db, 'dailyWorks', `${userId}_${date}`));
+}
+
 /** 특정 월의 공수 기록 조회 */
 export async function getMonthlyWorks(userId: string, year: number, month: number): Promise<DailyWorkRecord[]> {
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
