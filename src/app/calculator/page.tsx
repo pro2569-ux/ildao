@@ -15,6 +15,7 @@ import {
 import { formatWon } from '@/lib/format';
 import { Spinner, PageLoader } from '@/components/ui/Spinner';
 import { WEATHER_OPTIONS } from '@/lib/constants';
+import { calculateMonthlySummary, calculatePeriodSummary, calculateTeamSummary } from '@/lib/calculator';
 import { DailyWorkRecord, WeatherType, TeamMember, TeamDailyWork } from '@/types';
 
 // ===== 상수 정의 =====
@@ -288,26 +289,10 @@ export default function CalculatorPage() {
 
   // ===== 개인용: 월간 요약 계산 =====
 
-  const personalSummary = useMemo(() => {
-    let totalManDay = 0;
-    let overtimeCount = 0;
-    let dayOffCount = 0;
-    let extensionCount = 0;
-    let totalExpense = 0;
-
-    let estimatedWage = 0;
-    monthlyRecords.forEach((record) => {
-      totalManDay += record.manDay;
-      if (record.overtime) overtimeCount++;
-      if (record.dayOff) dayOffCount++;
-      if (record.extension) extensionCount++;
-      totalExpense += record.expense || 0;
-      // 기록별로 저장된 그 날의 일당 사용 (미입력 기록만 현재 입력값으로 보정)
-      estimatedWage += record.manDay * (record.dailyWage || dailyWageInput);
-    });
-
-    return { totalManDay, overtimeCount, dayOffCount, extensionCount, totalExpense, estimatedWage };
-  }, [monthlyRecords, dailyWageInput]);
+  const personalSummary = useMemo(
+    () => calculateMonthlySummary(Array.from(monthlyRecords.values()), dailyWageInput),
+    [monthlyRecords, dailyWageInput]
+  );
 
   // ===== 기간 합계 조회 =====
 
@@ -325,19 +310,10 @@ export default function CalculatorPage() {
     }
   };
 
-  const periodSummary = useMemo(() => {
-    if (!periodRecords) return null;
-    let totalManDay = 0;
-    let totalExpense = 0;
-    let estimatedWage = 0;
-    periodRecords.forEach((r) => {
-      totalManDay += r.manDay;
-      totalExpense += r.expense || 0;
-      // 기록별로 저장된 그 날의 일당 사용 (미입력 기록만 현재 입력값으로 보정)
-      estimatedWage += r.manDay * (r.dailyWage || dailyWageInput);
-    });
-    return { totalManDay, totalExpense, estimatedWage };
-  }, [periodRecords, dailyWageInput]);
+  const periodSummary = useMemo(
+    () => (periodRecords ? calculatePeriodSummary(periodRecords, dailyWageInput) : null),
+    [periodRecords, dailyWageInput]
+  );
 
   // ===== 팀장용: 팀원 추가 =====
 
@@ -478,20 +454,10 @@ export default function CalculatorPage() {
 
   // ===== 팀 전체 요약 =====
 
-  const teamSummary = useMemo(() => {
-    let totalManDay = 0;
-    let totalWage = 0;
-
-    teamMembers.forEach((member) => {
-      const memberTotal = teamWorks
-        .filter((w) => w.memberId === member.id)
-        .reduce((sum, w) => sum + w.manDay, 0);
-      totalManDay += memberTotal;
-      totalWage += memberTotal * (member.dailyWage || 0);
-    });
-
-    return { totalManDay, totalWage };
-  }, [teamMembers, teamWorks]);
+  const teamSummary = useMemo(
+    () => calculateTeamSummary(teamMembers, teamWorks),
+    [teamMembers, teamWorks]
+  );
 
   // ===== 로딩 & 비로그인 처리 =====
 
