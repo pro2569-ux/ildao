@@ -47,6 +47,11 @@ export default function CreateJobPage() {
     if (!category) { setError('직종을 선택해주세요.'); return; }
     if (!dailyWage) { setError('일당을 입력해주세요.'); return; }
     if (!region) { setError('지역을 선택해주세요.'); return; }
+    // 근무 시간 형식 검증 (VALID-02): 빈 값·비정형 입력 차단 (HH:MM~HH:MM, 공백/한 자리 시 허용)
+    if (!/^\d{1,2}:\d{2}\s*~\s*\d{1,2}:\d{2}$/.test(workHours.trim())) {
+      setError('근무 시간을 "08:00~17:00" 형식으로 입력해주세요.');
+      return;
+    }
     if (!startDate) { setError('근무 시작일을 선택해주세요.'); return; }
     // 날짜 검증: 과거 시작일·시작일보다 빠른 종료일 차단
     if (startDate < localToday()) { setError('근무 시작일은 오늘 이후여야 합니다.'); return; }
@@ -85,7 +90,7 @@ export default function CreateJobPage() {
         region,
         startDate: new Date(startDate),
         endDate: endDate ? new Date(endDate) : undefined,
-        workHours,
+        workHours: workHours.trim(),
         location: {
           address: fullAddress,
           lat: lat,
