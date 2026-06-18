@@ -13,10 +13,10 @@
 - [x] #163 직종 상수(JOB_CATEGORIES) 단일화 + workers '기타' 누락 버그
 - [x] #193 날짜/통화 포맷 유틸(`lib/format.ts`) 추출
 - [x] #199 공용 Spinner/PageLoader·EmptyState·ErrorState 추출 (BottomSheet/Button은 잔여)
+- [x] #316 일부 — `package.json`에 `typecheck` 스크립트(`tsc --noEmit`) 추가 (typecheck/build 검증 통과)
 - (결함 캠페인 부산물: PWA PNG 아이콘, 지원·즐겨찾기 결정적 docId, 룰/인덱스 작성, useRequireAuth, toDate/대시보드 캡 등)
 
 ## ⏳ 자동 진행 가능 (우선순위 순)
-- [ ] [자동가능] `package.json`에 `"typecheck": "tsc --noEmit"` 스크립트 추가 (#316 일부) — 루프 검증 명령과 정합
 - [ ] [자동가능] #157 `saveDailyWork`/`saveTeamDailyWork` upsert를 `setDoc(.., { merge: true })` 1회로 (getDoc+분기 2왕복·read-then-write race 제거)
 - [ ] [자동가능] #163 잔여 — `WEATHER_OPTIONS`(calculator)·`jobStatusBadge`(favorites) 매핑을 `lib/constants.ts`로 이동
 - [ ] [자동가능] #282 프로필/구직자 이미지 `next/image` 전환 + `next.config.js` `images.remotePatterns`(lh3.googleusercontent.com)
