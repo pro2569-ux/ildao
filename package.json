@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "verify": "tsc --noEmit && next build",
     "icons:generate": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
