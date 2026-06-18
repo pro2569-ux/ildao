@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { updateUserProfile } from '@/lib/firestore';
 import { REGIONS, JOB_CATEGORIES } from '@/lib/constants';
@@ -191,12 +192,15 @@ export default function ProfileEditPage() {
       <div className="card mb-5">
         <div className="flex flex-col items-center gap-3">
           {/* 현재 프로필 이미지 또는 플레이스홀더 */}
-          <div className="w-20 h-20 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
+          <div className="relative w-20 h-20 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
             {profileImage && !imgError ? (
-              <img
+              <Image
                 src={profileImage}
                 alt="프로필"
-                className="w-full h-full object-cover"
+                fill
+                sizes="80px"
+                unoptimized
+                className="object-cover"
                 referrerPolicy="no-referrer"
                 onError={() => setImgError(true)}
               />

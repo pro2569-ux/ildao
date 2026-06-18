@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { toggleProfilePublic } from '@/lib/firestore';
 import { PageLoader } from '@/components/ui/Spinner';
@@ -58,12 +59,14 @@ export default function ProfilePage() {
       <div className="card mb-4">
         <div className="flex items-center gap-4">
           {/* 프로필 이미지 */}
-          <div className="w-16 h-16 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
+          <div className="relative w-16 h-16 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
             {user.photoURL ? (
-              <img
+              <Image
                 src={user.photoURL}
                 alt="프로필"
-                className="w-full h-full object-cover"
+                fill
+                sizes="64px"
+                className="object-cover"
                 referrerPolicy="no-referrer"
               />
             ) : (

@@ -8,6 +8,12 @@ const withPWA = require('next-pwa')({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  images: {
+    // Firebase/Google 프로필 사진 최적화 허용 (사용자 임의 URL은 컴포넌트에서 unoptimized 처리)
+    remotePatterns: [
+      { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
+    ],
+  },
 };
 
 module.exports = withPWA(nextConfig);

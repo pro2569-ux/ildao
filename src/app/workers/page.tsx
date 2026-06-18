@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { getPublicWorkers, getFavorites, addFavorite, removeFavorite } from '@/lib/firestore';
 import { JOB_CATEGORIES } from '@/lib/constants';
@@ -134,12 +135,15 @@ export default function WorkersPage() {
             <div key={worker.uid} className="card">
               <div className="flex items-start gap-3">
                 {/* 프로필 이미지 */}
-                <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
+                <div className="relative w-12 h-12 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
                   {worker.profileImage ? (
-                    <img
+                    <Image
                       src={worker.profileImage}
                       alt={worker.name}
-                      className="w-full h-full object-cover"
+                      fill
+                      sizes="48px"
+                      unoptimized
+                      className="object-cover"
                       referrerPolicy="no-referrer"
                     />
                   ) : (
