@@ -49,7 +49,7 @@
 - [x] [자동가능] **PROF-01** 공개 토글 aria + 중복클릭 — `profile/page.tsx` role="switch"/aria-checked/aria-label + togglingPublic으로 await 중 disabled. verify 통과
 - [x] [자동가능] **CALC-04** BottomSheet a11y — `BottomSheet.tsx` 'use client'+Escape 닫기·role="dialog"/aria-modal·배경 스크롤 잠금·초기 포커스(마운트 기준, onClose ref로 재구독 방지). verify 통과
 - [x] [자동가능] **GUEST-01** 죽은 직종 버튼 — `GuestHome.tsx` 8개 직종 button을 /login Link로 전환(게스트 CTA 일관). verify 통과
-- [ ] [자동가능] **GUEST-02** '최신 구인' 하드코딩 더미 — `GuestHome.tsx:57` `getJobs` 실데이터 또는 '예시' 라벨
+- [x] [자동가능] **GUEST-02** '최신 구인' 하드코딩 더미 — `GuestHome.tsx` getJobs({status:'open',limitCount:3}) 실데이터 로딩(로딩/빈 상태), 카드는 공개 상세(/jobs/[id]) 링크. verify 통과
 - [ ] [자동가능] **JOBS-01** 비로그인 지원 CTA 미표시 — `jobs/[id]/page.tsx:314`
 - [ ] [자동가능] **UI-04** 프로필에 선호 지역 행 누락 — `profile/page.tsx`
 - [ ] [자동가능] **EMP-03** 내 지원내역 N+1 — `my-applications/page.tsx:35` `documentId() in` 청크

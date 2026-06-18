@@ -1,9 +1,27 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { getJobs } from '@/lib/firestore';
+import { formatDate, formatWon } from '@/lib/format';
+import { JobPost } from '@/types';
+import { Spinner } from '@/components/ui/Spinner';
 
 /** 비로그인 사용자 홈 화면 */
 export default function GuestHome() {
+  const [recentJobs, setRecentJobs] = useState<JobPost[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // 비로그인도 jobs read 허용 — 실제 최신 모집중 공고 3건 노출 (GUEST-02)
+    let cancelled = false;
+    getJobs({ status: 'open', limitCount: 3 })
+      .then((jobs) => { if (!cancelled) setRecentJobs(jobs); })
+      .catch((e) => { if (!cancelled) console.error('최신 구인 로드 실패:', e); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
   return (
     <div className="px-4 pt-6 pb-24">
       {/* 상단 헤더 */}
@@ -55,32 +73,38 @@ export default function GuestHome() {
         </div>
       </section>
 
-      {/* 최신 구인 목록 (샘플) */}
+      {/* 최신 구인 목록 (실제 모집중 공고) */}
       <section>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold">최신 구인</h2>
         </div>
-        <div className="space-y-3">
-          {[
-            { title: '철근공 3명 급구', location: '서울 강남구', wage: '25만', date: '내일~' },
-            { title: '목공 팀 구합니다', location: '경기 수원시', wage: '28만', date: '5/7~' },
-            { title: '설비 배관공 모집', location: '인천 남동구', wage: '27만', date: '5/8~' },
-          ].map((job, i) => (
-            <div key={i} className="card flex items-center gap-3">
-              <div className="w-12 h-12 bg-primary-50 rounded-lg flex items-center justify-center">
-                <span className="text-primary-500 font-bold text-sm">D-1</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-sm truncate">{job.title}</h3>
-                <p className="text-xs text-gray-500 mt-0.5">{job.location} · {job.date}</p>
-              </div>
-              <div className="text-right">
-                <span className="text-accent-500 font-bold text-sm">{job.wage}</span>
-                <p className="text-xs text-gray-400">일당</p>
-              </div>
-            </div>
-          ))}
-        </div>
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <Spinner size="sm" />
+          </div>
+        ) : recentJobs.length === 0 ? (
+          <div className="card text-center py-8">
+            <p className="text-gray-400 text-sm">등록된 구인공고가 없습니다</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {recentJobs.map((job) => (
+              <Link key={job.id} href={`/jobs/${job.id}`} className="card flex items-center gap-3">
+                <div className="w-12 h-12 bg-primary-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <span className="text-primary-500 font-bold text-xs">{job.category}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-sm truncate">{job.title}</h3>
+                  <p className="text-xs text-gray-500 mt-0.5 truncate">{job.location.address} · {formatDate(job.startDate)}~</p>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <span className="text-accent-500 font-bold text-sm">{formatWon(job.dailyWage)}</span>
+                  <p className="text-xs text-gray-400">일당</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
         <div className="mt-4 text-center">
           <Link href="/login" className="text-sm text-primary-500 font-medium">
             로그인하고 더 많은 공고 보기 →
