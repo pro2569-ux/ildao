@@ -18,36 +18,42 @@ export default function EmployerHome() {
   const [recentApps, setRecentApps] = useState<Application[]>([]);
 
   useEffect(() => {
-    if (userProfile?.uid) {
-      loadMyJobs();
-      loadStats();
-    }
+    if (!userProfile?.uid) return;
+    // 계정 전환·언마운트 시 늦게 끝난 응답이 최신 화면을 덮어쓰지 않도록 cancelled 가드 (WorkerHome과 동일 패턴)
+    let cancelled = false;
+    const uid = userProfile.uid;
+
+    const loadMyJobs = async () => {
+      try {
+        const jobs = await getJobs({ employerId: uid, limitCount: 5 });
+        if (!cancelled) setMyJobs(jobs);
+      } catch (error) {
+        if (!cancelled) console.error('구인글 로드 실패:', error);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    const loadStats = async () => {
+      try {
+        const stats = await getEmployerStats(uid);
+        if (!cancelled) {
+          setActiveJobCount(stats.activeJobs);
+          setTotalApplicants(stats.totalApplicants);
+          setRecentApps(stats.recentApplications);
+        }
+      } catch (error) {
+        if (!cancelled) console.error('통계 로드 실패:', error);
+      }
+    };
+
+    loadMyJobs();
+    loadStats();
+
+    return () => {
+      cancelled = true;
+    };
   }, [userProfile?.uid]);
-
-  const loadStats = async () => {
-    try {
-      const stats = await getEmployerStats(userProfile!.uid);
-      setActiveJobCount(stats.activeJobs);
-      setTotalApplicants(stats.totalApplicants);
-      setRecentApps(stats.recentApplications);
-    } catch (error) {
-      console.error('통계 로드 실패:', error);
-    }
-  };
-
-  const loadMyJobs = async () => {
-    try {
-      const jobs = await getJobs({
-        employerId: userProfile!.uid,
-        limitCount: 5,
-      });
-      setMyJobs(jobs);
-    } catch (error) {
-      console.error('구인글 로드 실패:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="px-4 pt-6 pb-24">
