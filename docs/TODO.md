@@ -47,7 +47,7 @@
 ### C. 접근성 / 성능 / 게스트 전환
 - [x] [자동가능] **CFG-03** 핀치 줌 차단(WCAG 1.4.4) — `layout.tsx` `maximumScale:1`·`userScalable:false` 제거(확대 허용). verify 통과
 - [x] [자동가능] **PROF-01** 공개 토글 aria + 중복클릭 — `profile/page.tsx` role="switch"/aria-checked/aria-label + togglingPublic으로 await 중 disabled. verify 통과
-- [ ] [자동가능] **CALC-04** BottomSheet a11y(Esc/포커스/aria/스크롤잠금) — `BottomSheet.tsx:11`
+- [x] [자동가능] **CALC-04** BottomSheet a11y — `BottomSheet.tsx` 'use client'+Escape 닫기·role="dialog"/aria-modal·배경 스크롤 잠금·초기 포커스(마운트 기준, onClose ref로 재구독 방지). verify 통과
 - [ ] [자동가능] **GUEST-01** 죽은 직종 버튼 — `GuestHome.tsx:45` Link화 또는 hover 제거
 - [ ] [자동가능] **GUEST-02** '최신 구인' 하드코딩 더미 — `GuestHome.tsx:57` `getJobs` 실데이터 또는 '예시' 라벨
 - [ ] [자동가능] **JOBS-01** 비로그인 지원 CTA 미표시 — `jobs/[id]/page.tsx:314`
