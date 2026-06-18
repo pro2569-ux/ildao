@@ -95,7 +95,8 @@ export default function FavoritesPage() {
         // 관심 공고 상세 로드
         const jobsWithDetails = await Promise.all(
           jobFavs.map(async (fav) => {
-            const job = await getJob(fav.targetId);
+            // 삭제(null)·일시적 로드 실패 모두 목록 전체를 깨뜨리지 않도록 null 처리 (프로필 로드와 동일 패턴)
+            const job = await getJob(fav.targetId).catch(() => null);
             return { ...fav, job };
           })
         );
