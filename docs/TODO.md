@@ -36,7 +36,7 @@
 
 ### B. 조용한 실패 / 검증 / 일관성
 - [x] [자동가능] **EMP-01** 마감/삭제 실패 알림 없음+dead state — `my-jobs/page.tsx` 실패 시 alert(applicants와 일관)+미사용 actionJobId를 처리 중 버튼 disabled에 활용. verify 통과
-- [ ] [자동가능] **PROF-02** 공개 토글 실패 피드백 — `profile/page.tsx:34`
+- [x] [자동가능] **PROF-02** 공개 토글 실패 피드백 — `profile/page.tsx` catch에 alert 추가(중복클릭 방지·aria는 PROF-01). verify 통과
 - [ ] [자동가능] **UI-03** 통계 로드 실패 시 0 표시 — `EmployerHome.tsx:27` 로딩/에러 상태 분리
 - [ ] [자동가능] **VALID-01** 계산기 입력 상한 없음 — `calculator/page.tsx:661,876,997` 상한+정수화(jobs/create와 통일)
 - [ ] [자동가능] **VALID-02** workHours 형식 미검증 — `jobs/create/page.tsx:259`

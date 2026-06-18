@@ -40,6 +40,7 @@ export default function ProfilePage() {
       await refreshProfile();
     } catch (error) {
       console.error('프로필 공개 설정 실패:', error);
+      alert('공개 설정 변경에 실패했습니다. 다시 시도해주세요.');
     }
   };
 
