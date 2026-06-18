@@ -19,11 +19,12 @@
 - [x] #282 프로필 이미지 next/image 전환 + remotePatterns(lh3) — profile은 최적화, 임의 URL(workers/edit)은 unoptimized로 회귀 방지
 - [x] #246 일부 — `src/app/robots.ts` 추가 (개인화/개인정보 경로 Disallow, 공개 경로 Allow). sitemap은 도메인 필요로 잔여
 - [x] #328 일부 — 공수/급여 계산 순수함수를 `lib/calculator.ts`로 추출 + calculator 리팩터 (테스트 가능 구조, verify 통과)
+- [x] #199 잔여(일부) — 공용 `BottomSheet` 추출 (calculator 모달 2개 래퍼 공용화, slide-up 키프레임 globals.css로 이동)
 - (결함 캠페인 부산물: PWA PNG 아이콘, 지원·즐겨찾기 결정적 docId, 룰/인덱스 작성, useRequireAuth, toDate/대시보드 캡 등)
 
 ## ⏳ 자동 진행 가능 (우선순위 순)
-- [ ] [자동가능] #199 잔여 — BottomSheet(calculator 모달 2개 동일 구조)·Button/Input 컴포넌트 추출
-- [ ] [자동가능] 피드 `startAfter` 커서 페이지네이션 (현재 `limitCount`만 적용)
+- [ ] [자동가능] 피드 `startAfter` 커서 페이지네이션 (현재 `limitCount`만 적용 / 커서 동작은 build 검증 불가 — 주의)
+- [ ] [자동가능?] #199 잔여2 — Button/Input 컴포넌트 추출 (`btn-primary`·`card` 등 전 페이지 대규모 스윕 + 시각 검증 불가 → 사용자 오버사이트 권장)
 
 ## 🔒 사용자 필요 (루프가 건드리지 않음)
 - [ ] [사용자필요] Firestore 룰/인덱스 배포 — `npx firebase-tools login` → `npx firebase-tools deploy --only firestore` (프로젝트 ildao-fcbf6)

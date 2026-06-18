@@ -16,6 +16,7 @@ import { formatWon } from '@/lib/format';
 import { Spinner, PageLoader } from '@/components/ui/Spinner';
 import { WEATHER_OPTIONS } from '@/lib/constants';
 import { calculateMonthlySummary, calculatePeriodSummary, calculateTeamSummary } from '@/lib/calculator';
+import { BottomSheet } from '@/components/ui/BottomSheet';
 import { DailyWorkRecord, WeatherType, TeamMember, TeamDailyWork } from '@/types';
 
 // ===== 상수 정의 =====
@@ -631,20 +632,7 @@ export default function CalculatorPage() {
     const dayLabel = DAY_LABELS[dateObj.getDay()];
 
     return (
-      <>
-        {/* 배경 오버레이 */}
-        <div
-          className="fixed inset-0 bg-black/40 z-40"
-          onClick={closeDayModal}
-        />
-
-        {/* 바텀시트 모달 */}
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl max-h-[85vh] overflow-y-auto animate-slide-up">
-          <div className="max-w-lg mx-auto px-4 pt-4 pb-8">
-            {/* 핸들 바 */}
-            <div className="flex justify-center mb-3">
-              <div className="w-10 h-1 bg-gray-300 rounded-full" />
-            </div>
+      <BottomSheet onClose={closeDayModal}>
 
             {/* 날짜 헤더 */}
             <h3 className="text-lg font-bold text-center mb-2">
@@ -718,9 +706,7 @@ export default function CalculatorPage() {
             >
               {isSaving ? '저장 중...' : '저장'}
             </button>
-          </div>
-        </div>
-      </>
+      </BottomSheet>
     );
   };
 
@@ -734,16 +720,7 @@ export default function CalculatorPage() {
     const dayLabel = DAY_LABELS[dateObj.getDay()];
 
     return (
-      <>
-        <div
-          className="fixed inset-0 bg-black/40 z-40"
-          onClick={closeTeamDayModal}
-        />
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl max-h-[85vh] overflow-y-auto animate-slide-up">
-          <div className="max-w-lg mx-auto px-4 pt-4 pb-8">
-            <div className="flex justify-center mb-3">
-              <div className="w-10 h-1 bg-gray-300 rounded-full" />
-            </div>
+      <BottomSheet onClose={closeTeamDayModal}>
 
             <h3 className="text-lg font-bold text-center mb-1">
               {selectedMember.name}
@@ -781,9 +758,7 @@ export default function CalculatorPage() {
             >
               {isSaving ? '저장 중...' : '저장'}
             </button>
-          </div>
-        </div>
-      </>
+      </BottomSheet>
     );
   };
 
@@ -1155,20 +1130,6 @@ export default function CalculatorPage() {
       {renderPersonalDayModal()}
       {renderTeamDayModal()}
 
-      {/* 바텀시트 슬라이드업 애니메이션 */}
-      <style jsx global>{`
-        @keyframes slide-up {
-          from {
-            transform: translateY(100%);
-          }
-          to {
-            transform: translateY(0);
-          }
-        }
-        .animate-slide-up {
-          animation: slide-up 0.3s ease-out;
-        }
-      `}</style>
     </div>
   );
 }
