@@ -53,22 +53,30 @@ export default function MyJobsPage() {
   /** 구인글 마감 */
   const handleClose = async (jobId: string) => {
     if (!confirm('이 구인글을 마감하시겠습니까?')) return;
+    setActionJobId(jobId);
     try {
       await updateJob(jobId, { status: 'closed' });
       await loadJobs();
     } catch (error) {
       console.error('마감 실패:', error);
+      alert('마감에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setActionJobId(null);
     }
   };
 
   /** 구인글 삭제 */
   const handleDelete = async (jobId: string) => {
     if (!confirm('이 구인글을 삭제하시겠습니까? 받은 지원 내역도 함께 삭제되며, 이 작업은 취소할 수 없습니다.')) return;
+    setActionJobId(jobId);
     try {
       await deleteJob(jobId, user!.uid);
       await loadJobs();
     } catch (error) {
       console.error('삭제 실패:', error);
+      alert('삭제에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setActionJobId(null);
     }
   };
 
@@ -144,14 +152,16 @@ export default function MyJobsPage() {
                   {job.status === 'open' && (
                     <button
                       onClick={() => handleClose(job.id)}
-                      className="text-xs text-gray-500 hover:text-gray-700 py-1 px-2"
+                      disabled={actionJobId === job.id}
+                      className="text-xs text-gray-500 hover:text-gray-700 py-1 px-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       마감
                     </button>
                   )}
                   <button
                     onClick={() => handleDelete(job.id)}
-                    className="text-xs text-red-500 hover:text-red-700 py-1 px-2"
+                    disabled={actionJobId === job.id}
+                    className="text-xs text-red-500 hover:text-red-700 py-1 px-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     삭제
                   </button>

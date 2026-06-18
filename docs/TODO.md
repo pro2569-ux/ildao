@@ -35,7 +35,7 @@
 - [x] [자동가능] **DATA-01** region 오염(지도 선택) — `constants.ts`에 `normalizeRegion`('서울특별시'→'서울', 충청/전라/경상 별칭) 추가, `jobs/create` onSelect가 이를 거쳐 표준 약칭만 저장(실패 시 select값 유지). verify 통과. ⚠️기존 오염 문서 백필은 사용자
 
 ### B. 조용한 실패 / 검증 / 일관성
-- [ ] [자동가능] **EMP-01** 마감/삭제 실패 알림 없음+dead state — `my-jobs/page.tsx:54` `alert`+dead state 정리
+- [x] [자동가능] **EMP-01** 마감/삭제 실패 알림 없음+dead state — `my-jobs/page.tsx` 실패 시 alert(applicants와 일관)+미사용 actionJobId를 처리 중 버튼 disabled에 활용. verify 통과
 - [ ] [자동가능] **PROF-02** 공개 토글 실패 피드백 — `profile/page.tsx:34`
 - [ ] [자동가능] **UI-03** 통계 로드 실패 시 0 표시 — `EmployerHome.tsx:27` 로딩/에러 상태 분리
 - [ ] [자동가능] **VALID-01** 계산기 입력 상한 없음 — `calculator/page.tsx:661,876,997` 상한+정수화(jobs/create와 통일)
