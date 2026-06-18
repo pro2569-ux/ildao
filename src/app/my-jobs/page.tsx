@@ -7,6 +7,7 @@ import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { getJobs, updateJob, deleteJob, getApplicationCount } from '@/lib/firestore';
 import { formatDateFull } from '@/lib/format';
 import { JobPost } from '@/types';
+import { jobStatusBadge } from '@/lib/constants';
 import { PageLoader } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 
@@ -119,14 +120,8 @@ export default function MyJobsPage() {
             <div key={job.id} className="card">
               <Link href={`/jobs/${job.id}`}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                    job.status === 'open'
-                      ? 'bg-green-100 text-green-600'
-                      : job.status === 'closed'
-                      ? 'bg-gray-100 text-gray-500'
-                      : 'bg-blue-100 text-primary-600'
-                  }`}>
-                    {job.status === 'open' ? '모집중' : job.status === 'closed' ? '마감' : '진행중'}
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${jobStatusBadge(job.status).className}`}>
+                    {jobStatusBadge(job.status).text}
                   </span>
                   <span className="text-xs text-gray-400">{formatDateFull(job.createdAt)}</span>
                 </div>

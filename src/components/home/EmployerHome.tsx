@@ -7,6 +7,7 @@ import { getJobs, getEmployerStats } from '@/lib/firestore';
 import { formatDate } from '@/lib/format';
 import { Spinner } from '@/components/ui/Spinner';
 import { JobPost, Application } from '@/types';
+import { jobStatusBadge } from '@/lib/constants';
 
 /** 구인자 전용 홈 화면 */
 export default function EmployerHome() {
@@ -160,11 +161,8 @@ export default function EmployerHome() {
             {myJobs.map((job) => (
               <Link key={job.id} href={`/jobs/${job.id}`} className="card block">
                 <div className="flex items-center justify-between mb-1">
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${job.status === 'open'
-                      ? 'bg-green-100 text-green-600'
-                      : 'bg-gray-100 text-gray-500'
-                  }`}>
-                    {job.status === 'open' ? '모집중' : job.status === 'closed' ? '마감' : '진행중'}
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${jobStatusBadge(job.status).className}`}>
+                    {jobStatusBadge(job.status).text}
                   </span>
                   <span className="text-xs text-gray-400">{formatDate(job.createdAt)}</span>
                 </div>

@@ -42,7 +42,7 @@
 - [x] [자동가능] **VALID-02** workHours 형식 미검증 — `jobs/create/page.tsx` handleSubmit에 HH:MM~HH:MM 정규식 검증(빈값 차단)+저장 시 trim. verify 통과
 - [x] [자동가능] **CALC-03** 기간 합계 시작>종료 미검증 — `calculator/page.tsx` handlePeriodQuery에 periodStart>periodEnd 차단 + 시작일 max/종료일 min 연동. verify 통과
 - [x] [자동가능] **CALC-05** 빈 기록 저장 — `calculator` 의미있는 입력(공수>0||휴무||경비>0||메모) 검증, 빈 입력 시 기존 기록 삭제(deleteDailyWork 헬퍼 추가)·없으면 미저장. verify 통과
-- [ ] [자동가능] **CONST-01** 상태 뱃지 인라인 삼항(completed 오표시) — 3곳 공용 `jobStatusBadge`로 통일
+- [x] [자동가능] **CONST-01** 상태 뱃지 인라인 삼항(completed 오표시) — EmployerHome·my-jobs·jobs/[id] 3곳을 공용 jobStatusBadge로 통일(completed→'완료', in_progress→파랑 정상화). verify 통과
 
 ### C. 접근성 / 성능 / 게스트 전환
 - [ ] [자동가능] **CFG-03** 핀치 줌 차단(WCAG 1.4.4) — `layout.tsx:16` `userScalable`/`maximumScale` 제거

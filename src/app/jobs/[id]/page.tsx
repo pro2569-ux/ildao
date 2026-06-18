@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getJob, hasApplied, applyToJob, getUserProfile, isFavorited, addFavorite, removeFavorite } from '@/lib/firestore';
 import { formatDateFull } from '@/lib/format';
 import { JobPost, UserProfile } from '@/types';
+import { jobStatusBadge } from '@/lib/constants';
 import KakaoMap from '@/components/ui/KakaoMap';
 import { PageLoader } from '@/components/ui/Spinner';
 
@@ -218,12 +219,8 @@ export default function JobDetailPage() {
 
       <div className="px-4 pt-4">
         {/* 상태 뱃지 */}
-        <span className={`inline-block text-xs font-medium px-2.5 py-1 rounded-full mb-3 ${
-          job.status === 'open'
-            ? 'bg-green-100 text-green-600'
-            : 'bg-gray-100 text-gray-500'
-        }`}>
-          {job.status === 'open' ? '모집중' : job.status === 'closed' ? '마감' : '진행중'}
+        <span className={`inline-block text-xs font-medium px-2.5 py-1 rounded-full mb-3 ${jobStatusBadge(job.status).className}`}>
+          {jobStatusBadge(job.status).text}
         </span>
 
         {/* 제목 */}
