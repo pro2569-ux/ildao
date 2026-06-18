@@ -260,29 +260,16 @@ export async function getApplicationCount(jobId: string, employerId: string): Pr
 
 // ===== Phase 2: 공수 기록 관련 =====
 
-/** 일별 공수 저장 (upsert) */
+/** 일별 공수 저장 (upsert — 단일 setDoc merge로 getDoc 분기·read-then-write race 제거, #157) */
 export async function saveDailyWork(userId: string, date: string, data: Partial<DailyWorkRecord>): Promise<void> {
   const docId = `${userId}_${date}`;
-  const docRef = doc(db, 'dailyWorks', docId);
-  const existing = await getDoc(docRef);
-
-  if (existing.exists()) {
-    await updateDoc(docRef, { ...data, updatedAt: serverTimestamp() });
-  } else {
-    await setDoc(docRef, {
-      userId,
-      date,
-      manDay: 0,
-      overtime: false,
-      dayOff: false,
-      extension: false,
-      expense: 0,
-      memo: '',
-      weather: 'none',
-      ...data,
-      createdAt: serverTimestamp(),
-    });
-  }
+  // 호출부는 항상 전체 필드를 전달하므로 merge로 신규/수정을 한 번에 처리한다.
+  // (defaults를 넣지 않아 부분 업데이트 시 기존 값이 default로 덮어써지지 않음)
+  await setDoc(
+    doc(db, 'dailyWorks', docId),
+    { userId, date, ...data, updatedAt: serverTimestamp() },
+    { merge: true }
+  );
 }
 
 /** 특정 월의 공수 기록 조회 */
@@ -339,29 +326,15 @@ export async function getTeamMembers(userId: string): Promise<TeamMember[]> {
   return docSnap.data().members || [];
 }
 
-/** 팀원 공수 저장 */
+/** 팀원 공수 저장 (upsert — 단일 setDoc merge, #157) */
 export async function saveTeamDailyWork(teamLeaderId: string, memberId: string, date: string, data: Partial<TeamDailyWork>): Promise<void> {
   const docId = `${teamLeaderId}_${memberId}_${date}`;
-  const docRef = doc(db, 'teamDailyWorks', docId);
-  const existing = await getDoc(docRef);
-
-  if (existing.exists()) {
-    await updateDoc(docRef, { ...data, updatedAt: serverTimestamp() });
-  } else {
-    await setDoc(docRef, {
-      teamLeaderId,
-      memberId,
-      memberName: data.memberName || '',
-      date,
-      manDay: 0,
-      overtime: false,
-      dayOff: false,
-      extension: false,
-      memo: '',
-      ...data,
-      createdAt: serverTimestamp(),
-    });
-  }
+  // 호출부가 memberName 등 전체 필드를 전달하므로 merge 1회로 처리
+  await setDoc(
+    doc(db, 'teamDailyWorks', docId),
+    { teamLeaderId, memberId, date, ...data, updatedAt: serverTimestamp() },
+    { merge: true }
+  );
 }
 
 /** 팀원 삭제 시 해당 팀원의 공수 기록 일괄 삭제 (고아 레코드 방지) */
