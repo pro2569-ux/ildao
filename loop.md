@@ -15,13 +15,13 @@
 고른 항목 하나만 구현한다. 곁다리 리팩터·다른 항목 손대기 금지.
 
 ## 3. 검증 (반드시 실제로 실행)
-**검증은 단일 명령 `npm run verify` 하나로 실행한다.** (= `tsc --noEmit && next build`)
-- **명령을 파이프(`|`)나 `&&`로 엮지 마라.** Claude Code 권한 규칙은 체인/파이프 명령에 매칭되지 않아 무인 실행 중 프롬프트에서 멈춘다. 또 `cmd | tail`의 `$?`는 `tail`의 종료코드(거의 항상 0)를 잡아 **실패를 못 거른다.** 검증 체인은 `verify` 스크립트 안에 두고 한 줄로 부른다.
-- `npm run verify`의 **종료코드가 0이면 통과, 0이 아니면 실패**다. 출력을 직접 읽는다.
-- 테스트: Vitest(#328) 도입 후 `verify`를 `tsc --noEmit && vitest run && next build`로 확장한다. 그 전까지 별도 테스트 단계는 없다.
-- 린트: `next lint`는 미설정(대화형 프롬프트)이라 실행하지 않는다.
+**검증은 정확히 `npm run verify` 한 줄만 실행한다.** (= `node scripts/verify.mjs` → typecheck + build)
+- 뒤에 **파이프(`|`)·리다이렉트·`echo`·세미콜론(`;`)·`&&`·`$(...)`/`${...}`(셸 확장)을 절대 덧붙이지 마라.** 그 순간 권한 규칙(`Bash(npm run *)`) 매칭이 깨지거나 "Contains expansion"으로 막혀 무인 실행이 프롬프트에서 멈춘다. 출력 정리·종료코드 판정은 `scripts/verify.mjs`가 처리한다(PIPESTATUS·tail 등은 전부 스크립트 안에).
+- 스크립트 마지막 줄 `VERIFY typecheck=… build=…`와 **종료코드(0=통과, 그 외=실패)**를 직접 읽는다.
+- 테스트: Vitest(#328) 도입 후 `scripts/verify.mjs`에 `vitest run` 단계를 추가한다. 그 전까지 별도 테스트 단계 없음.
+- 린트: `next lint`는 미설정(대화형)이라 실행하지 않는다.
 
-> ⚠️ 검증 명령을 **실제로 실행하지 않고 통과를 추정하지 마라.**
+> ⚠️ 검증을 실제로 실행하지 않고 통과를 추정하지 마라. 그리고 `npm run verify` 외에 **아무것도 덧붙이지 마라.**
 
 ## 4. 판정
 - **실패** → 출력을 읽고 원인을 수정한 뒤 **다시 검증**. 통과할 때까지 같은 항목을 반복한다.
@@ -41,4 +41,4 @@
 ## 배경 (이 프로젝트의 현실)
 - 결함 51건은 전건 완료(`docs/defect-report.md`). 남은 건 개선 42건(`docs/improvement-report.md`) — 백로그는 `docs/TODO.md`.
 - 원격/PR/CI 없음. Firestore 룰/인덱스는 **미배포** 상태(코드 수정과 별개로 사용자가 `firebase login` 후 배포해야 실효) — 루프는 배포하지 않는다.
-- 검증은 단일 `npm run verify`(= `tsc --noEmit && next build`)로 묶여 있다. 권한 규칙 `Bash(npm run *)`에 매칭돼 무인 실행 시 프롬프트가 뜨지 않는다. Vitest(#328) 도입 시 `verify`에 `vitest run`을 추가한다.
+- 검증은 단일 `npm run verify`(= `node scripts/verify.mjs`: typecheck+build, 출력 정리·종료코드 내장)로 묶여 있다. 명령줄에 파이프/확장이 없어야 `Bash(npm run *)`에 매칭돼 프롬프트가 안 뜬다. Vitest(#328) 도입 시 verify 스크립트에 `vitest run` 단계를 추가한다.
