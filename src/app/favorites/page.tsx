@@ -10,6 +10,7 @@ import { Favorite, UserProfile, JobPost } from '@/types';
 import { Spinner, PageLoader } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
+import { jobStatusBadge } from '@/lib/constants';
 
 /** 즐겨찾기한 근로자 (구인자용) */
 interface FavoriteWorker extends Favorite {
@@ -126,22 +127,6 @@ export default function FavoritesPage() {
       alert('즐겨찾기 해제에 실패했습니다.');
     } finally {
       setRemovingId(null);
-    }
-  };
-
-  /** 공고 상태 뼉지 */
-  const jobStatusBadge = (status: string) => {
-    switch (status) {
-      case 'open':
-        return { text: '모집중', className: 'bg-green-100 text-green-600' };
-      case 'closed':
-        return { text: '마감', className: 'bg-gray-100 text-gray-500' };
-      case 'in_progress':
-        return { text: '진행중', className: 'bg-blue-100 text-blue-600' };
-      case 'completed':
-        return { text: '완료', className: 'bg-gray-100 text-gray-400' };
-      default:
-        return { text: status, className: 'bg-gray-100 text-gray-500' };
     }
   };
 

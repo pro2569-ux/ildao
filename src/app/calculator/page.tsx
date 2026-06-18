@@ -14,6 +14,7 @@ import {
 } from '@/lib/firestore';
 import { formatWon } from '@/lib/format';
 import { Spinner, PageLoader } from '@/components/ui/Spinner';
+import { WEATHER_OPTIONS } from '@/lib/constants';
 import { DailyWorkRecord, WeatherType, TeamMember, TeamDailyWork } from '@/types';
 
 // ===== 상수 정의 =====
@@ -23,16 +24,6 @@ type TabMode = 'personal' | 'team';
 
 /** 요일 한글 라벨 */
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
-
-/** 날씨 아이콘 매핑 */
-const WEATHER_OPTIONS: { type: WeatherType; icon: string; label: string }[] = [
-  { type: 'sunny', icon: '☀️', label: '맑음' },
-  { type: 'cloudy', icon: '☁️', label: '흐림' },
-  { type: 'rainy', icon: '🌧️', label: '비' },
-  { type: 'snowy', icon: '❄️', label: '눈' },
-  { type: 'windy', icon: '💨', label: '바람' },
-  { type: 'none', icon: '➖', label: '없음' },
-];
 
 // ===== 유틸리티 함수 =====
 

@@ -15,10 +15,10 @@
 - [x] #199 공용 Spinner/PageLoader·EmptyState·ErrorState 추출 (BottomSheet/Button은 잔여)
 - [x] #316 일부 — `package.json`에 `typecheck` 스크립트(`tsc --noEmit`) 추가 (typecheck/build 검증 통과)
 - [x] #157 `saveDailyWork`/`saveTeamDailyWork`를 단일 `setDoc(merge)`로 (getDoc 분기·race 제거, createdAt→updatedAt 일원화)
+- [x] #163 잔여 — `WEATHER_OPTIONS`·`jobStatusBadge`를 `lib/constants.ts`로 이동 (calculator/favorites 공용화)
 - (결함 캠페인 부산물: PWA PNG 아이콘, 지원·즐겨찾기 결정적 docId, 룰/인덱스 작성, useRequireAuth, toDate/대시보드 캡 등)
 
 ## ⏳ 자동 진행 가능 (우선순위 순)
-- [ ] [자동가능] #163 잔여 — `WEATHER_OPTIONS`(calculator)·`jobStatusBadge`(favorites) 매핑을 `lib/constants.ts`로 이동
 - [ ] [자동가능] #282 프로필/구직자 이미지 `next/image` 전환 + `next.config.js` `images.remotePatterns`(lh3.googleusercontent.com)
 - [ ] [자동가능] #246 `src/app/robots.ts` 추가 (개인화 경로 Disallow / `/jobs` Allow). sitemap은 배포 도메인 필요 → 부분
 - [ ] [자동가능] #328 Vitest 도입 + 공수/급여 계산 순수함수(`lib/calculator.ts`) 추출·단위 테스트 → 이후 `npx vitest run`이 검증에 포함됨
