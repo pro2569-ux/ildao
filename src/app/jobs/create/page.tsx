@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { createJob } from '@/lib/firestore';
-import { REGIONS, JOB_CATEGORIES } from '@/lib/constants';
+import { REGIONS, JOB_CATEGORIES, normalizeRegion } from '@/lib/constants';
 import { JobCategory } from '@/types';
 import KakaoMap from '@/components/ui/KakaoMap';
 import { PageLoader } from '@/components/ui/Spinner';
@@ -213,7 +213,9 @@ export default function CreateJobPage() {
               address={`${region} ${addressDetail}`.trim()}
               onSelect={(data) => {
                 const parts = data.address.split(' ');
-                if (parts.length > 0) setRegion(parts[0]);
+                // 지오코딩 시/도 명칭을 REGIONS 표준 약칭으로 정규화 — 실패 시 기존 select 값 유지 (DATA-01)
+                const normalized = normalizeRegion(parts[0]);
+                if (normalized) setRegion(normalized);
                 if (parts.length > 1) setAddressDetail(parts.slice(1).join(' '));
                 setLat(data.lat);
                 setLng(data.lng);

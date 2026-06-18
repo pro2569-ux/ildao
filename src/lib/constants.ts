@@ -14,6 +14,28 @@ export const REGIONS = [
   '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주',
 ] as const;
 
+// 약칭이 전체명의 접두사와 다른 시/도 (충청/전라/경상 → 북/남)
+const REGION_ALIASES: Record<string, (typeof REGIONS)[number]> = {
+  충청북도: '충북', 충청남도: '충남',
+  전라북도: '전북', 전라남도: '전남',
+  경상북도: '경북', 경상남도: '경남',
+};
+
+/**
+ * 카카오 지오코딩이 반환하는 시/도 전체 명칭('서울특별시'·'충청북도'·'강원특별자치도' 등)을
+ * REGIONS의 표준 약칭('서울'·'충북'·'강원')으로 정규화한다. 매칭 실패 시 null.
+ * 지역 필터가 where('region','==',...) 정확일치라 저장값이 REGIONS와 동일해야 누락되지 않음 (DATA-01).
+ */
+export function normalizeRegion(raw: string): (typeof REGIONS)[number] | null {
+  const token = (raw || '').trim();
+  if (!token) return null;
+  const exact = REGIONS.find((r) => r === token);
+  if (exact) return exact;
+  if (REGION_ALIASES[token]) return REGION_ALIASES[token];
+  // 접두사 일치: '서울특별시'→'서울', '경기도'→'경기', '전북특별자치도'→'전북'
+  return REGIONS.find((r) => token.startsWith(r)) ?? null;
+}
+
 /** 날씨 옵션 (공수 계산기) */
 export const WEATHER_OPTIONS: { type: WeatherType; icon: string; label: string }[] = [
   { type: 'sunny', icon: '☀️', label: '맑음' },
