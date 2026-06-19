@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
-import { getApplicationsByWorker, getJob, getUserProfile } from '@/lib/firestore';
+import { getApplicationsByWorker, getJobsByIds, getUserProfile } from '@/lib/firestore';
 import { formatDate } from '@/lib/format';
 import { Application, JobPost, UserProfile } from '@/types';
 import { PageLoader } from '@/components/ui/Spinner';
@@ -30,11 +30,12 @@ export default function MyApplicationsPage() {
     setLoading(true);
     try {
       const apps = await getApplicationsByWorker(user!.uid);
-      // 각 지원에 대한 구인글 정보 로드 + 수락된 건은 업체 프로필(연락처)도 로드
+      // 공고는 documentId in 청크로 일괄 조회(N+1 제거), 수락된 건만 업체 프로필(연락처)도 로드
       // (업체 프로필은 보안 규칙상 공개 읽기 허용)
+      const jobMap = await getJobsByIds(apps.map((a) => a.jobId));
       const appsWithJobs = await Promise.all(
         apps.map(async (app) => {
-          const job = await getJob(app.jobId);
+          const job = jobMap.get(app.jobId);
           const employer =
             app.status === 'accepted'
               ? (await getUserProfile(app.employerId).catch(() => null)) || undefined

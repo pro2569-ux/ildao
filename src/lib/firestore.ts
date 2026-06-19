@@ -2,7 +2,7 @@
 
 import {
   collection, doc, addDoc, getDoc, getDocs, updateDoc, deleteDoc, setDoc,
-  query, where, orderBy, limit, serverTimestamp, Timestamp,
+  query, where, orderBy, limit, serverTimestamp, Timestamp, documentId,
   getCountFromServer, writeBatch,
   DocumentData, DocumentReference, QueryConstraint
 } from 'firebase/firestore';
@@ -95,6 +95,31 @@ export async function getJob(jobId: string): Promise<JobPost | null> {
     createdAt: toDate(data.createdAt),
     updatedAt: toDate(data.updatedAt),
   } as JobPost;
+}
+
+/** 여러 구인글을 documentId in 청크(최대 30)로 일괄 조회 — 지원 내역 등의 N+1 방지 (EMP-03) */
+export async function getJobsByIds(jobIds: string[]): Promise<Map<string, JobPost>> {
+  const uniqueIds = Array.from(new Set(jobIds)).filter(Boolean);
+  const result = new Map<string, JobPost>();
+  const CHUNK = 30; // Firestore 'in' 필터 최대값
+  for (let i = 0; i < uniqueIds.length; i += CHUNK) {
+    const chunk = uniqueIds.slice(i, i + CHUNK);
+    const snapshot = await getDocs(
+      query(collection(db, 'jobs'), where(documentId(), 'in', chunk))
+    );
+    snapshot.docs.forEach((d) => {
+      const data = d.data();
+      result.set(d.id, {
+        ...data,
+        id: d.id,
+        startDate: toDate(data.startDate),
+        endDate: data.endDate ? toDate(data.endDate) : undefined,
+        createdAt: toDate(data.createdAt),
+        updatedAt: toDate(data.updatedAt),
+      } as JobPost);
+    });
+  }
+  return result;
 }
 
 /** 구인글 수정 */

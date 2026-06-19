@@ -52,7 +52,7 @@
 - [x] [자동가능] **GUEST-02** '최신 구인' 하드코딩 더미 — `GuestHome.tsx` getJobs({status:'open',limitCount:3}) 실데이터 로딩(로딩/빈 상태), 카드는 공개 상세(/jobs/[id]) 링크. verify 통과
 - [x] [자동가능] **JOBS-01** 비로그인 지원 CTA 미표시 — `jobs/[id]/page.tsx` open 공고 하단을 역할별 분기(구직자=지원, 비로그인=로그인하고 지원하기 next 복귀, 그 외=안내). verify 통과
 - [x] [자동가능] **UI-04** 프로필에 선호 지역 행 누락 — `profile/page.tsx` 구직자 블록에 선호 지역 InfoRow 추가(저장값 표시). verify 통과
-- [ ] [자동가능] **EMP-03** 내 지원내역 N+1 — `my-applications/page.tsx:35` `documentId() in` 청크
+- [x] [자동가능] **EMP-03** 내 지원내역 N+1 — firestore.ts에 getJobsByIds(documentId in 30청크) 추가, my-applications가 일괄 조회로 전환. verify 통과
 
 ### D. 예방적 / 위생 (info)
 - [ ] [자동가능] **NAV-01** 인증 로딩 중 게스트 메뉴 깜빡임 — `BottomNav.tsx:84` `loading` 가드
