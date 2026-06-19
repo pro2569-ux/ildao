@@ -14,6 +14,21 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+// Firebase 환경변수 누락 시 명확한 진단 메시지 — 미설정 키로 인한 모호한 런타임 에러('auth/invalid-api-key' 등)의
+// 원인 추적을 돕는다 (개발 환경에서만, 카카오맵 fallback과 동일한 DX 보강 — CFG-02)
+if (process.env.NODE_ENV !== 'production') {
+  const missing = Object.entries({
+    NEXT_PUBLIC_FIREBASE_API_KEY: firebaseConfig.apiKey,
+    NEXT_PUBLIC_FIREBASE_PROJECT_ID: firebaseConfig.projectId,
+    NEXT_PUBLIC_FIREBASE_APP_ID: firebaseConfig.appId,
+  })
+    .filter(([, value]) => !value)
+    .map(([key]) => key);
+  if (missing.length > 0) {
+    console.error(`[Firebase] 환경변수가 설정되지 않았습니다: ${missing.join(', ')}. .env.local을 확인하세요.`);
+  }
+}
+
 // Firebase 앱 초기화 (이미 초기화된 경우 기존 앱 사용)
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
