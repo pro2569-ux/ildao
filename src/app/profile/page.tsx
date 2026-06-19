@@ -122,6 +122,10 @@ export default function ProfilePage() {
                 value={userProfile.skills?.join(', ') || '-'}
               />
               <InfoRow
+                label="선호 지역"
+                value={userProfile.region || '-'}
+              />
+              <InfoRow
                 label="경력"
                 value={userProfile.experience ? `${userProfile.experience}년` : '-'}
               />
