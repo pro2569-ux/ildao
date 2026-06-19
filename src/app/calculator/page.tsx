@@ -916,7 +916,11 @@ export default function CalculatorPage() {
                 {formatWon(personalSummary.estimatedWage)}
               </div>
               <div className="text-xs text-gray-400 mt-1">
-                {personalSummary.totalManDay.toFixed(1)}공 &times; {formatWon(dailyWageInput)}
+                {Math.abs(personalSummary.totalManDay * dailyWageInput - personalSummary.estimatedWage) < 1 ? (
+                  <>{personalSummary.totalManDay.toFixed(1)}공 &times; {formatWon(dailyWageInput)}</>
+                ) : (
+                  '기록별 일당으로 합산'
+                )}
               </div>
             </div>
 
