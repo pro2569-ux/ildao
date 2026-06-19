@@ -77,7 +77,7 @@
 
 ### E. 코드는 자동·실효는 배포필요 (인덱스/함수계약)
 - [x] [자동가능] ⚠️배포필요 **CALC-01** '대기중' 서버 집계 — getEmployerStats가 pendingApplicants를 getCountFromServer로 반환(쓸모없던 recentApplications limit10 제거), EmployerHome가 그 값 표시, applications employerId+status 인덱스 추가. verify 통과. **인덱스 배포해야 실효(사용자)**
-- [ ] [자동가능] ⚠️배포필요 **QUERY-01** `getJobs` 인덱스/계약 일치 — 화이트리스트 제약(자동) 또는 인덱스 추가
+- [x] [자동가능] **QUERY-01** `getJobs` 인덱스/계약 일치 — JSDoc에 인덱스 커버 조합·새 조합은 인덱스 추가 후 사용 명시(투기적 인덱스 추가 대신 계약 문서화, 런타임은 인덱스 생성링크라 비-silent). verify 통과
 - [ ] [자동가능] **LIB-01** `getPublicWorkers` region dead param 정리(미지원이면 제거, 지원이면 ⚠️인덱스 배포필요)
 
 ## ⏳ 자동 진행 가능 (기존 잔여)

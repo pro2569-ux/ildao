@@ -52,7 +52,15 @@ export async function createJob(data: Omit<JobPost, 'id' | 'createdAt' | 'update
   return docRef.id;
 }
 
-/** 구인글 목록 조회 (필터 지원) */
+/** 구인글 목록 조회 (필터 지원)
+ *
+ * ⚠️ 인덱스 계약 (QUERY-01): (filter 조합 + sortBy)마다 firestore.indexes.json에 복합 인덱스가 있어야 한다.
+ *   현재 인덱스가 커버하는 조합(= 실제 호출부):
+ *     - status (+category/region 조합) + createdAt|dailyWage
+ *     - employerId + createdAt,  employerId + status + createdAt
+ *   status 없이 region/category 단독, employerId + dailyWage 등 새 조합을 호출하려면 먼저
+ *   firestore.indexes.json에 해당 인덱스를 추가·배포할 것(없으면 런타임에 'requires an index' 에러).
+ */
 export async function getJobs(filters?: {
   category?: JobCategory;
   region?: string;
