@@ -131,7 +131,7 @@ export async function getJobsByIds(jobIds: string[]): Promise<Map<string, JobPos
   return result;
 }
 
-/** 구인글 수정 */
+/** 구인글 수정 (소유권·불변 필드(employerId/createdAt) 검증은 firestore.rules가 담당 — LIB-03) */
 export async function updateJob(jobId: string, data: Partial<JobPost>): Promise<void> {
   const { id, createdAt, ...updateData } = data as any;
   await updateDoc(doc(db, 'jobs', jobId), {
@@ -276,7 +276,7 @@ export async function getUserProfile(uid: string): Promise<UserProfile | null> {
   } as UserProfile;
 }
 
-/** 프로필 공개 설정 토글 */
+/** 프로필 공개 설정 토글 (본인 문서만 수정 가능 — 검증은 firestore.rules가 담당 — LIB-03) */
 export async function toggleProfilePublic(uid: string, isPublic: boolean): Promise<void> {
   await updateDoc(doc(db, 'users', uid), {
     isPublic,
@@ -454,7 +454,7 @@ export async function getFavorites(userId: string, targetType?: 'user' | 'job'):
 
 // ===== Phase 2: 프로필 편집 =====
 
-/** 프로필 업데이트 */
+/** 프로필 업데이트 (본인 문서·불변 필드(uid/role/email) 검증은 firestore.rules가 담당 — LIB-03) */
 export async function updateUserProfile(uid: string, data: Record<string, any>): Promise<void> {
   await updateDoc(doc(db, 'users', uid), {
     ...data,
