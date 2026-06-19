@@ -37,7 +37,10 @@ export default function JobDetailPage() {
   const jobId = params.id as string;
 
   useEffect(() => {
-    loadJobDetail();
+    // jobId가 바뀌면 늦게 끝난 이전 응답이 최신 화면을 덮어쓰지 않도록 취소 가드 (REACT-04)
+    let cancelled = false;
+    loadJobDetail(() => cancelled);
+    return () => { cancelled = true; };
   }, [jobId]);
 
   // 지원 여부 확인은 별도 effect로 분리 — 새로고침 직후에는 userProfile이
@@ -61,11 +64,12 @@ export default function JobDetailPage() {
       .catch((error) => console.error('업체 즐겨찾기 상태 확인 실패:', error));
   }, [job, user, userProfile]);
 
-  const loadJobDetail = async () => {
+  const loadJobDetail = async (isCancelled: () => boolean = () => false) => {
     setLoading(true);
     setLoadError(false);
     try {
       const jobData = await getJob(jobId);
+      if (isCancelled()) return;
       if (!jobData) {
         router.replace('/jobs');
         return;
@@ -74,12 +78,14 @@ export default function JobDetailPage() {
 
       // 구인자 정보 로드 (실패해도 공고 자체는 표시되도록 분리 처리)
       const employerData = await getUserProfile(jobData.employerId).catch(() => null);
+      if (isCancelled()) return;
       setEmployer(employerData);
     } catch (error) {
+      if (isCancelled()) return;
       console.error('공고 로드 실패:', error);
       setLoadError(true);
     } finally {
-      setLoading(false);
+      if (!isCancelled()) setLoading(false);
     }
   };
 
