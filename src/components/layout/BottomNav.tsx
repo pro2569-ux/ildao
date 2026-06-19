@@ -85,8 +85,8 @@ export default function BottomNav() {
   const pathname = usePathname();
   const { userProfile, loading } = useAuth();
 
-  // 로그인/회원가입 페이지에서는 네비게이션 숨김
-  if (HIDDEN_PATHS.includes(pathname)) {
+  // 로그인/회원가입(및 그 하위 경로)에서는 네비게이션 숨김 — 중첩 라우트 추가 시에도 안전 (NAV-02)
+  if (HIDDEN_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
     return null;
   }
 
