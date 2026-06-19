@@ -4,6 +4,7 @@
 export function formatDate(date?: Date | null): string {
   if (!date) return '';
   const d = new Date(date);
+  if (isNaN(d.getTime())) return ''; // Invalid Date → 'NaN/NaN' 출력 방지 (FORMAT-01)
   return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
@@ -11,6 +12,7 @@ export function formatDate(date?: Date | null): string {
 export function formatDateFull(date?: Date | null): string {
   if (!date) return '';
   const d = new Date(date);
+  if (isNaN(d.getTime())) return ''; // Invalid Date → 'NaN.NaN.NaN' 출력 방지 (FORMAT-01)
   return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`;
 }
 
