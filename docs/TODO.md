@@ -67,7 +67,7 @@
 - [x] [자동가능] **JOBS-03** 지원 후 메시지 초기화 — `jobs/[id]/page.tsx` setApplied(true) 뒤 setApplyMessage(''). verify 통과
 - [x] [자동가능] **PROF-03** 저장 후 `router.push('/profile')` — `profile/edit` 저장 성공·헤더 뒤로가기 모두 router.back→push('/profile')(딥링크 안전). verify 통과
 - [x] [자동가능] **CFG-04** manifest maskable/any 분리+id/scope — `manifest.json` 512를 any/maskable 두 엔트리로 분리, id/scope "/" 추가(별도 any 아이콘 에셋은 미생성). verify 통과
-- [ ] [자동가능] **CFG-05** `.gitignore` `.vercel` 중복 제거 — 42행
+- [x] [자동가능] **CFG-05** `.gitignore` `.vercel` 중복 제거 — 42행 제거(32행 # vercel에서 이미 무시). 미커밋 트리도 정리
 - [ ] [자동가능] **CFG-01** `.vercelignore`에 `node_modules_old2` 추가
 - [ ] [자동가능] **CFG-02** firebase env 누락 가드 — `firebase.ts:8`
 - [ ] [자동가능] **SEC-06** `getPublicWorkers` isPublic 제약 '제거 금지' 주석 — `firestore.ts:205`
