@@ -441,6 +441,7 @@ export default function CalculatorPage() {
     const normExtension = teamEditDayOff ? false : teamEditExtension;
     try {
       await saveTeamDailyWork(user.uid, selectedMember.id, teamSelectedDate, {
+        // memberName은 보조 캐시 — 화면은 teams 명단의 live name을 우선 사용. 이름 편집 기능 추가 시 과거 기록 갱신 정책 필요 (CALC-07)
         memberName: selectedMember.name,
         manDay: normManDay,
         overtime: normOvertime,
@@ -675,6 +676,10 @@ export default function CalculatorPage() {
               editDayOff, setEditDayOff,
               editExtension, setEditExtension
             )}
+            {/* 잔업·연장은 기록용 — 급여는 공수×일당으로 산정되어 별도 반영되지 않음 (CALC-06) */}
+            <p className="text-[11px] text-gray-400 mb-3">
+              ※ 잔업·연장은 기록용입니다 (급여는 공수 × 일당으로 계산)
+            </p>
 
             {/* 경비 입력 */}
             <div className="mb-4">
