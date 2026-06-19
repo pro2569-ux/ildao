@@ -16,7 +16,7 @@ const FILTER_CATEGORIES: (JobCategory | '전체')[] = ['전체', ...JOB_CATEGORI
 /**
  * 구직자 목록 페이지
  * - 프로필 공개한 구직자 목록
- * - 직종/지역 필터
+ * - 직종 필터 (지역 필터는 미구현 — LIB-01)
  */
 export default function WorkersPage() {
   const router = useRouter();

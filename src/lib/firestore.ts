@@ -243,10 +243,9 @@ export async function updateApplicationStatus(applicationId: string, status: App
 
 // ===== 사용자 프로필 관련 =====
 
-/** 공개 프로필 구직자 목록 */
+/** 공개 프로필 구직자 목록 (직종 필터만 지원 — 지역 필터는 UI·인덱스 미구현이라 미지원, LIB-01) */
 export async function getPublicWorkers(filters?: {
   skills?: JobCategory;
-  region?: string;
 }): Promise<UserProfile[]> {
   const constraints: QueryConstraint[] = [
     where('role', '==', 'worker'),
