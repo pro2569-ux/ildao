@@ -64,7 +64,7 @@
 - [x] [자동가능] **REACT-03/05** favorites exhaustive-deps — effect를 loadFavorites useCallback 뒤로 이동(TDZ 회피)+deps [ready, loadFavorites]. verify 통과
 - [x] [자동가능] **REACT-02** KakaoMap effect 의존성/cleanup — onSelect ref화(stale 방지)+클릭 리스너 removeListener·마커 setMap(null) cleanup+좌표 변경 동기화 effect. verify 통과
 - [x] [자동가능] **CALC-02** 예상급여 보조라벨 명료화 — `calculator` 단일 산식이 estimatedWage와 일치할 때만 'N공×M원' 표시, 기록별 일당 혼재 시 '기록별 일당으로 합산'. verify 통과
-- [ ] [자동가능] **JOBS-03** 지원 후 메시지 초기화 — `jobs/[id]/page.tsx:111`
+- [x] [자동가능] **JOBS-03** 지원 후 메시지 초기화 — `jobs/[id]/page.tsx` setApplied(true) 뒤 setApplyMessage(''). verify 통과
 - [ ] [자동가능] **PROF-03** 저장 후 `router.push('/profile')` — `profile/edit/page.tsx:157,180`
 - [ ] [자동가능] **CFG-04** manifest maskable/any 분리+id/scope — `manifest.json`
 - [ ] [자동가능] **CFG-05** `.gitignore` `.vercel` 중복 제거 — 42행

@@ -117,6 +117,7 @@ export default function JobDetailPage() {
         message: applyMessage,
       });
       setApplied(true);
+      setApplyMessage(''); // 지원 완료 후 입력값 정리 (JOBS-03)
     } catch (error) {
       console.error('지원 실패:', error);
       alert('지원에 실패했습니다. 다시 시도해주세요.');
