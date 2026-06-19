@@ -153,9 +153,9 @@ export default function ProfileEditPage() {
       await refreshProfile();
 
       setSuccess(true);
-      // 성공 피드백 후 이전 페이지로 이동
+      // 성공 피드백 후 프로필로 이동 (딥링크 직접 진입 시에도 안전 — PROF-03)
       setTimeout(() => {
-        router.back();
+        router.push('/profile');
       }, 800);
     } catch (err) {
       console.error('프로필 수정 실패:', err);
@@ -177,7 +177,7 @@ export default function ProfileEditPage() {
       {/* 상단 헤더: 뒤로가기 + 제목 */}
       <div className="flex items-center gap-3 mb-6">
         <button
-          onClick={() => router.back()}
+          onClick={() => router.push('/profile')}
           className="p-2 -ml-2 rounded-lg hover:bg-gray-100 transition-colors"
           aria-label="뒤로가기"
         >

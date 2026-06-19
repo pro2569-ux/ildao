@@ -65,7 +65,7 @@
 - [x] [자동가능] **REACT-02** KakaoMap effect 의존성/cleanup — onSelect ref화(stale 방지)+클릭 리스너 removeListener·마커 setMap(null) cleanup+좌표 변경 동기화 effect. verify 통과
 - [x] [자동가능] **CALC-02** 예상급여 보조라벨 명료화 — `calculator` 단일 산식이 estimatedWage와 일치할 때만 'N공×M원' 표시, 기록별 일당 혼재 시 '기록별 일당으로 합산'. verify 통과
 - [x] [자동가능] **JOBS-03** 지원 후 메시지 초기화 — `jobs/[id]/page.tsx` setApplied(true) 뒤 setApplyMessage(''). verify 통과
-- [ ] [자동가능] **PROF-03** 저장 후 `router.push('/profile')` — `profile/edit/page.tsx:157,180`
+- [x] [자동가능] **PROF-03** 저장 후 `router.push('/profile')` — `profile/edit` 저장 성공·헤더 뒤로가기 모두 router.back→push('/profile')(딥링크 안전). verify 통과
 - [ ] [자동가능] **CFG-04** manifest maskable/any 분리+id/scope — `manifest.json`
 - [ ] [자동가능] **CFG-05** `.gitignore` `.vercel` 중복 제거 — 42행
 - [ ] [자동가능] **CFG-01** `.vercelignore`에 `node_modules_old2` 추가
