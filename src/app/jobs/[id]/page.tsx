@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { getJob, hasApplied, applyToJob, getUserProfile, isFavorited, addFavorite, removeFavorite } from '@/lib/firestore';
 import { formatDateFull } from '@/lib/format';
@@ -307,35 +308,53 @@ export default function JobDetailPage() {
         </p>
       </div>
 
-      {/* 하단 지원 버튼 (구직자만) */}
-      {userProfile?.role === 'worker' && job.status === 'open' && (
+      {/* 하단 지원 영역 (모집중 공고). 비로그인·구인자도 막다른 화면이 되지 않도록 분기 (JOBS-01) */}
+      {job.status === 'open' && (
         <div className="fixed bottom-16 left-0 right-0 px-4 pb-4 bg-gradient-to-t from-white via-white pt-4">
           <div className="max-w-lg mx-auto">
-            {applied ? (
+            {userProfile?.role === 'worker' ? (
+              applied ? (
+                <button
+                  disabled
+                  className="w-full py-3.5 bg-gray-100 text-gray-500 font-semibold rounded-xl"
+                >
+                  지원 완료
+                </button>
+              ) : (
+                <>
+                  <textarea
+                    value={applyMessage}
+                    onChange={(e) => setApplyMessage(e.target.value)}
+                    maxLength={200}
+                    rows={2}
+                    placeholder="간단한 자기소개나 메시지를 남겨보세요 (선택)"
+                    className="w-full mb-2 py-2 px-3 border border-gray-300 rounded-xl text-sm resize-none bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                  <button
+                    onClick={handleApply}
+                    disabled={applying}
+                    className="w-full py-3.5 btn-primary rounded-xl font-semibold disabled:opacity-50"
+                  >
+                    {applying ? '지원 중...' : '지원하기'}
+                  </button>
+                </>
+              )
+            ) : !user ? (
+              // 비로그인 — 로그인 후 이 공고로 복귀해 지원
+              <Link
+                href={`/login?next=/jobs/${job.id}`}
+                className="block w-full py-3.5 btn-primary rounded-xl font-semibold text-center"
+              >
+                로그인하고 지원하기
+              </Link>
+            ) : (
+              // 구인자 등 지원 불가 계정
               <button
                 disabled
                 className="w-full py-3.5 bg-gray-100 text-gray-500 font-semibold rounded-xl"
               >
-                지원 완료
+                구직자만 지원할 수 있습니다
               </button>
-            ) : (
-              <>
-                <textarea
-                  value={applyMessage}
-                  onChange={(e) => setApplyMessage(e.target.value)}
-                  maxLength={200}
-                  rows={2}
-                  placeholder="간단한 자기소개나 메시지를 남겨보세요 (선택)"
-                  className="w-full mb-2 py-2 px-3 border border-gray-300 rounded-xl text-sm resize-none bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-                <button
-                  onClick={handleApply}
-                  disabled={applying}
-                  className="w-full py-3.5 btn-primary rounded-xl font-semibold disabled:opacity-50"
-                >
-                  {applying ? '지원 중...' : '지원하기'}
-                </button>
-              </>
             )}
           </div>
         </div>
