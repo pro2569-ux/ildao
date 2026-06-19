@@ -245,6 +245,7 @@ export async function getPublicWorkers(filters?: {
     const data = doc.data();
     return {
       ...data,
+      uid: doc.id, // 저장된 uid 필드 누락에도 견고하게 docId로 보강 (LIB-02)
       createdAt: toDate(data.createdAt),
       updatedAt: toDate(data.updatedAt),
     } as UserProfile;
@@ -258,6 +259,7 @@ export async function getUserProfile(uid: string): Promise<UserProfile | null> {
   const data = docSnap.data();
   return {
     ...data,
+    uid: docSnap.id, // 저장된 uid 필드 누락에도 견고하게 docId로 보강 (LIB-02)
     createdAt: toDate(data.createdAt),
     updatedAt: toDate(data.updatedAt),
   } as UserProfile;
