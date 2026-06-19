@@ -242,6 +242,8 @@ export async function getPublicWorkers(filters?: {
 }): Promise<UserProfile[]> {
   const constraints: QueryConstraint[] = [
     where('role', '==', 'worker'),
+    // ⚠️ isPublic==true 제약은 절대 제거 금지 (SEC-06) — users read 규칙의 isPublic 분기가
+    //    이 list 쿼리 통과의 유일한 근거다. 제거하면 보안 규칙이 쿼리를 거부해 전체 조회가 실패한다.
     where('isPublic', '==', true),
   ];
 
