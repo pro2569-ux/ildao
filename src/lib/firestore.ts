@@ -19,6 +19,15 @@ const toDate = (ts: any): Date => {
   return isNaN(d.getTime()) ? new Date() : d;
 };
 
+// 월 범위를 [시작일, 다음 달 1일) 반열린 구간으로 반환 — 존재하지 않는 '-31' 매직값/사전식 운 의존 제거 (FIRESTORE-01)
+function monthRange(year: number, month: number): { start: string; endExclusive: string } {
+  const start = `${year}-${String(month).padStart(2, '0')}-01`;
+  const nextYear = month === 12 ? year + 1 : year;
+  const nextMonth = month === 12 ? 1 : month + 1;
+  const endExclusive = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
+  return { start, endExclusive };
+}
+
 // ===== 배치 삭제 헬퍼 (Firestore 배치당 500개 제한 대응) =====
 async function deleteInBatches(refs: DocumentReference[]): Promise<void> {
   const CHUNK = 450;
@@ -306,14 +315,13 @@ export async function deleteDailyWork(userId: string, date: string): Promise<voi
 
 /** 특정 월의 공수 기록 조회 */
 export async function getMonthlyWorks(userId: string, year: number, month: number): Promise<DailyWorkRecord[]> {
-  const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-  const endDate = `${year}-${String(month).padStart(2, '0')}-31`;
+  const { start, endExclusive } = monthRange(year, month);
 
   const q = query(
     collection(db, 'dailyWorks'),
     where('userId', '==', userId),
-    where('date', '>=', startDate),
-    where('date', '<=', endDate),
+    where('date', '>=', start),
+    where('date', '<', endExclusive),
     orderBy('date', 'asc')
   );
   const snapshot = await getDocs(q);
@@ -383,14 +391,13 @@ export async function deleteTeamMemberWorks(teamLeaderId: string, memberId: stri
 
 /** 팀원들의 월별 공수 조회 */
 export async function getTeamMonthlyWorks(teamLeaderId: string, year: number, month: number): Promise<TeamDailyWork[]> {
-  const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-  const endDate = `${year}-${String(month).padStart(2, '0')}-31`;
+  const { start, endExclusive } = monthRange(year, month);
 
   const q = query(
     collection(db, 'teamDailyWorks'),
     where('teamLeaderId', '==', teamLeaderId),
-    where('date', '>=', startDate),
-    where('date', '<=', endDate),
+    where('date', '>=', start),
+    where('date', '<', endExclusive),
     orderBy('date', 'asc')
   );
   const snapshot = await getDocs(q);

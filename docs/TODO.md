@@ -59,7 +59,7 @@
 - [x] [자동가능] **NAV-02** 숨김 경로 `startsWith` 매칭 — `BottomNav.tsx` includes→some(정확일치||접두사+'/')로 중첩 라우트 안전. verify 통과
 - [x] [자동가능] **FORMAT-01** Invalid Date 가드 — `format.ts` formatDate/formatDateFull에 isNaN(getTime) 체크로 'NaN/NaN' 방지. verify 통과
 - [x] [자동가능] **LIB-02** `uid: docSnap.id` 보강 — `firestore.ts` getUserProfile/getPublicWorkers에 uid를 docId로 명시 보강(jobs/applications와 일관). verify 통과
-- [ ] [자동가능] **FIRESTORE-01** 월별 상한 `-31` 매직값 → `< nextMonth-01` — `firestore.ts:276,353`(CALC-08 동일)
+- [x] [자동가능] **FIRESTORE-01/CALC-08** 월별 상한 `-31` 매직값 → `monthRange`로 `[start, 다음달1일)` 반열린 구간(getMonthlyWorks/getTeamMonthlyWorks). 인덱스 동일 호환. verify 통과
 - [ ] [자동가능] **REACT-02/03/04** effect 의존성/cleanup/취소 가드 — `KakaoMap`·`favorites`·`jobs/[id]`
 - [ ] [자동가능] **CALC-02** 예상급여 보조라벨 명료화 — `calculator/page.tsx:884`
 - [ ] [자동가능] **JOBS-03** 지원 후 메시지 초기화 — `jobs/[id]/page.tsx:111`
