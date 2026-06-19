@@ -55,7 +55,7 @@
 - [x] [자동가능] **EMP-03** 내 지원내역 N+1 — firestore.ts에 getJobsByIds(documentId in 30청크) 추가, my-applications가 일괄 조회로 전환. verify 통과
 
 ### D. 예방적 / 위생 (info)
-- [ ] [자동가능] **NAV-01** 인증 로딩 중 게스트 메뉴 깜빡임 — `BottomNav.tsx:84` `loading` 가드
+- [x] [자동가능] **NAV-01** 인증 로딩 중 게스트 메뉴 깜빡임 — `BottomNav.tsx` useAuth loading 구조분해, 로딩 중 동일 높이 스켈레톤(잘못된 메뉴·점프 방지). verify 통과
 - [ ] [자동가능] **NAV-02** 숨김 경로 `startsWith` 매칭 — `BottomNav.tsx:8,89`
 - [ ] [자동가능] **FORMAT-01** Invalid Date 가드 — `format.ts:4`
 - [ ] [자동가능] **LIB-02** `uid: docSnap.id` 보강 — `firestore.ts:219`

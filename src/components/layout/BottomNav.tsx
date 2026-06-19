@@ -83,11 +83,29 @@ const defaultNav: NavItem[] = [
  */
 export default function BottomNav() {
   const pathname = usePathname();
-  const { userProfile } = useAuth();
+  const { userProfile, loading } = useAuth();
 
   // 로그인/회원가입 페이지에서는 네비게이션 숨김
   if (HIDDEN_PATHS.includes(pathname)) {
     return null;
+  }
+
+  // 인증 로딩 중에는 잘못된(기본) 메뉴를 먼저 그렸다 바꾸는 깜빡임을 피하고자
+  // 동일 높이의 스켈레톤만 표시한다 (영역 생성/소멸 점프 없이 — NAV-01)
+  if (loading) {
+    return (
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
+        <div className="max-w-lg mx-auto flex items-center justify-around py-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex flex-col items-center gap-0.5 py-1 px-3">
+              <div className="w-6 h-6 rounded-full bg-gray-100" />
+              <div className="mt-0.5 w-8 h-2 rounded bg-gray-100" />
+            </div>
+          ))}
+        </div>
+        <div className="h-safe-area-bottom" />
+      </nav>
+    );
   }
 
   // 역할에 따른 네비게이션 선택
