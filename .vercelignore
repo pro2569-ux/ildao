@@ -1,5 +1,7 @@
 node_modules
 node_modules_broken
+node_modules_old2
+node_modules_*
 .next
 .git
 .env*.local

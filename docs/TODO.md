@@ -68,7 +68,7 @@
 - [x] [자동가능] **PROF-03** 저장 후 `router.push('/profile')` — `profile/edit` 저장 성공·헤더 뒤로가기 모두 router.back→push('/profile')(딥링크 안전). verify 통과
 - [x] [자동가능] **CFG-04** manifest maskable/any 분리+id/scope — `manifest.json` 512를 any/maskable 두 엔트리로 분리, id/scope "/" 추가(별도 any 아이콘 에셋은 미생성). verify 통과
 - [x] [자동가능] **CFG-05** `.gitignore` `.vercel` 중복 제거 — 42행 제거(32행 # vercel에서 이미 무시). 미커밋 트리도 정리
-- [ ] [자동가능] **CFG-01** `.vercelignore`에 `node_modules_old2` 추가
+- [x] [자동가능] **CFG-01** `.vercelignore`에 `node_modules_old2` + `node_modules_*` 글롭 추가(CLI 배포 파일수 한도 보호). ⚠️근본적으론 백업 폴더 삭제 권장(사용자)
 - [ ] [자동가능] **CFG-02** firebase env 누락 가드 — `firebase.ts:8`
 - [ ] [자동가능] **SEC-06** `getPublicWorkers` isPublic 제약 '제거 금지' 주석 — `firestore.ts:205`
 - [ ] [자동가능] **LIB-03** update 헬퍼 '검증은 규칙 담당' 주석 — `firestore.ts:101,242,417`
