@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getJobs } from '@/lib/firestore';
+import { getJobsPage, type JobCursor } from '@/lib/firestore';
 import { REGIONS, JOB_CATEGORIES } from '@/lib/constants';
 import { formatDate } from '@/lib/format';
 import { Spinner } from '@/components/ui/Spinner';
@@ -15,6 +15,9 @@ const CATEGORIES: (JobCategory | '전체')[] = ['전체', ...JOB_CATEGORIES];
 /** 정렬 옵션 */
 type SortOption = 'latest' | 'highWage';
 
+/** 한 페이지 로드 개수 (커서 페이지네이션) */
+const PAGE_SIZE = 20;
+
 /**
  * 구인 공고 피드 페이지
  * - 전체 구인 공고 리스트
@@ -24,26 +27,32 @@ type SortOption = 'latest' | 'highWage';
 export default function JobsPage() {
   const [jobs, setJobs] = useState<JobPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [lastDoc, setLastDoc] = useState<JobCursor | null>(null);
+  const [hasMore, setHasMore] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<JobCategory | '전체'>('전체');
   const [selectedRegion, setSelectedRegion] = useState<string>('전체');
   const [sortBy, setSortBy] = useState<SortOption>('latest');
 
+  // 현재 필터/정렬을 getJobsPage 인자로 변환 (#40 — 전체 fetch 방지, 커서 페이지네이션)
+  const buildFilters = () => ({
+    status: 'open' as const,
+    category: selectedCategory === '전체' ? undefined : selectedCategory,
+    region: selectedRegion === '전체' ? undefined : selectedRegion,
+    sortBy: (sortBy === 'highWage' ? 'dailyWage' : 'createdAt') as 'createdAt' | 'dailyWage',
+    sortDir: 'desc' as const,
+  });
+
+  // 필터/정렬 변경 시 첫 페이지를 새로 로드 (빠른 전환 시 stale 응답은 cancelled로 무시)
   useEffect(() => {
-    // 필터/정렬을 빠르게 전환하면 이전 요청 응답이 최신 결과를 덮어쓸 수 있으므로
-    // cleanup으로 stale 응답을 무시한다
     let cancelled = false;
     setLoading(true);
-    getJobs({
-      status: 'open',
-      category: selectedCategory === '전체' ? undefined : selectedCategory,
-      region: selectedRegion === '전체' ? undefined : selectedRegion,
-      sortBy: sortBy === 'highWage' ? 'dailyWage' : 'createdAt',
-      sortDir: 'desc',
-      // 첫 화면 로드량·읽기 비용을 제한 (#40 — 전체 fetch 방지). 추후 커서 페이지네이션 여지
-      limitCount: 50,
-    })
-      .then((data) => {
-        if (!cancelled) setJobs(data);
+    getJobsPage(buildFilters(), PAGE_SIZE)
+      .then((res) => {
+        if (cancelled) return;
+        setJobs(res.jobs);
+        setLastDoc(res.lastDoc);
+        setHasMore(res.hasMore);
       })
       .catch((error) => {
         if (!cancelled) console.error('구인 공고 로드 실패:', error);
@@ -54,7 +63,25 @@ export default function JobsPage() {
     return () => {
       cancelled = true;
     };
+    // buildFilters는 아래 원시 필터 값에서 파생되므로 그 값들만 의존
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory, selectedRegion, sortBy]);
+
+  // '더보기' — 마지막 문서를 커서로 다음 페이지를 이어서 로드
+  const loadMore = async () => {
+    if (loadingMore || !hasMore || !lastDoc) return;
+    setLoadingMore(true);
+    try {
+      const res = await getJobsPage(buildFilters(), PAGE_SIZE, lastDoc);
+      setJobs((prev) => [...prev, ...res.jobs]);
+      setLastDoc(res.lastDoc);
+      setHasMore(res.hasMore);
+    } catch (error) {
+      console.error('추가 공고 로드 실패:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   return (
     <div className="px-4 pt-6 pb-24">
@@ -97,7 +124,7 @@ export default function JobsPage() {
       {/* 정렬 옵션 */}
       <div className="flex items-center justify-between mb-4">
         <span className="text-sm text-gray-500">
-          {loading ? '로딩중...' : `${jobs.length}건`}
+          {loading ? '로딩중...' : `${jobs.length}건${hasMore ? '+' : ''}`}
         </span>
         <div className="flex gap-2">
           <button
@@ -136,6 +163,7 @@ export default function JobsPage() {
           }
         />
       ) : (
+        <>
         <div className="space-y-3">
           {jobs.map((job) => (
             <Link key={job.id} href={`/jobs/${job.id}`} className="card block">
@@ -174,6 +202,16 @@ export default function JobsPage() {
             </Link>
           ))}
         </div>
+        {hasMore && (
+          <button
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="w-full py-3 mt-3 text-sm font-medium text-primary-500 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loadingMore ? '불러오는 중...' : '더보기'}
+          </button>
+        )}
+        </>
       )}
     </div>
   );

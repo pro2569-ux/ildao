@@ -81,7 +81,7 @@
 - [x] [자동가능] **LIB-01** `getPublicWorkers` region dead param 제거(호출부 미사용 확인) + workers JSDoc '지역 필터' 정정(미구현 명시, CLAUDE.md는 이미 직종 필터만). verify 통과
 
 ## ⏳ 자동 진행 가능 (기존 잔여)
-- [ ] [자동가능] 피드 `startAfter` 커서 페이지네이션 (현재 `limitCount`만 적용 / 커서 동작은 build 검증 불가 — 주의)
+- [x] [자동가능] 피드 `startAfter` 커서 페이지네이션 — `getJobsPage`(pageSize+1로 hasMore 판정, JobCursor 스냅샷 반환) 추가, 피드가 20개씩 '더보기'로 로드. build 검증 통과. ⚠️실제 '더보기' 동작은 앱 실행으로 직접 확인 필요(런타임 미검증)
 - [ ] [자동가능?] #199 잔여2 — Button/Input 컴포넌트 추출 (`btn-primary`·`card` 등 전 페이지 대규모 스윕 + 시각 검증 불가 → 사용자 오버사이트 권장)
 
 ## 🔒 사용자 필요 (루프가 건드리지 않음)

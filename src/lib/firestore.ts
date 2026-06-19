@@ -2,9 +2,9 @@
 
 import {
   collection, doc, addDoc, getDoc, getDocs, updateDoc, deleteDoc, setDoc,
-  query, where, orderBy, limit, serverTimestamp, Timestamp, documentId,
+  query, where, orderBy, limit, startAfter, serverTimestamp, Timestamp, documentId,
   getCountFromServer, writeBatch,
-  DocumentData, DocumentReference, QueryConstraint
+  DocumentData, DocumentReference, QueryConstraint, QueryDocumentSnapshot
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { JobPost, Application, UserProfile, JobCategory, JobStatus, ApplicationStatus, DailyWorkRecord, TeamMember, TeamDailyWork, Favorite } from '@/types';
@@ -97,6 +97,55 @@ export async function getJobs(filters?: {
       updatedAt: toDate(data.updatedAt),
     } as JobPost;
   });
+}
+
+/** 구인글 문서 → JobPost 매핑 (Timestamp→Date 변환 공통화) */
+function mapJobDoc(d: QueryDocumentSnapshot): JobPost {
+  const data = d.data();
+  return {
+    ...data,
+    id: d.id,
+    startDate: toDate(data.startDate),
+    endDate: data.endDate ? toDate(data.endDate) : undefined,
+    createdAt: toDate(data.createdAt),
+    updatedAt: toDate(data.updatedAt),
+  } as JobPost;
+}
+
+/** 페이지네이션 커서 (구인글 피드 '더보기'용 — 내부적으로 Firestore 스냅샷) */
+export type JobCursor = QueryDocumentSnapshot;
+
+/** 구인글 한 페이지 조회 (커서 기반 — startAfter)
+ *  pageSize+1개를 요청해 초과분 유무로 hasMore를 판정하고, 다음 호출에 lastDoc을 startAfter로 넘긴다.
+ *  필터/정렬 조합의 인덱스 계약은 getJobs와 동일 (QUERY-01 참고). */
+export async function getJobsPage(
+  filters: {
+    category?: JobCategory;
+    region?: string;
+    status?: JobStatus;
+    employerId?: string;
+    sortBy?: 'createdAt' | 'dailyWage';
+    sortDir?: 'asc' | 'desc';
+  },
+  pageSize: number,
+  startAfterDoc?: JobCursor | null
+): Promise<{ jobs: JobPost[]; lastDoc: JobCursor | null; hasMore: boolean }> {
+  const constraints: QueryConstraint[] = [];
+  if (filters.category) constraints.push(where('category', '==', filters.category));
+  if (filters.region) constraints.push(where('region', '==', filters.region));
+  if (filters.status) constraints.push(where('status', '==', filters.status));
+  if (filters.employerId) constraints.push(where('employerId', '==', filters.employerId));
+  constraints.push(orderBy(filters.sortBy || 'createdAt', filters.sortDir || 'desc'));
+  if (startAfterDoc) constraints.push(startAfter(startAfterDoc));
+  // pageSize+1개를 읽어 마지막 페이지 여부(hasMore)를 판정
+  constraints.push(limit(pageSize + 1));
+
+  const snapshot = await getDocs(query(collection(db, 'jobs'), ...constraints));
+  const hasMore = snapshot.docs.length > pageSize;
+  const pageDocs = hasMore ? snapshot.docs.slice(0, pageSize) : snapshot.docs;
+  const jobs = pageDocs.map(mapJobDoc);
+  const lastDoc = pageDocs.length > 0 ? pageDocs[pageDocs.length - 1] : null;
+  return { jobs, lastDoc, hasMore };
 }
 
 /** 구인글 단건 조회 */
