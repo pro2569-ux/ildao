@@ -38,6 +38,9 @@ export default function KakaoMap({ mode, address, lat, lng, onSelect, height = '
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
+  // onSelect 최신값을 ref로 유지 — 지도 클릭 리스너가 stale 콜백을 잡지 않도록 (REACT-02)
+  const onSelectRef = useRef(onSelect);
+  onSelectRef.current = onSelect;
   const [searchQuery, setSearchQuery] = useState(address || '');
   const [sdkLoaded, setSdkLoaded] = useState(false);
   const [error, setError] = useState('');
@@ -102,8 +105,7 @@ export default function KakaoMap({ mode, address, lat, lng, onSelect, height = '
     // 초기 마커 설정 (좌표가 있는 경우)
     if (lat && lng && lat !== 0 && lng !== 0) {
       const position = new kakao.maps.LatLng(lat, lng);
-      const marker = new kakao.maps.Marker({ position, map });
-      markerRef.current = marker;
+      markerRef.current = new kakao.maps.Marker({ position, map });
     } else if (mode === 'view' && address) {
       // 좌표 없이 저장된 공고(#49): 주소를 지오코딩해 실제 위치에 마커 표시
       // (좌표 0 → 서울 시청 중심에 마커 없이 떠 위치를 오인하던 문제 해소)
@@ -112,15 +114,15 @@ export default function KakaoMap({ mode, address, lat, lng, onSelect, height = '
         if (status === kakao.maps.services.Status.OK && result[0]) {
           const position = new kakao.maps.LatLng(parseFloat(result[0].y), parseFloat(result[0].x));
           map.setCenter(position);
-          const marker = new kakao.maps.Marker({ position, map });
-          markerRef.current = marker;
+          markerRef.current = new kakao.maps.Marker({ position, map });
         }
       });
     }
 
     // select 모드: 지도 클릭 시 마커 이동 + 주소 역변환
+    let clickHandler: any;
     if (mode === 'select') {
-      kakao.maps.event.addListener(map, 'click', (mouseEvent: any) => {
+      clickHandler = (mouseEvent: any) => {
         const latlng = mouseEvent.latLng;
         placeMarker(latlng.getLat(), latlng.getLng(), map);
 
@@ -132,11 +134,22 @@ export default function KakaoMap({ mode, address, lat, lng, onSelect, height = '
               ? result[0].road_address.address_name
               : result[0].address.address_name;
             setSearchQuery(addr);
-            onSelect?.({ address: addr, lat: latlng.getLat(), lng: latlng.getLng() });
+            onSelectRef.current?.({ address: addr, lat: latlng.getLat(), lng: latlng.getLng() });
           }
         });
-      });
+      };
+      kakao.maps.event.addListener(map, 'click', clickHandler);
     }
+
+    // 언마운트/재실행 시 리스너·마커 정리 (중복 등록·마커 누수 방지 — REACT-02)
+    return () => {
+      if (clickHandler) kakao.maps.event.removeListener(map, 'click', clickHandler);
+      if (markerRef.current) {
+        markerRef.current.setMap(null);
+        markerRef.current = null;
+      }
+      mapInstanceRef.current = null;
+    };
   }, [sdkLoaded]);
 
   /** 마커 배치 헬퍼 */
@@ -156,6 +169,13 @@ export default function KakaoMap({ mode, address, lat, lng, onSelect, height = '
 
     targetMap.setCenter(position);
   }, []);
+
+  // 좌표 prop이 바뀌면 지도를 재생성하지 않고 중심·마커만 갱신 (REACT-02)
+  useEffect(() => {
+    if (!sdkLoaded || !mapInstanceRef.current) return;
+    if (!lat || !lng || lat === 0 || lng === 0) return;
+    placeMarker(lat, lng);
+  }, [sdkLoaded, lat, lng, placeMarker]);
 
   /** 주소 검색 (select 모드) */
   const handleSearch = useCallback(() => {
