@@ -53,11 +53,6 @@ export default function FavoritesPage() {
 
   const isEmployer = userProfile?.role === 'employer';
 
-  // 가드 통과 후 데이터 로드
-  useEffect(() => {
-    if (ready) loadFavorites();
-  }, [ready]);
-
   /** 즐겨찾기 데이터 로드 */
   const loadFavorites = useCallback(async () => {
     if (!user) return;
@@ -109,6 +104,11 @@ export default function FavoritesPage() {
       setLoading(false);
     }
   }, [user, isEmployer]);
+
+  // 가드 통과 후 데이터 로드 (loadFavorites는 user/isEmployer에만 의존하는 안정 콜백 — REACT-03/05)
+  useEffect(() => {
+    if (ready) loadFavorites();
+  }, [ready, loadFavorites]);
 
   /** 즐겨찾기 해제 (확인 후) */
   const handleRemoveFavorite = async (targetId: string, label: string) => {
