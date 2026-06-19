@@ -76,7 +76,7 @@
 - [x] [자동가능] **JOBS-04** 목록 시작 임박 뱃지(D-3 이내 '오늘/내일 시작'·'D-N') 추가. 프리미엄 강조는 isPremium 항상 false(프리미엄 미구현)라 보류. verify 통과
 
 ### E. 코드는 자동·실효는 배포필요 (인덱스/함수계약)
-- [ ] [자동가능] ⚠️배포필요 **CALC-01** '대기중' 서버 집계 — `getEmployerStats`에 employerId+status `getCountFromServer`+복합 인덱스(`firestore.indexes.json`)
+- [x] [자동가능] ⚠️배포필요 **CALC-01** '대기중' 서버 집계 — getEmployerStats가 pendingApplicants를 getCountFromServer로 반환(쓸모없던 recentApplications limit10 제거), EmployerHome가 그 값 표시, applications employerId+status 인덱스 추가. verify 통과. **인덱스 배포해야 실효(사용자)**
 - [ ] [자동가능] ⚠️배포필요 **QUERY-01** `getJobs` 인덱스/계약 일치 — 화이트리스트 제약(자동) 또는 인덱스 추가
 - [ ] [자동가능] **LIB-01** `getPublicWorkers` region dead param 정리(미지원이면 제거, 지원이면 ⚠️인덱스 배포필요)
 

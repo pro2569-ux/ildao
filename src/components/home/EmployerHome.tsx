@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getJobs, getEmployerStats } from '@/lib/firestore';
 import { formatDate } from '@/lib/format';
 import { Spinner } from '@/components/ui/Spinner';
-import { JobPost, Application } from '@/types';
+import { JobPost } from '@/types';
 import { jobStatusBadge } from '@/lib/constants';
 
 /** 구인자 전용 홈 화면 */
@@ -16,7 +16,7 @@ export default function EmployerHome() {
   const [loading, setLoading] = useState(true);
   const [activeJobCount, setActiveJobCount] = useState(0);
   const [totalApplicants, setTotalApplicants] = useState(0);
-  const [recentApps, setRecentApps] = useState<Application[]>([]);
+  const [pendingApplicants, setPendingApplicants] = useState(0);
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
@@ -45,7 +45,7 @@ export default function EmployerHome() {
         if (!cancelled) {
           setActiveJobCount(stats.activeJobs);
           setTotalApplicants(stats.totalApplicants);
-          setRecentApps(stats.recentApplications);
+          setPendingApplicants(stats.pendingApplicants);
         }
       } catch (error) {
         if (!cancelled) {
@@ -87,7 +87,7 @@ export default function EmployerHome() {
             <p className="text-xs text-gray-500 mt-1">총 지원자</p>
           </div>
           <div className="card text-center">
-            <p className="text-2xl font-bold text-green-500">{statsLoading || statsError ? '–' : recentApps.filter((a) => a.status === 'pending').length}</p>
+            <p className="text-2xl font-bold text-green-500">{statsLoading || statsError ? '–' : pendingApplicants}</p>
             <p className="text-xs text-gray-500 mt-1">대기중</p>
           </div>
         </div>

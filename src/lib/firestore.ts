@@ -468,7 +468,7 @@ export async function updateUserProfile(uid: string, data: Record<string, any>):
 export async function getEmployerStats(employerId: string): Promise<{
   activeJobs: number;
   totalApplicants: number;
-  recentApplications: Application[];
+  pendingApplicants: number;
 }> {
   // 진행 중인 구인글
   const jobsQuery = query(
@@ -485,19 +485,16 @@ export async function getEmployerStats(employerId: string): Promise<{
   );
   const totalApplicants = countSnap.data().count;
 
-  // 최근 지원 10건
-  const appsQuery = query(
-    collection(db, 'applications'),
-    where('employerId', '==', employerId),
-    orderBy('createdAt', 'desc'),
-    limit(10)
+  // 대기중(pending) 지원자 수 — 서버 집계로 정확히 (예전엔 limit 10 목록을 클라이언트 필터해 10에서 캡됨, CALC-01)
+  // ⚠️ applications employerId+status 복합 인덱스 필요 (firestore.indexes.json — 배포해야 실효)
+  const pendingSnap = await getCountFromServer(
+    query(
+      collection(db, 'applications'),
+      where('employerId', '==', employerId),
+      where('status', '==', 'pending')
+    )
   );
-  const appsSnap = await getDocs(appsQuery);
-  const recentApplications = appsSnap.docs.map((d) => ({
-    ...d.data(),
-    id: d.id,
-    createdAt: toDate(d.data().createdAt),
-  } as Application));
+  const pendingApplicants = pendingSnap.data().count;
 
-  return { activeJobs, totalApplicants, recentApplications };
+  return { activeJobs, totalApplicants, pendingApplicants };
 }
