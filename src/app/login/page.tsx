@@ -12,7 +12,7 @@ import { Spinner, PageLoader } from '@/components/ui/Spinner';
  * - 프로필 미설정 시 회원가입 페이지로 이동
  */
 function LoginContent() {
-  const { user, userProfile, loading, signInWithGoogle } = useAuth();
+  const { user, userProfile, loading, signInWithGoogle, signInWithKakao } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSigningIn, setIsSigningIn] = useState(false);
@@ -51,6 +51,12 @@ function LoginContent() {
     }
   };
 
+  /** 카카오 로그인 핸들러 (리다이렉트 방식 — 상태 변경 불필요) */
+  const handleKakaoSignIn = () => {
+    setError('');
+    signInWithKakao();
+  };
+
   // 로딩 중
   if (loading) {
     return (
@@ -86,6 +92,19 @@ function LoginContent() {
 
       {/* 로그인 버튼 영역 */}
       <div className="w-full max-w-sm space-y-3">
+        {/* 카카오 로그인 (기존 회원이 쓰던 기본 로그인 — kakao: uid 데이터 연결) */}
+        <button
+          onClick={handleKakaoSignIn}
+          disabled={isSigningIn}
+          className="w-full flex items-center justify-center gap-3 py-3.5 px-6 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+          style={{ backgroundColor: '#FEE500', color: '#191919' }}
+        >
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.61 1.558 4.908 3.926 6.284L5 21l4.58-2.453A11.2 11.2 0 0012 18c5.523 0 10-3.477 10-7.5S17.523 3 12 3z" />
+          </svg>
+          <span>카카오로 시작하기</span>
+        </button>
+
         {/* Google 로그인 */}
         <button
           onClick={handleGoogleSignIn}
