@@ -73,7 +73,7 @@
 - [x] [자동가능] **SEC-06** `getPublicWorkers` isPublic 제약 '제거 금지' 주석 — 규칙 통과의 유일 근거임을 명시. verify 통과
 - [x] [자동가능] **LIB-03** update 헬퍼 '검증은 규칙 담당' 주석 — updateJob/toggleProfilePublic/updateUserProfile JSDoc에 소유권·불변필드 검증 위임 명시. verify 통과
 - [x] [자동가능] **CALC-06/07** 잔업/연장 토글 아래 '기록용(급여 미반영)' 안내 + saveTeamDailyWork memberName 보조 캐시 주석. verify 통과
-- [ ] [자동가능] **JOBS-04** 목록 프리미엄/마감임박 구분(선택)
+- [x] [자동가능] **JOBS-04** 목록 시작 임박 뱃지(D-3 이내 '오늘/내일 시작'·'D-N') 추가. 프리미엄 강조는 isPremium 항상 false(프리미엄 미구현)라 보류. verify 통과
 
 ### E. 코드는 자동·실효는 배포필요 (인덱스/함수계약)
 - [ ] [자동가능] ⚠️배포필요 **CALC-01** '대기중' 서버 집계 — `getEmployerStats`에 employerId+status `getCountFromServer`+복합 인덱스(`firestore.indexes.json`)

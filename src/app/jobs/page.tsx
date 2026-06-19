@@ -140,9 +140,23 @@ export default function JobsPage() {
           {jobs.map((job) => (
             <Link key={job.id} href={`/jobs/${job.id}`} className="card block">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-primary-600">
-                  {job.category}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-primary-600">
+                    {job.category}
+                  </span>
+                  {/* 시작 임박(D-3 이내) 뱃지 — 실데이터 기반 정보성 보강 (JOBS-04) */}
+                  {(() => {
+                    const today = new Date(); today.setHours(0, 0, 0, 0);
+                    const start = new Date(job.startDate); start.setHours(0, 0, 0, 0);
+                    const d = Math.round((start.getTime() - today.getTime()) / 86400000);
+                    if (d < 0 || d > 3) return null;
+                    return (
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-red-50 text-red-500">
+                        {d === 0 ? '오늘 시작' : d === 1 ? '내일 시작' : `D-${d}`}
+                      </span>
+                    );
+                  })()}
+                </div>
                 <span className="text-xs text-gray-400">{formatDate(job.createdAt)}</span>
               </div>
               <h3 className="font-semibold text-sm">{job.title}</h3>
