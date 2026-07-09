@@ -75,6 +75,9 @@ export default function CalculatorPage() {
   const [currentMonth, setCurrentMonth] = useState(() => new Date().getMonth() + 1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 탭별 최초 로드 완료 여부 (P2-10) — 월 이동 시 전체 언마운트(깜빡임) 대신 오버레이 로딩을 쓰기 위함
+  const [personalLoaded, setPersonalLoaded] = useState(false);
+  const [teamLoaded, setTeamLoaded] = useState(false);
 
   // ===== 개인용 상태 =====
   const [monthlyRecords, setMonthlyRecords] = useState<Map<string, DailyWorkRecord>>(new Map());
@@ -146,6 +149,7 @@ export default function CalculatorPage() {
       setError('데이터를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
+      setPersonalLoaded(true);
     }
   }, [user, currentYear, currentMonth]);
 
@@ -166,6 +170,7 @@ export default function CalculatorPage() {
       setError('팀 데이터를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
+      setTeamLoaded(true);
     }
   }, [user, currentYear, currentMonth]);
 
@@ -221,7 +226,10 @@ export default function CalculatorPage() {
 
   const getCellColor = (dateKey: string): string => {
     const record = monthlyRecords.get(dateKey);
-    if (!record || record.manDay === 0) return 'bg-gray-50';
+    if (!record) return 'bg-gray-50';
+    // 휴무 기록일은 미기록일과 구분 (P2-10)
+    if (record.dayOff) return 'bg-gray-200';
+    if (record.manDay === 0) return 'bg-gray-50';
     if (record.manDay <= 0.5) return 'bg-yellow-100';
     if (record.manDay <= 1.0) return 'bg-green-100';
     return 'bg-blue-100';
@@ -231,7 +239,10 @@ export default function CalculatorPage() {
 
   const getTeamCellColor = (memberId: string, dateKey: string): string => {
     const record = teamWorks.find((w) => w.memberId === memberId && w.date === dateKey);
-    if (!record || record.manDay === 0) return 'bg-gray-50';
+    if (!record) return 'bg-gray-50';
+    // 휴무 기록일은 미기록일과 구분 (P2-10)
+    if (record.dayOff) return 'bg-gray-200';
+    if (record.manDay === 0) return 'bg-gray-50';
     if (record.manDay <= 0.5) return 'bg-yellow-100';
     if (record.manDay <= 1.0) return 'bg-green-100';
     return 'bg-blue-100';
@@ -650,7 +661,7 @@ export default function CalculatorPage() {
     mode: 'personal' | 'teamMember',
     onDayClick: (day: number) => void
   ) => (
-    <div className="card mb-4">
+    <div className="card mb-4 relative">
       {/* 요일 헤더 */}
       <div className="grid grid-cols-7 gap-1 mb-2">
         {DAY_LABELS.map((label, i) => (
@@ -678,16 +689,20 @@ export default function CalculatorPage() {
           // 셀 색상 결정
           let cellBg: string;
           let manDayValue: number | undefined;
+          let isDayOffDay = false;
 
           if (mode === 'personal') {
             cellBg = getCellColor(dateKey);
-            manDayValue = monthlyRecords.get(dateKey)?.manDay;
+            const rec = monthlyRecords.get(dateKey);
+            manDayValue = rec?.manDay;
+            isDayOffDay = !!rec?.dayOff;
           } else {
             cellBg = selectedMember ? getTeamCellColor(selectedMember.id, dateKey) : 'bg-gray-50';
             const tw = teamWorks.find(
               (w) => w.memberId === selectedMember?.id && w.date === dateKey
             );
             manDayValue = tw?.manDay;
+            isDayOffDay = !!tw?.dayOff;
           }
 
           const isToday = day === todayDay;
@@ -707,13 +722,23 @@ export default function CalculatorPage() {
               >
                 {day}
               </span>
-              {manDayValue !== undefined && manDayValue > 0 && (
+              {manDayValue !== undefined && manDayValue > 0 ? (
                 <span className="text-sm font-bold text-gray-700">{manDayValue}</span>
-              )}
+              ) : isDayOffDay ? (
+                // 휴무 기록일 표시 (P2-10)
+                <span className="text-xs font-medium text-gray-500">휴</span>
+              ) : null}
             </button>
           );
         })}
       </div>
+
+      {/* 월 이동 중 오버레이 로딩 — 캘린더를 유지한 채 위에만 표시 (P2-10) */}
+      {isLoading && (
+        <div className="absolute inset-0 bg-white/60 rounded-xl flex items-center justify-center">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500" />
+        </div>
+      )}
     </div>
   );
 
@@ -1121,15 +1146,15 @@ export default function CalculatorPage() {
         </div>
       )}
 
-      {/* 로딩 표시 */}
-      {isLoading && (
+      {/* 로딩 표시 — 탭 최초 로드에만 전체 스피너, 이후 월 이동은 캘린더 오버레이 (P2-10) */}
+      {isLoading && !(activeTab === 'personal' ? personalLoaded : teamLoaded) && (
         <div className="flex justify-center py-8">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500" />
         </div>
       )}
 
       {/* ===== 개인용 모드 ===== */}
-      {activeTab === 'personal' && !isLoading && (
+      {activeTab === 'personal' && personalLoaded && (
         <>
           {/* 오늘 기록하기 원탭 버튼 (P2-7) */}
           <button
@@ -1289,7 +1314,7 @@ export default function CalculatorPage() {
       )}
 
       {/* ===== 팀장용 모드 ===== */}
-      {activeTab === 'team' && !isLoading && (
+      {activeTab === 'team' && teamLoaded && (
         <>
           {/* 선택된 팀원이 없으면 팀원 목록, 있으면 팀원 캘린더 */}
           {!selectedMember ? (
