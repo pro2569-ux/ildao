@@ -38,3 +38,20 @@
            hover:bg-accent-600 active:bg-accent-600 transition-colors;
   }
 }
+
+@layer utilities {
+  /* 아이폰 하단 안전 영역 높이 (홈 인디케이터 영역) */
+  .h-safe-area-bottom {
+    height: env(safe-area-inset-bottom);
+  }
+
+  /* 가로 스크롤 시 스크롤바 숨김 (필터 칩 등) */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}

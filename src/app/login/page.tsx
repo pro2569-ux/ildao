@@ -1,34 +1,53 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
 /**
- * 로그인 페이지
- * - Google 로그인 지원
- * - 카카오 로그인 지원 (SDK v2 authorize 방식)
- * - 이미 로그인된 경우 홈으로 리다이렉트
- * - 프로필 미설정 시 회원가입 페이지로 이동
+ * 로그인 후 복귀 경로 sessionStorage 키
+ * - 카카오 로그인은 리다이렉트 왕복이 있어 sessionStorage로 returnUrl 유지
+ * - src/app/auth/kakao/callback/page.tsx 와 동일한 키를 사용해야 함
  */
-export default function LoginPage() {
+const RETURN_URL_STORAGE_KEY = 'loginReturnUrl';
+
+/**
+ * 내부 경로만 허용 (open redirect 방지)
+ * - '/'로 시작하고 '//'(외부 도메인)로 시작하지 않는 경로만 통과
+ */
+function getSafeReturnUrl(returnUrl: string | null): string | null {
+  if (returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//')) {
+    return returnUrl;
+  }
+  return null;
+}
+
+/**
+ * 로그인 페이지 - 내부 컴포넌트
+ * useSearchParams()는 Suspense 경계 내에서 사용해야 함
+ */
+function LoginContent() {
   const { user, userProfile, loading, signInWithGoogle, signInWithKakao } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [error, setError] = useState('');
+
+  // 로그인 후 돌아갈 경로 (?returnUrl=/jobs/xxx) — 내부 경로만 허용
+  const returnUrl = getSafeReturnUrl(searchParams.get('returnUrl'));
 
   // 로그인 상태에 따른 리다이렉트
   useEffect(() => {
     if (!loading && user) {
       if (userProfile) {
-        // 프로필 있으면 홈으로
-        router.replace('/');
+        // 프로필 있으면 returnUrl(내부 경로만) 또는 홈으로
+        router.replace(returnUrl || '/');
       } else {
         // 프로필 없으면 회원가입으로
         router.replace('/register');
       }
     }
-  }, [user, userProfile, loading, router]);
+  }, [user, userProfile, loading, router, returnUrl]);
 
   /** Google 로그인 핸들러 */
   const handleGoogleSignIn = async () => {
@@ -49,6 +68,16 @@ export default function LoginPage() {
   /** 카카오 로그인 핸들러 (리다이렉트 방식 - 상태 변경 불필요) */
   const handleKakaoSignIn = () => {
     setError('');
+    // 리다이렉트 왕복 후에도 복귀 경로가 유지되도록 sessionStorage에 저장
+    try {
+      if (returnUrl) {
+        sessionStorage.setItem(RETURN_URL_STORAGE_KEY, returnUrl);
+      } else {
+        sessionStorage.removeItem(RETURN_URL_STORAGE_KEY);
+      }
+    } catch (err) {
+      console.error('복귀 경로 저장 실패:', err);
+    }
     signInWithKakao();
   };
 
@@ -152,5 +181,27 @@ export default function LoginPage() {
         동의하는 것으로 간주됩니다.
       </p>
     </div>
+  );
+}
+
+/**
+ * 로그인 페이지
+ * - Google 로그인 지원
+ * - 카카오 로그인 지원 (SDK v2 authorize 방식)
+ * - 이미 로그인된 경우 returnUrl(내부 경로) 또는 홈으로 리다이렉트
+ * - 프로필 미설정 시 회원가입 페이지로 이동
+ * - Suspense로 감싸서 useSearchParams() 사용 가능하게 함
+ */
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent" />
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }

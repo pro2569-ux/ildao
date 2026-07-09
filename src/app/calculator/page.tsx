@@ -12,6 +12,7 @@ import {
   getTeamMonthlyWorks,
 } from '@/lib/firestore';
 import { DailyWorkRecord, WeatherType, TeamMember, TeamDailyWork } from '@/types';
+import { formatManwon } from '@/lib/format';
 
 // ===== 상수 정의 =====
 
@@ -65,8 +66,8 @@ export default function CalculatorPage() {
 
   // ===== 공통 상태 =====
   const [activeTab, setActiveTab] = useState<TabMode>('personal');
-  const [currentYear, setCurrentYear] = useState(2026);
-  const [currentMonth, setCurrentMonth] = useState(5);
+  const [currentYear, setCurrentYear] = useState(() => new Date().getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(() => new Date().getMonth() + 1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -84,6 +85,7 @@ export default function CalculatorPage() {
   const [editMemo, setEditMemo] = useState('');
   const [editWeather, setEditWeather] = useState<WeatherType>('none');
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // 기간 조회 상태
   const [periodStart, setPeriodStart] = useState('');
@@ -109,13 +111,6 @@ export default function CalculatorPage() {
 
   // ===== 초기 데이터 로드 =====
 
-  /** 현재 날짜로 초기화 */
-  useEffect(() => {
-    const now = new Date();
-    setCurrentYear(now.getFullYear());
-    setCurrentMonth(now.getMonth() + 1);
-  }, []);
-
   /** 일당 초기값 설정 (사용자 프로필에서) */
   useEffect(() => {
     if (userProfile?.desiredWage) {
@@ -135,7 +130,6 @@ export default function CalculatorPage() {
       setMonthlyRecords(map);
     } catch (err: any) {
       console.error('월별 공수 로드 실패:', err);
-      alert('공수 로드 에러: ' + (err?.message || JSON.stringify(err)));
       setError('데이터를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
@@ -156,7 +150,6 @@ export default function CalculatorPage() {
       setTeamWorks(works);
     } catch (err: any) {
       console.error('팀 데이터 로드 실패:', err);
-      alert('팀 데이터 에러: ' + (err?.message || JSON.stringify(err)));
       setError('팀 데이터를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
@@ -236,6 +229,7 @@ export default function CalculatorPage() {
   const openDayModal = (day: number) => {
     const dateKey = formatDateKey(currentYear, currentMonth, day);
     setSelectedDate(dateKey);
+    setSaveError(null);
 
     const existing = monthlyRecords.get(dateKey);
     if (existing) {
@@ -260,6 +254,7 @@ export default function CalculatorPage() {
 
   const closeDayModal = () => {
     setSelectedDate(null);
+    setSaveError(null);
   };
 
   // ===== 개인용: 공수 저장 =====
@@ -298,7 +293,7 @@ export default function CalculatorPage() {
       closeDayModal();
     } catch (err) {
       console.error('공수 저장 실패:', err);
-      setError('저장에 실패했습니다. 다시 시도해주세요.');
+      setSaveError('저장에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsSaving(false);
     }
@@ -408,6 +403,7 @@ export default function CalculatorPage() {
     if (!selectedMember) return;
     const dateKey = formatDateKey(currentYear, currentMonth, day);
     setTeamSelectedDate(dateKey);
+    setSaveError(null);
 
     const existing = teamWorks.find(
       (w) => w.memberId === selectedMember.id && w.date === dateKey
@@ -429,6 +425,7 @@ export default function CalculatorPage() {
 
   const closeTeamDayModal = () => {
     setTeamSelectedDate(null);
+    setSaveError(null);
   };
 
   // ===== 팀장용: 팀원 공수 저장 =====
@@ -471,7 +468,7 @@ export default function CalculatorPage() {
       closeTeamDayModal();
     } catch (err) {
       console.error('팀원 공수 저장 실패:', err);
-      setError('저장에 실패했습니다.');
+      setSaveError('저장에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsSaving(false);
     }
@@ -514,6 +511,13 @@ export default function CalculatorPage() {
   }
 
   // ===== 공통 캘린더 렌더링 =====
+
+  /** 오늘 날짜 (현재 보고 있는 연/월에 속할 때만 강조) */
+  const today = new Date();
+  const todayDay =
+    today.getFullYear() === currentYear && today.getMonth() + 1 === currentMonth
+      ? today.getDate()
+      : null;
 
   /** 캘린더 그리드 (개인용 또는 팀원용) */
   const renderCalendar = (
@@ -560,21 +564,25 @@ export default function CalculatorPage() {
             manDayValue = tw?.manDay;
           }
 
+          const isToday = day === todayDay;
+
           return (
             <button
               key={dateKey}
               onClick={() => onDayClick(day)}
-              className={`aspect-square rounded-lg flex flex-col items-center justify-center text-sm transition-colors ${cellBg} hover:ring-2 hover:ring-primary-500`}
+              className={`aspect-square rounded-lg flex flex-col items-center justify-center text-sm transition-colors ${cellBg} hover:ring-2 hover:ring-primary-500 ${
+                isToday ? 'ring-2 ring-primary-500' : ''
+              }`}
             >
               <span
-                className={`text-xs ${
+                className={`text-xs ${isToday ? 'font-bold' : ''} ${
                   dayOfWeek === 0 ? 'text-red-500' : dayOfWeek === 6 ? 'text-blue-500' : 'text-gray-700'
                 }`}
               >
                 {day}
               </span>
               {manDayValue !== undefined && manDayValue > 0 && (
-                <span className="text-[10px] font-bold text-gray-600">{manDayValue}</span>
+                <span className="text-sm font-bold text-gray-700">{manDayValue}</span>
               )}
             </button>
           );
@@ -589,28 +597,47 @@ export default function CalculatorPage() {
     value: number,
     setValue: (v: number) => void
   ) => (
-    <div className="flex items-center justify-center gap-4 my-4">
-      <button
-        onClick={() => setValue(Math.max(0, Math.round((value - 0.1) * 10) / 10))}
-        disabled={value <= 0}
-        className="w-14 h-14 rounded-full bg-gray-100 text-2xl font-bold text-gray-700 flex items-center justify-center disabled:opacity-30 active:bg-gray-200 transition-colors"
-      >
-        -
-      </button>
-      <div className="text-center">
-        <div className="text-5xl font-extrabold text-primary-500 tabular-nums min-w-[100px]">
-          {value.toFixed(1)}
-        </div>
-        <div className="text-xs text-gray-400 mt-1">공수</div>
+    <>
+      {/* 공수 프리셋 버튼 (자주 쓰는 값 바로 입력) */}
+      <div className="flex gap-2 mt-4">
+        {[0.5, 1.0, 1.5].map((preset) => (
+          <button
+            key={preset}
+            onClick={() => setValue(preset)}
+            className={`flex-1 py-3 rounded-lg text-base font-bold transition-colors ${
+              value === preset
+                ? 'bg-primary-500 text-white'
+                : 'bg-gray-100 text-gray-700 active:bg-gray-200'
+            }`}
+          >
+            {preset.toFixed(1)}공
+          </button>
+        ))}
       </div>
-      <button
-        onClick={() => setValue(Math.min(2.0, Math.round((value + 0.1) * 10) / 10))}
-        disabled={value >= 2.0}
-        className="w-14 h-14 rounded-full bg-gray-100 text-2xl font-bold text-gray-700 flex items-center justify-center disabled:opacity-30 active:bg-gray-200 transition-colors"
-      >
-        +
-      </button>
-    </div>
+
+      <div className="flex items-center justify-center gap-4 my-4">
+        <button
+          onClick={() => setValue(Math.max(0, Math.round((value - 0.1) * 10) / 10))}
+          disabled={value <= 0}
+          className="w-14 h-14 rounded-full bg-gray-100 text-2xl font-bold text-gray-700 flex items-center justify-center disabled:opacity-30 active:bg-gray-200 transition-colors"
+        >
+          -
+        </button>
+        <div className="text-center">
+          <div className="text-5xl font-extrabold text-primary-500 tabular-nums min-w-[100px]">
+            {value.toFixed(1)}
+          </div>
+          <div className="text-xs text-gray-400 mt-1">공수</div>
+        </div>
+        <button
+          onClick={() => setValue(Math.min(2.0, Math.round((value + 0.1) * 10) / 10))}
+          disabled={value >= 2.0}
+          className="w-14 h-14 rounded-full bg-gray-100 text-2xl font-bold text-gray-700 flex items-center justify-center disabled:opacity-30 active:bg-gray-200 transition-colors"
+        >
+          +
+        </button>
+      </div>
+    </>
   );
 
   // ===== 토글 버튼 렌더링 =====
@@ -705,12 +732,21 @@ export default function CalculatorPage() {
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₩</span>
                 <input
                   type="number"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={editExpense || ''}
                   onChange={(e) => setEditExpense(Number(e.target.value) || 0)}
                   placeholder="0"
                   className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
+              {/* 금액 확인 도움말 (0 개수 확인용 만원 환산) */}
+              {editExpense > 0 && (
+                <p className="mt-1 text-sm text-gray-600">
+                  {formatWon(editExpense)}
+                  {editExpense >= 10000 && ` (${formatManwon(editExpense)})`}
+                </p>
+              )}
             </div>
 
             {/* 메모 입력 */}
@@ -745,6 +781,11 @@ export default function CalculatorPage() {
                 ))}
               </div>
             </div>
+
+            {/* 저장 실패 에러 메시지 */}
+            {saveError && (
+              <p className="text-sm text-red-500 text-center mb-3">{saveError}</p>
+            )}
 
             {/* 저장 버튼 */}
             <button
@@ -809,6 +850,11 @@ export default function CalculatorPage() {
                 className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
+
+            {/* 저장 실패 에러 메시지 */}
+            {saveError && (
+              <p className="text-sm text-red-500 text-center mb-3">{saveError}</p>
+            )}
 
             <button
               onClick={handleSaveTeamWork}
@@ -932,12 +978,21 @@ export default function CalculatorPage() {
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₩</span>
                 <input
                   type="number"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={dailyWageInput || ''}
                   onChange={(e) => setDailyWageInput(Number(e.target.value) || 0)}
                   placeholder="일당을 입력하세요"
                   className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
+              {/* 금액 확인 도움말 (0 개수 확인용 만원 환산) */}
+              {dailyWageInput > 0 && (
+                <p className="mt-1 text-sm text-gray-600">
+                  {formatWon(dailyWageInput)}
+                  {dailyWageInput >= 10000 && ` (${formatManwon(dailyWageInput)})`}
+                </p>
+              )}
             </div>
 
             {/* 예상 급여 (눈에 띄게 표시) */}
@@ -948,6 +1003,9 @@ export default function CalculatorPage() {
               </div>
               <div className="text-xs text-gray-400 mt-1">
                 {personalSummary.totalManDay.toFixed(1)}공 &times; {formatWon(dailyWageInput)}
+              </div>
+              <div className="text-sm text-gray-600 mt-2">
+                3.3% 공제 후: {formatWon(Math.round(personalSummary.estimatedWage * 0.967))}
               </div>
             </div>
 
@@ -1052,11 +1110,20 @@ export default function CalculatorPage() {
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₩</span>
                       <input
                         type="number"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         value={newMemberWage || ''}
                         onChange={(e) => setNewMemberWage(Number(e.target.value) || 0)}
                         placeholder="일당"
                         className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                       />
+                      {/* 금액 확인 도움말 (0 개수 확인용 만원 환산) */}
+                      {newMemberWage > 0 && (
+                        <p className="mt-1 text-sm text-gray-600">
+                          {formatWon(newMemberWage)}
+                          {newMemberWage >= 10000 && ` (${formatManwon(newMemberWage)})`}
+                        </p>
+                      )}
                     </div>
                     <div className="flex gap-2">
                       <button
@@ -1105,11 +1172,11 @@ export default function CalculatorPage() {
                               <div className="text-lg font-bold text-primary-500">
                                 {memberTotal.toFixed(1)}
                               </div>
-                              <div className="text-[10px] text-gray-400">공수</div>
+                              <div className="text-sm text-gray-500">공수</div>
                             </div>
                             <button
                               onClick={() => handleDeleteMember(member.id)}
-                              className="text-red-400 text-xs hover:text-red-600"
+                              className="min-w-[44px] min-h-[44px] flex items-center justify-center text-red-500 text-sm hover:text-red-600"
                             >
                               삭제
                             </button>

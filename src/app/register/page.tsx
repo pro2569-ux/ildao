@@ -6,6 +6,7 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserRole, JobCategory } from '@/types';
+import { formatWon, formatManwon } from '@/lib/format';
 
 /** 사용 가능한 직종 목록 */
 const JOB_CATEGORIES: JobCategory[] = [
@@ -284,6 +285,8 @@ export default function RegisterPage() {
                 </label>
                 <input
                   type="number"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={experience}
                   onChange={(e) => setExperience(e.target.value)}
                   placeholder="예: 5"
@@ -300,6 +303,8 @@ export default function RegisterPage() {
                 </label>
                 <input
                   type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={desiredWage}
                   onChange={(e) => {
                     const raw = e.target.value.replace(/\D/g, '');
@@ -308,6 +313,12 @@ export default function RegisterPage() {
                   placeholder="예: 250,000"
                   className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
                 />
+                {/* 금액 확인 도움말 (0 개수 확인용 만원 환산) */}
+                {desiredWage && (
+                  <p className="mt-1 text-sm text-gray-600">
+                    {formatWon(Number(desiredWage.replace(/,/g, '')))} ({formatManwon(Number(desiredWage.replace(/,/g, '')))})
+                  </p>
+                )}
               </div>
             </>
           )}

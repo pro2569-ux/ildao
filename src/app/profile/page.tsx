@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { toggleProfilePublic } from '@/lib/firestore';
@@ -14,6 +14,22 @@ import { toggleProfilePublic } from '@/lib/firestore';
 export default function ProfilePage() {
   const { user, userProfile, loading, signOut, refreshProfile } = useAuth();
   const router = useRouter();
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /** 토스트 표시 (3초 후 자동으로 사라짐) */
+  const showToast = (message: string) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToastMessage(message);
+    toastTimerRef.current = setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  // 페이지 이탈 시 토스트 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, []);
 
   // 비로그인 시 로그인 페이지로 리다이렉트
   useEffect(() => {
@@ -98,7 +114,7 @@ export default function ProfilePage() {
       {/* 프로필 상세 정보 */}
       {userProfile && (
         <div className="card mb-4 space-y-3">
-          <h3 className="font-semibold text-sm text-gray-400 uppercase tracking-wider">프로필 정보</h3>
+          <h3 className="font-semibold text-sm text-gray-500 uppercase tracking-wider">프로필 정보</h3>
 
           <InfoRow label="연락처" value={userProfile.phone} />
 
@@ -143,20 +159,24 @@ export default function ProfilePage() {
         <div className="card mb-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-semibold text-sm text-gray-700">프로필 공개</h3>
-              <p className="text-xs text-gray-500 mt-0.5">
+              <h3 className="font-semibold text-base text-gray-800">프로필 공개</h3>
+              <p className="text-sm text-gray-500 mt-0.5">
                 구인자에게 내 프로필이 노출됩니다
               </p>
             </div>
+            {/* p-2로 터치 영역 44px 이상 확보 (시각 크기는 유지) */}
             <button
               onClick={handleTogglePublic}
-              className={`relative w-12 h-7 rounded-full transition-colors ${
-                userProfile.isPublic ? 'bg-primary-500' : 'bg-gray-300'
-              }`}
+              aria-label="프로필 공개 전환"
+              className="p-2 -m-2 flex-shrink-0"
             >
-              <div className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform ${
-                userProfile.isPublic ? 'translate-x-5' : 'translate-x-0.5'
-              }`} />
+              <span className={`relative block w-12 h-7 rounded-full transition-colors ${
+                userProfile.isPublic ? 'bg-primary-500' : 'bg-gray-300'
+              }`}>
+                <span className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform ${
+                  userProfile.isPublic ? 'translate-x-5' : 'translate-x-0.5'
+                }`} />
+              </span>
             </button>
           </div>
         </div>
@@ -165,10 +185,10 @@ export default function ProfilePage() {
       {/* 프로필 미설정 안내 */}
       {!userProfile && (
         <div className="card mb-4 text-center py-6">
-          <p className="text-gray-500 text-sm mb-3">프로필이 설정되지 않았습니다.</p>
+          <p className="text-gray-500 text-base mb-3">프로필이 설정되지 않았습니다.</p>
           <button
             onClick={() => router.push('/register')}
-            className="btn-primary text-sm py-2 px-4"
+            className="btn-primary text-base py-3 px-5 min-h-[44px]"
           >
             프로필 설정하기
           </button>
@@ -178,21 +198,36 @@ export default function ProfilePage() {
       {/* 메뉴 */}
       <div className="card mb-4 divide-y divide-gray-100">
         <MenuItem label="프로필 수정" onClick={() => router.push('/profile/edit')} />
-        <MenuItem label="알림 설정" onClick={() => {/* TODO */}} />
-        <MenuItem label="문의하기" onClick={() => {/* TODO */}} />
-        <MenuItem label="이용약관" onClick={() => {/* TODO */}} />
+        {/* 하단 네비에서 빠진 즐겨찾기 진입점 (P2-12) */}
+        <MenuItem label="즐겨찾기" onClick={() => router.push('/favorites')} />
+        <MenuItem label="알림 설정" badge="준비중" onClick={() => showToast('준비 중인 기능이에요')} />
+        {/* TODO: 대표 전화(tel:) 또는 카카오채널로 교체 */}
+        <MenuItem
+          label="문의하기"
+          onClick={() => {
+            window.location.href = 'mailto:pro2569@gmail.com?subject=일다오 문의';
+          }}
+        />
+        <MenuItem label="이용약관" badge="준비중" onClick={() => showToast('준비 중인 기능이에요')} />
       </div>
 
       {/* 로그아웃 */}
       <button
         onClick={handleSignOut}
-        className="w-full py-3 text-center text-red-500 font-medium bg-white rounded-xl border border-gray-100 hover:bg-red-50 transition-colors"
+        className="w-full py-3 min-h-[44px] text-center text-base text-red-500 font-medium bg-white rounded-xl border border-gray-100 hover:bg-red-50 transition-colors"
       >
         로그아웃
       </button>
 
       {/* 버전 정보 */}
-      <p className="text-center text-xs text-gray-300 mt-4">일다오 v1.0.0</p>
+      <p className="text-center text-sm text-gray-500 mt-4">일다오 v1.0.0</p>
+
+      {/* 토스트 메시지 */}
+      {toastMessage && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-black/70 text-white text-sm px-4 py-2.5 rounded-full whitespace-nowrap">
+          {toastMessage}
+        </div>
+      )}
     </div>
   );
 }
@@ -202,20 +237,27 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between">
       <span className="text-sm text-gray-500">{label}</span>
-      <span className="text-sm font-medium text-gray-900">{value}</span>
+      <span className="text-base font-medium text-gray-900">{value}</span>
     </div>
   );
 }
 
 /** 메뉴 항목 컴포넌트 */
-function MenuItem({ label, onClick }: { label: string; onClick: () => void }) {
+function MenuItem({ label, badge, onClick }: { label: string; badge?: string; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center justify-between py-3.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+      className="w-full flex items-center justify-between py-3.5 min-h-[44px] text-base text-gray-700 hover:bg-gray-50 transition-colors"
     >
-      <span>{label}</span>
-      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <span className="flex items-center gap-1.5">
+        {label}
+        {badge && (
+          <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full">
+            {badge}
+          </span>
+        )}
+      </span>
+      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
       </svg>
     </button>
