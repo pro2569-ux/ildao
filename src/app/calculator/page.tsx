@@ -226,12 +226,8 @@ export default function CalculatorPage() {
 
   // ===== 개인용: 날짜 클릭 → 모달 열기 =====
 
-  const openDayModal = (day: number) => {
-    const dateKey = formatDateKey(currentYear, currentMonth, day);
-    setSelectedDate(dateKey);
-    setSaveError(null);
-
-    const existing = monthlyRecords.get(dateKey);
+  /** 기존 기록이 있으면 프리필, 없으면 기본값 초기화 */
+  const prefillEditFields = (existing?: DailyWorkRecord) => {
     if (existing) {
       setEditManDay(existing.manDay);
       setEditOvertime(existing.overtime);
@@ -250,6 +246,46 @@ export default function CalculatorPage() {
       setEditMemo('');
       setEditWeather('none');
     }
+  };
+
+  const openDayModal = (day: number) => {
+    const dateKey = formatDateKey(currentYear, currentMonth, day);
+    setSelectedDate(dateKey);
+    setSaveError(null);
+    prefillEditFields(monthlyRecords.get(dateKey));
+  };
+
+  // ===== 개인용: 오늘 기록하기 원탭 (P2-7) =====
+
+  /** 캘린더에서 오늘을 찾지 않고 바로 오늘 날짜 모달을 연다 ("퇴근 후 30초 기록") */
+  const openTodayModal = async () => {
+    if (!user) return;
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth() + 1;
+    const dateKey = formatDateKey(y, m, now.getDate());
+    const sameMonth = y === currentYear && m === currentMonth;
+
+    // 다른 달을 보던 중이면 오늘이 속한 달로 이동
+    if (!sameMonth) {
+      setCurrentYear(y);
+      setCurrentMonth(m);
+    }
+
+    let existing = sameMonth ? monthlyRecords.get(dateKey) : undefined;
+    if (!sameMonth) {
+      // 보던 달 데이터에는 오늘이 없으므로 단건 조회로 기존 기록 프리필 (기본값 저장으로 덮어쓰는 사고 방지)
+      try {
+        const records = await getWorksByDateRange(user.uid, dateKey, dateKey);
+        existing = records[0];
+      } catch (error) {
+        console.error('오늘 기록 조회 실패:', error);
+      }
+    }
+
+    setSelectedDate(dateKey);
+    setSaveError(null);
+    prefillEditFields(existing);
   };
 
   const closeDayModal = () => {
@@ -937,6 +973,20 @@ export default function CalculatorPage() {
       {/* ===== 개인용 모드 ===== */}
       {activeTab === 'personal' && !isLoading && (
         <>
+          {/* 오늘 기록하기 원탭 버튼 (P2-7) */}
+          <button
+            onClick={openTodayModal}
+            className="w-full min-h-[56px] mb-4 bg-accent-500 hover:bg-accent-600 active:bg-accent-600 text-white text-lg font-bold rounded-xl flex items-center justify-center gap-2 shadow-sm"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+            </svg>
+            오늘 기록하기
+            <span className="text-base font-semibold text-orange-100">
+              {new Date().getMonth() + 1}월 {new Date().getDate()}일
+            </span>
+          </button>
+
           {/* 캘린더 그리드 */}
           {renderCalendar('personal', openDayModal)}
 
