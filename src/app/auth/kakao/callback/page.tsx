@@ -81,11 +81,10 @@ function KakaoCallbackContent() {
         });
 
         if (!response.ok) {
-          const data = await response.json();
+          // 상세는 콘솔에만 남기고 사용자에게는 쉬운 한국어로 안내 (P2-18)
+          const data = await response.json().catch(() => null);
           console.error('카카오 API 에러 상세:', JSON.stringify(data));
-          throw new Error(
-            `${data.error || '로그인 처리에 실패했습니다.'} ${data.detail ? `(${data.detail})` : ''}`
-          );
+          throw new Error('카카오 로그인에 실패했어요. 잠시 후 다시 시도해주세요.');
         }
 
         const { customToken } = await response.json();
@@ -102,7 +101,7 @@ function KakaoCallbackContent() {
         }
       } catch (err: any) {
         console.error('카카오 콜백 처리 오류:', err);
-        setError(err.message || '로그인에 실패했습니다.');
+        setError(err.message || '카카오 로그인에 실패했어요. 잠시 후 다시 시도해주세요.');
         setTimeout(() => router.replace(getLoginPath()), 3000);
       }
     };

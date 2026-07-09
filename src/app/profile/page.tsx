@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { toggleProfilePublic } from '@/lib/firestore';
+import ConfirmSheet from '@/components/ui/ConfirmSheet';
 
 /**
  * 내 정보 (프로필) 페이지
@@ -15,6 +16,8 @@ export default function ProfilePage() {
   const { user, userProfile, loading, signOut, refreshProfile } = useAuth();
   const router = useRouter();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  // 로그아웃 실수 방지 확인 시트 (P2-18)
+  const [showLogoutSheet, setShowLogoutSheet] = useState(false);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /** 토스트 표시 (3초 후 자동으로 사라짐) */
@@ -211,13 +214,22 @@ export default function ProfilePage() {
         <MenuItem label="이용약관" badge="준비중" onClick={() => showToast('준비 중인 기능이에요')} />
       </div>
 
-      {/* 로그아웃 */}
+      {/* 로그아웃 — 확인 시트 경유 (P2-18) */}
       <button
-        onClick={handleSignOut}
+        onClick={() => setShowLogoutSheet(true)}
         className="w-full py-3 min-h-[44px] text-center text-base text-red-500 font-medium bg-white rounded-xl border border-gray-100 hover:bg-red-50 transition-colors"
       >
         로그아웃
       </button>
+
+      <ConfirmSheet
+        open={showLogoutSheet}
+        title="로그아웃할까요?"
+        description="다시 이용하려면 로그인이 필요해요"
+        confirmText="로그아웃"
+        onConfirm={handleSignOut}
+        onCancel={() => setShowLogoutSheet(false)}
+      />
 
       {/* 버전 정보 */}
       <p className="text-center text-sm text-gray-500 mt-4">일다오 v1.0.0</p>

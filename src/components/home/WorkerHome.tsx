@@ -13,7 +13,7 @@ import { JobPost, Application, JobCategory } from '@/types';
 import ErrorState from '@/components/ui/ErrorState';
 import { formatWon, formatDate } from '@/lib/format';
 
-/** 직종 카테고리 목록 */
+/** 직종 카테고리 목록 — 공고 피드와 동일하게 전체 직종 노출 (P2-18) */
 const CATEGORIES: { name: JobCategory | '전체'; icon: string }[] = [
   { name: '전체', icon: '📋' },
   { name: '철근', icon: '🔩' },
@@ -23,6 +23,12 @@ const CATEGORIES: { name: JobCategory | '전체'; icon: string }[] = [
   { name: '도장', icon: '🎨' },
   { name: '용접', icon: '🔥' },
   { name: '타일', icon: '🧱' },
+  { name: '미장', icon: '🪣' },
+  { name: '방수', icon: '☔' },
+  { name: '조적', icon: '🏗️' },
+  { name: '비계', icon: '🪜' },
+  { name: '잡역', icon: '💪' },
+  { name: '기타', icon: '📦' },
 ];
 
 /** 닫은 수락 배너의 application id 목록을 저장하는 localStorage 키 */

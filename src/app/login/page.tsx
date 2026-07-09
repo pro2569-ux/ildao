@@ -31,6 +31,8 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSigningIn, setIsSigningIn] = useState(false);
+  // 카카오는 리다이렉트 방식이라 이동할 때까지 버튼 잠금 (중복 탭 방지, P2-18)
+  const [kakaoRedirecting, setKakaoRedirecting] = useState(false);
   const [error, setError] = useState('');
 
   // 로그인 후 돌아갈 경로 (?returnUrl=/jobs/xxx) — 내부 경로만 허용
@@ -65,8 +67,10 @@ function LoginContent() {
     }
   };
 
-  /** 카카오 로그인 핸들러 (리다이렉트 방식 - 상태 변경 불필요) */
+  /** 카카오 로그인 핸들러 (리다이렉트 방식) */
   const handleKakaoSignIn = () => {
+    if (kakaoRedirecting) return;
+    setKakaoRedirecting(true);
     setError('');
     // 리다이렉트 왕복 후에도 복귀 경로가 유지되도록 sessionStorage에 저장
     try {
@@ -123,21 +127,25 @@ function LoginContent() {
         {/* 카카오 로그인 */}
         <button
           onClick={handleKakaoSignIn}
-          disabled={isSigningIn}
+          disabled={isSigningIn || kakaoRedirecting}
           className="w-full flex items-center justify-center gap-3 py-3.5 px-6 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
           style={{ backgroundColor: '#FEE500', color: '#191919' }}
         >
-          {/* 카카오 말풍선 아이콘 */}
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.61 1.558 4.908 3.926 6.284L5 21l4.58-2.453A11.2 11.2 0 0012 18c5.523 0 10-3.477 10-7.5S17.523 3 12 3z" />
-          </svg>
-          <span>카카오로 시작하기</span>
+          {kakaoRedirecting ? (
+            <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-700 border-t-transparent" />
+          ) : (
+            // 카카오 말풍선 아이콘
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.61 1.558 4.908 3.926 6.284L5 21l4.58-2.453A11.2 11.2 0 0012 18c5.523 0 10-3.477 10-7.5S17.523 3 12 3z" />
+            </svg>
+          )}
+          <span>{kakaoRedirecting ? '카카오로 이동 중...' : '카카오로 시작하기'}</span>
         </button>
 
         {/* Google 로그인 */}
         <button
           onClick={handleGoogleSignIn}
-          disabled={isSigningIn}
+          disabled={isSigningIn || kakaoRedirecting}
           className="w-full flex items-center justify-center gap-3 py-3.5 px-6 bg-white border border-gray-300 rounded-xl font-medium text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
         >
           {isSigningIn ? (

@@ -81,6 +81,35 @@ export default function ProfileEditPage() {
     }
   }, [userProfile]);
 
+  // 저장 안 한 수정 내용이 있으면 새로고침/탭 닫기 경고 (P2-18)
+  // 위 프리필과 동일한 규칙으로 프로필 원본과 현재 입력값을 비교해 변경 여부 판단
+  useEffect(() => {
+    if (!userProfile) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      if (isSaving || success) return;
+      const clean =
+        name === (userProfile.name || '') &&
+        phone === (userProfile.phone || '') &&
+        profileImage === (userProfile.profileImage || '') &&
+        (userProfile.role === 'worker'
+          ? JSON.stringify(skills) === JSON.stringify((userProfile.skills as JobCategory[]) || []) &&
+            experience === (userProfile.experience ? String(userProfile.experience) : '') &&
+            region === (userProfile.region || '') &&
+            desiredWage === (userProfile.desiredWage ? userProfile.desiredWage.toLocaleString() : '') &&
+            introduction === (userProfile.introduction || '')
+          : companyName === (userProfile.companyName || '') &&
+            representativeName === (userProfile.representativeName || '') &&
+            JSON.stringify(mainJobCategories) === JSON.stringify(userProfile.mainJobCategories || []) &&
+            companyIntro === (userProfile.companyIntro || ''));
+      if (!clean) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [userProfile, isSaving, success, name, phone, profileImage, skills, experience, region, desiredWage, introduction, companyName, representativeName, mainJobCategories, companyIntro]);
+
   /** 직종 토글 (구직자 skills) */
   const toggleSkill = (category: JobCategory) => {
     setSkills((prev) =>

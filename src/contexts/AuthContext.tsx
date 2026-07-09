@@ -106,26 +106,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithKakao = () => {
     if (typeof window === 'undefined') return;
 
+    const clientId = process.env.NEXT_PUBLIC_KAKAO_JS_KEY || '80b8cae0927e7a3757684435be41eaf8';
+    const redirectUri = window.location.origin + '/auth/kakao/callback';
+    /** SDK 없이도 동작하는 직접 인증 URL (authorize()와 동일 엔드포인트) */
+    const goAuthorizeUrl = () => {
+      window.location.href = `https://kauth.kakao.com/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`;
+    };
+
+    // SDK 미로드여도 버튼이 조용히 죽지 않도록 직접 인증 URL로 이동 (P2-18)
     if (!window.Kakao) {
-      console.error('카카오 SDK가 로드되지 않았습니다.');
+      console.warn('카카오 SDK 미로드 — 인증 URL로 직접 이동합니다.');
+      goAuthorizeUrl();
       return;
     }
 
     if (!window.Kakao.isInitialized()) {
-      const key = process.env.NEXT_PUBLIC_KAKAO_JS_KEY || '80b8cae0927e7a3757684435be41eaf8';
-      window.Kakao.init(key);
+      window.Kakao.init(clientId);
     }
 
     // SDK v2는 Kakao.Auth.authorize() 사용 (login()은 deprecated)
     if (typeof window.Kakao.Auth?.authorize === 'function') {
-      window.Kakao.Auth.authorize({
-        redirectUri: window.location.origin + '/auth/kakao/callback',
-      });
+      window.Kakao.Auth.authorize({ redirectUri });
     } else {
-      // fallback: 직접 카카오 인증 URL로 이동
-      const clientId = process.env.NEXT_PUBLIC_KAKAO_JS_KEY || '80b8cae0927e7a3757684435be41eaf8';
-      const redirectUri = encodeURIComponent(window.location.origin + '/auth/kakao/callback');
-      window.location.href = `https://kauth.kakao.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code`;
+      goAuthorizeUrl();
     }
   };
 

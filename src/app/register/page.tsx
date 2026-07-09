@@ -20,8 +20,14 @@ const JOB_CATEGORIES: JobCategory[] = [
  * - 유형별 추가 정보 입력
  */
 export default function RegisterPage() {
-  const { user, userProfile, loading, refreshProfile } = useAuth();
+  const { user, userProfile, loading, refreshProfile, signOut } = useAuth();
   const router = useRouter();
+
+  /** 잘못된 계정으로 들어온 경우 로그아웃 후 로그인 화면으로 (P2-18) */
+  const handleSwitchAccount = async () => {
+    await signOut();
+    router.replace('/login');
+  };
 
   // 단계: 1=역할선택, 2=정보입력
   const [step, setStep] = useState(1);
@@ -158,6 +164,8 @@ export default function RegisterPage() {
           <div className={`h-1 flex-1 rounded-full ${step >= 1 ? 'bg-primary-500' : 'bg-gray-200'}`} />
           <div className={`h-1 flex-1 rounded-full ${step >= 2 ? 'bg-primary-500' : 'bg-gray-200'}`} />
         </div>
+        {/* 진행 단계 텍스트 (P2-18) */}
+        <p className="text-sm font-semibold text-primary-500 mb-1">{step}/2 단계</p>
         <h1 className="text-xl font-bold text-gray-900">
           {step === 1 ? '어떤 용도로 사용하시나요?' : '기본 정보를 입력해주세요'}
         </h1>
@@ -404,6 +412,15 @@ export default function RegisterPage() {
           </div>
         </div>
       )}
+
+      {/* 다른 계정으로 로그인 (P2-18) — 잘못된 계정으로 들어온 경우 탈출구 */}
+      <button
+        type="button"
+        onClick={handleSwitchAccount}
+        className="w-full mt-8 min-h-[44px] text-center text-base text-gray-500 underline"
+      >
+        다른 계정으로 로그인
+      </button>
     </div>
   );
 }
