@@ -3,20 +3,36 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // users 컬렉션: 본인만 읽기/쓰기
+    // jobs.applicants 배열에 본인 uid만 추가/제거하는 변경인지 확인
+    // (지원하기 arrayUnion / 지원 취소 arrayRemove — 다른 필드 변경 불가)
+    function isSelfApplicantsChange() {
+      let before = resource.data.applicants.toSet();
+      let after = request.resource.data.applicants.toSet();
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['applicants'])
+        && after.difference(before).hasOnly([request.auth.uid])
+        && before.difference(after).hasOnly([request.auth.uid]);
+    }
+
+    // users 컬렉션
+    // - get(단건): 로그인 사용자 허용 — 공고 상세의 업체 정보, 지원자 프로필 표시에 필요.
+    //   전화번호 노출 정책(지원 = 연락 동의, 인력검색은 isPublic만)은 UI에서 통제.
+    // - list(목록 쿼리): 본인 문서 또는 isPublic == true 프로필만 (인력검색용)
     match /users/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
+      allow get: if request.auth != null;
+      allow list: if request.auth != null
+        && (request.auth.uid == userId || resource.data.isPublic == true);
       allow create: if request.auth != null && request.auth.uid == userId;
       allow update: if request.auth != null && request.auth.uid == userId;
       allow delete: if false;
     }
 
     // 개인 공수 기록
+    // - delete: 본인 기록만 (P2 — 공수 삭제 기능)
     match /dailyWorks/{docId} {
       allow read: if request.auth != null && resource.data.userId == request.auth.uid;
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
       allow update: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow delete: if false;
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
 
     // 팀 정보 (팀장 본인만)
@@ -26,27 +42,43 @@ service cloud.firestore {
     }
 
     // 팀원 공수 기록
+    // - delete: 팀장 본인 기록만 (P2 — 팀원 공수 삭제 기능)
     match /teamDailyWorks/{docId} {
       allow read: if request.auth != null && resource.data.teamLeaderId == request.auth.uid;
       allow create: if request.auth != null && request.resource.data.teamLeaderId == request.auth.uid;
       allow update: if request.auth != null && resource.data.teamLeaderId == request.auth.uid;
-      allow delete: if false;
+      allow delete: if request.auth != null && resource.data.teamLeaderId == request.auth.uid;
     }
 
     // 구인 공고
+    // - update: 작성자(구인자) 본인, 또는 지원자가 applicants 배열에 자기 uid만 추가/제거
     match /jobs/{docId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
-      allow update: if request.auth != null && resource.data.employerId == request.auth.uid;
+      allow update: if request.auth != null
+        && (resource.data.employerId == request.auth.uid || isSelfApplicantsChange());
       allow delete: if request.auth != null && resource.data.employerId == request.auth.uid;
     }
 
-    // 지원 내역
+    // 지원 내역 (문서 ID 규칙: `${jobId}_${workerId}`)
+    // - read: 로그인 사용자 (문서에는 uid/상태만 있고 연락처 등 개인정보 없음)
+    //   ※ getCountFromServer 집계 read도 이 규칙으로 허용됨
+    // - create: 본인 지원만, 문서 ID 규칙 강제, 초기 상태는 pending
+    // - update: 해당 공고의 구인자만, status 필드만 변경 가능 (수락/거절)
+    // - delete: 본인의 pending 지원만 (지원 취소)
     match /applications/{docId} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null;
-      allow delete: if false;
+      allow create: if request.auth != null
+        && request.resource.data.workerId == request.auth.uid
+        && docId == request.resource.data.jobId + '_' + request.resource.data.workerId
+        && request.resource.data.status == 'pending';
+      allow update: if request.auth != null
+        && resource.data.employerId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        && request.resource.data.status in ['pending', 'accepted', 'rejected'];
+      allow delete: if request.auth != null
+        && resource.data.workerId == request.auth.uid
+        && resource.data.status == 'pending';
     }
 
     // 즐겨찾기

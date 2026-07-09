@@ -83,6 +83,7 @@ export interface JobPost {
     lat: number;            // 위도
     lng: number;            // 경도
   };
+  region?: string;          // 시/도 (REGIONS 값 그대로 저장, P2-6 — 옛 공고에는 없을 수 있음)
   // 상태
   status: JobStatus;
   applicants: string[];     // 지원자 UID 목록

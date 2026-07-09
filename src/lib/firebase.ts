@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore, getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getMessaging, isSupported } from 'firebase/messaging';
 
@@ -15,11 +15,15 @@ const firebaseConfig = {
 };
 
 // Firebase 앱 초기화 (이미 초기화된 경우 기존 앱 사용)
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+const isNewApp = getApps().length === 0;
+const app = isNewApp ? initializeApp(firebaseConfig) : getApp();
 
 // Firebase 서비스 인스턴스
+// ignoreUndefinedProperties: undefined 필드가 섞여도 저장이 실패하지 않도록 함
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+export const db = isNewApp
+  ? initializeFirestore(app, { ignoreUndefinedProperties: true })
+  : getFirestore(app);
 export const storage = getStorage(app);
 
 // FCM은 브라우저 환경에서만 사용 가능
