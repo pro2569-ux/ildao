@@ -125,6 +125,17 @@ export default function CalculatorPage() {
   const [teamEditExtension, setTeamEditExtension] = useState(false);
   const [teamEditMemo, setTeamEditMemo] = useState('');
 
+  // 팀원 삭제 확인 시트 (P2-15)
+  const [memberToDelete, setMemberToDelete] = useState<TeamMember | null>(null);
+  const [memberDeleting, setMemberDeleting] = useState(false);
+  const [memberDeleteError, setMemberDeleteError] = useState<string | null>(null);
+
+  // 오늘 전원 일괄 기록 바텀시트 (P2-15) — memberId → 오늘 공수
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkValues, setBulkValues] = useState<Map<string, number>>(new Map());
+  const [bulkSaving, setBulkSaving] = useState(false);
+  const [bulkError, setBulkError] = useState<string | null>(null);
+
   // ===== 초기 데이터 로드 =====
 
   /** 일당 초기값 설정 (사용자 프로필에서) */
@@ -462,12 +473,35 @@ export default function CalculatorPage() {
 
   // ===== 팀장용: 팀원 추가 =====
 
+  /**
+   * 팀원 ID 생성 (P2-15) — 연락처(숫자) 기반 고정 ID.
+   * 삭제 후 같은 연락처로 다시 등록하면 teamDailyWorks 기록(docId에 memberId 포함)이 다시 연결됨.
+   * 연락처가 없으면 이름 기반 (동명이인은 연락처 입력으로 구분 권장).
+   */
+  const makeMemberId = (name: string, phone?: string): string => {
+    const digits = (phone || '').replace(/\D/g, '');
+    return digits ? `p${digits}` : `n${name}`;
+  };
+
   const handleAddMember = async () => {
     if (!user || !newMemberName.trim()) return;
+    const name = newMemberName.trim();
+    const phone = newMemberPhone.trim();
+    const id = makeMemberId(name, phone);
+    const digits = phone.replace(/\D/g, '');
+    // 중복 등록 방지 (동일 ID 또는 동일 연락처)
+    if (
+      teamMembers.some(
+        (m) => m.id === id || (digits && (m.phone || '').replace(/\D/g, '') === digits)
+      )
+    ) {
+      setError('이미 등록된 팀원이에요.');
+      return;
+    }
     const newMember: TeamMember = {
-      id: Date.now().toString(),
-      name: newMemberName.trim(),
-      phone: newMemberPhone.trim() || undefined,
+      id,
+      name,
+      phone: phone || undefined,
       dailyWage: newMemberWage || undefined,
     };
     const updatedMembers = [...teamMembers, newMember];
@@ -478,26 +512,33 @@ export default function CalculatorPage() {
       setNewMemberPhone('');
       setNewMemberWage(0);
       setShowAddMember(false);
+      showToast(`${name}님을 팀에 추가했어요`);
     } catch (err) {
       console.error('팀원 추가 실패:', err);
       setError('팀원 추가에 실패했습니다.');
     }
   };
 
-  // ===== 팀장용: 팀원 삭제 =====
+  // ===== 팀장용: 팀원 삭제 (확인 시트 경유, P2-15) =====
 
-  const handleDeleteMember = async (memberId: string) => {
-    if (!user) return;
-    const updatedMembers = teamMembers.filter((m) => m.id !== memberId);
+  const handleDeleteMember = async () => {
+    if (!user || !memberToDelete) return;
+    const updatedMembers = teamMembers.filter((m) => m.id !== memberToDelete.id);
+    setMemberDeleting(true);
+    setMemberDeleteError(null);
     try {
       await saveTeamMembers(user.uid, updatedMembers);
       setTeamMembers(updatedMembers);
-      if (selectedMember?.id === memberId) {
+      if (selectedMember?.id === memberToDelete.id) {
         setSelectedMember(null);
       }
+      showToast(`${memberToDelete.name}님을 팀에서 삭제했어요`);
+      setMemberToDelete(null);
     } catch (err) {
       console.error('팀원 삭제 실패:', err);
-      setError('팀원 삭제에 실패했습니다.');
+      setMemberDeleteError('삭제에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setMemberDeleting(false);
     }
   };
 
@@ -608,6 +649,96 @@ export default function CalculatorPage() {
       setDeleteError('삭제에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  // ===== 팀장용: 오늘 전원 일괄 기록 (P2-15) =====
+
+  /** "오늘 전원 1공 + 예외만 조정" — 오늘 기록이 이미 있는 팀원은 그 값으로 프리필 */
+  const openBulkModal = async () => {
+    if (!user || teamMembers.length === 0) return;
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth() + 1;
+    const dateKey = formatDateKey(y, m, now.getDate());
+    const sameMonth = y === currentYear && m === currentMonth;
+
+    // 다른 달을 보던 중이면 오늘이 속한 달로 이동
+    if (!sameMonth) {
+      setCurrentYear(y);
+      setCurrentMonth(m);
+    }
+
+    let todays: TeamDailyWork[] = [];
+    if (sameMonth) {
+      todays = teamWorks.filter((w) => w.date === dateKey);
+    } else {
+      // 보던 달 데이터에는 오늘이 없으므로 조회해서 프리필 (덮어쓰기 사고 방지)
+      try {
+        todays = (await getTeamMonthlyWorks(user.uid, y, m)).filter((w) => w.date === dateKey);
+      } catch (err) {
+        console.error('오늘 팀 기록 조회 실패:', err);
+      }
+    }
+
+    const init = new Map<string, number>();
+    teamMembers.forEach((member) => {
+      const existing = todays.find((w) => w.memberId === member.id);
+      init.set(member.id, existing ? existing.manDay : 1.0);
+    });
+    setBulkValues(init);
+    setBulkError(null);
+    setBulkOpen(true);
+  };
+
+  const handleBulkSave = async () => {
+    if (!user) return;
+    const now = new Date();
+    const dateKey = formatDateKey(now.getFullYear(), now.getMonth() + 1, now.getDate());
+    setBulkSaving(true);
+    setBulkError(null);
+    try {
+      const existingByMember = new Map(
+        teamWorks.filter((w) => w.date === dateKey).map((w) => [w.memberId, w])
+      );
+      const savedRecords: TeamDailyWork[] = [];
+      await Promise.all(
+        teamMembers.map(async (member) => {
+          const manDay = bulkValues.get(member.id) ?? 1.0;
+          const existing = existingByMember.get(member.id);
+          if (existing && existing.manDay === manDay) return; // 변경 없음 → 쓰기 생략
+          const data = {
+            memberName: member.name,
+            manDay,
+            // 휴무(0공) 선택 시 dayOff 기록, 공수 있으면 휴무 해제 (P2-9와 동일 규칙)
+            dayOff: manDay === 0,
+            overtime: existing?.overtime ?? false,
+            extension: existing?.extension ?? false,
+            memo: existing?.memo ?? '',
+          };
+          await saveTeamDailyWork(user.uid, member.id, dateKey, data);
+          savedRecords.push({
+            teamLeaderId: user.uid,
+            memberId: member.id,
+            date: dateKey,
+            ...data,
+          });
+        })
+      );
+      // 로컬 상태 반영
+      setTeamWorks((prev) => {
+        const rest = prev.filter(
+          (w) => !(w.date === dateKey && savedRecords.some((n) => n.memberId === w.memberId))
+        );
+        return [...rest, ...savedRecords];
+      });
+      setBulkOpen(false);
+      showToast(`팀원 ${teamMembers.length}명 오늘 공수를 저장했어요`);
+    } catch (err) {
+      console.error('전원 기록 저장 실패:', err);
+      setBulkError('저장에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setBulkSaving(false);
     }
   };
 
@@ -1088,6 +1219,101 @@ export default function CalculatorPage() {
     );
   };
 
+  // ===== 오늘 전원 일괄 기록 바텀시트 (P2-15) =====
+
+  const BULK_PRESETS = [0, 0.5, 1.0, 1.5];
+
+  const renderBulkModal = () => {
+    if (!bulkOpen) return null;
+    const now = new Date();
+
+    return (
+      <>
+        {/* 배경 오버레이 — 저장 중에는 닫히지 않음 */}
+        <div
+          className="fixed inset-0 bg-black/40 z-40"
+          onClick={bulkSaving ? undefined : () => setBulkOpen(false)}
+        />
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl max-h-[85vh] overflow-y-auto animate-slide-up">
+          <div className="max-w-lg mx-auto px-4 pt-4 pb-8">
+            <div className="flex justify-center mb-3">
+              <div className="w-10 h-1 bg-gray-300 rounded-full" />
+            </div>
+
+            <h3 className="text-lg font-bold text-center mb-1">오늘 전원 기록</h3>
+            <p className="text-sm text-gray-500 text-center mb-4">
+              {now.getMonth() + 1}월 {now.getDate()}일 · 기본 1공, 예외인 팀원만 조정하세요
+            </p>
+
+            {/* 팀원별 공수 선택 */}
+            <div className="mb-4">
+              {teamMembers.map((member) => {
+                const value = bulkValues.get(member.id) ?? 1.0;
+                const isPreset = BULK_PRESETS.includes(value);
+                return (
+                  <div
+                    key={member.id}
+                    className="flex items-center justify-between gap-2 py-2 border-b border-gray-50"
+                  >
+                    <div className="min-w-0">
+                      <div className="text-base font-medium truncate">{member.name}</div>
+                      {/* 프리셋 외 값(개별 미세조정분)은 텍스트로 표시 */}
+                      {!isPreset && (
+                        <div className="text-sm text-gray-500">현재 {value}공</div>
+                      )}
+                    </div>
+                    <div className="flex gap-1 flex-shrink-0">
+                      {BULK_PRESETS.map((preset) => (
+                        <button
+                          key={preset}
+                          onClick={() =>
+                            setBulkValues((prev) => new Map(prev).set(member.id, preset))
+                          }
+                          disabled={bulkSaving}
+                          className={`min-w-[48px] min-h-[44px] rounded-lg text-sm font-bold transition-colors ${
+                            value === preset
+                              ? preset === 0
+                                ? 'bg-gray-500 text-white'
+                                : 'bg-primary-500 text-white'
+                              : 'bg-gray-100 text-gray-700 active:bg-gray-200'
+                          }`}
+                        >
+                          {preset === 0 ? '휴무' : `${preset}공`}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 저장 실패 에러 메시지 */}
+            {bulkError && (
+              <p className="text-sm text-red-500 text-center mb-3">{bulkError}</p>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setBulkOpen(false)}
+                disabled={bulkSaving}
+                className="flex-1 min-h-[48px] py-3 bg-gray-100 text-gray-700 text-base font-bold rounded-lg disabled:opacity-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleBulkSave}
+                disabled={bulkSaving}
+                className="btn-primary flex-[2] py-3 text-base font-bold disabled:opacity-50"
+              >
+                {bulkSaving ? '저장 중...' : `전원 저장 (${teamMembers.length}명)`}
+              </button>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  };
+
   // ===== 메인 렌더 =====
 
   return (
@@ -1319,6 +1545,22 @@ export default function CalculatorPage() {
           {/* 선택된 팀원이 없으면 팀원 목록, 있으면 팀원 캘린더 */}
           {!selectedMember ? (
             <>
+              {/* 오늘 전원 기록 원탭 버튼 (P2-15) */}
+              {teamMembers.length > 0 && (
+                <button
+                  onClick={openBulkModal}
+                  className="w-full min-h-[56px] mb-4 bg-accent-500 hover:bg-accent-600 active:bg-accent-600 text-white text-lg font-bold rounded-xl flex items-center justify-center gap-2 shadow-sm"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                  </svg>
+                  오늘 전원 기록
+                  <span className="text-base font-semibold text-orange-100">
+                    {teamMembers.length}명
+                  </span>
+                </button>
+              )}
+
               {/* 팀원 관리 카드 */}
               <div className="card mb-4">
                 <div className="flex items-center justify-between mb-3">
@@ -1385,11 +1627,27 @@ export default function CalculatorPage() {
                   </div>
                 )}
 
-                {/* 팀원 리스트 */}
+                {/* 팀원 리스트 — 빈 상태는 온보딩 안내 (P2-15) */}
                 {teamMembers.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-6">
-                    등록된 팀원이 없습니다.
-                  </p>
+                  !showAddMember && (
+                    <div className="text-center py-8">
+                      <div className="text-4xl mb-3">👷</div>
+                      <p className="text-base font-semibold text-gray-700 mb-1">
+                        아직 팀원이 없어요
+                      </p>
+                      <p className="text-sm text-gray-500 mb-4">
+                        팀원을 등록하면 전원 공수를 한 번에
+                        <br />
+                        기록하고 급여를 계산할 수 있어요
+                      </p>
+                      <button
+                        onClick={() => setShowAddMember(true)}
+                        className="btn-primary min-h-[48px] py-3 px-6 text-base font-bold rounded-xl"
+                      >
+                        + 첫 팀원 추가하기
+                      </button>
+                    </div>
+                  )
                 ) : (
                   <div className="space-y-2">
                     {teamMembers.map((member) => {
@@ -1401,13 +1659,19 @@ export default function CalculatorPage() {
                         >
                           <button
                             onClick={() => setSelectedMember(member)}
-                            className="flex-1 text-left"
+                            className="flex-1 text-left min-w-0"
                           >
-                            <div className="font-medium text-sm">{member.name}</div>
-                            <div className="text-xs text-gray-400">
+                            <div className="font-medium text-base">{member.name}</div>
+                            <div className="text-sm text-gray-500">
                               {member.phone || '연락처 없음'}
                               {member.dailyWage ? ` · ${formatWon(member.dailyWage)}` : ''}
                             </div>
+                            {/* 일당 미입력 시 0원 계산 경고 (P2-15) */}
+                            {!member.dailyWage && (
+                              <div className="text-sm font-medium text-amber-600">
+                                일당 미입력 — 급여에 0원으로 계산돼요
+                              </div>
+                            )}
                           </button>
                           <div className="flex items-center gap-3">
                             <div className="text-right">
@@ -1417,7 +1681,7 @@ export default function CalculatorPage() {
                               <div className="text-sm text-gray-500">공수</div>
                             </div>
                             <button
-                              onClick={() => handleDeleteMember(member.id)}
+                              onClick={() => setMemberToDelete(member)}
                               className="min-w-[44px] min-h-[44px] flex items-center justify-center text-red-500 text-sm hover:text-red-600"
                             >
                               삭제
@@ -1448,6 +1712,12 @@ export default function CalculatorPage() {
                       <div className="text-xs text-gray-500 mt-1">예상 총 급여</div>
                     </div>
                   </div>
+                  {/* 일당 미입력 팀원 0원 계산 안내 (P2-15) */}
+                  {teamMembers.some((m) => !m.dailyWage) && (
+                    <p className="text-sm text-gray-500 mt-3">
+                      일당을 입력하지 않은 팀원은 급여 합계에 0원으로 들어가요.
+                    </p>
+                  )}
                 </div>
               )}
             </>
@@ -1457,13 +1727,14 @@ export default function CalculatorPage() {
               <div className="flex items-center gap-2 mb-4">
                 <button
                   onClick={() => setSelectedMember(null)}
-                  className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600"
+                  aria-label="팀원 목록으로"
+                  className="w-11 h-11 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 text-xl"
                 >
                   &lsaquo;
                 </button>
                 <h3 className="text-base font-bold">{selectedMember.name}</h3>
                 {selectedMember.dailyWage && (
-                  <span className="text-xs text-gray-400 ml-auto">
+                  <span className="text-sm text-gray-500 ml-auto">
                     일당 {formatWon(selectedMember.dailyWage)}
                   </span>
                 )}
@@ -1497,6 +1768,24 @@ export default function CalculatorPage() {
       {/* ===== 모달들 ===== */}
       {renderPersonalDayModal()}
       {renderTeamDayModal()}
+      {renderBulkModal()}
+
+      {/* 팀원 삭제 확인 시트 (P2-15) */}
+      <ConfirmSheet
+        open={memberToDelete !== null}
+        title={`${memberToDelete?.name ?? ''}님을 팀에서 삭제할까요?`}
+        description="삭제해도 저장된 공수 기록은 지워지지 않아요. 같은 연락처로 다시 등록하면 기록을 이어서 볼 수 있어요."
+        confirmText="삭제"
+        danger
+        loading={memberDeleting}
+        loadingText="삭제 중..."
+        error={memberDeleteError}
+        onConfirm={handleDeleteMember}
+        onCancel={() => {
+          setMemberToDelete(null);
+          setMemberDeleteError(null);
+        }}
+      />
 
       {/* 기록 삭제 확인 시트 (P2-8) — 일별 모달(z-50) 위에 표시됨 */}
       <ConfirmSheet
