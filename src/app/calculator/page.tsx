@@ -12,6 +12,7 @@ import {
   saveTeamDailyWork,
   deleteTeamDailyWork,
   getTeamMonthlyWorks,
+  updateUserProfile,
 } from '@/lib/firestore';
 import { DailyWorkRecord, WeatherType, TeamMember, TeamDailyWork } from '@/types';
 import { formatManwon } from '@/lib/format';
@@ -66,7 +67,7 @@ function formatWon(amount: number): string {
  * - 팀장용: 팀원 공수 관리 및 팀 총합 계산
  */
 export default function CalculatorPage() {
-  const { user, userProfile, loading: authLoading } = useAuth();
+  const { user, userProfile, loading: authLoading, refreshProfile } = useAuth();
 
   // ===== 공통 상태 =====
   const [activeTab, setActiveTab] = useState<TabMode>('personal');
@@ -380,6 +381,9 @@ export default function CalculatorPage() {
     let dayOffCount = 0;
     let extensionCount = 0;
     let totalExpense = 0;
+    let estimatedWage = 0;
+    // 기록별 일당이 현재 일당과 다른 날이 하나라도 있으면 "X공 × 일당" 공식 표기가 성립하지 않음
+    let usesRecordWage = false;
 
     monthlyRecords.forEach((record) => {
       totalManDay += record.manDay;
@@ -387,12 +391,33 @@ export default function CalculatorPage() {
       if (record.dayOff) dayOffCount++;
       if (record.extension) extensionCount++;
       totalExpense += record.expense || 0;
+      // Σ(공수 × 그날 일당) — 일당 미저장(옛 기록·0)이면 현재 일당으로 대체 (P2-9)
+      const wage = record.dailyWage || dailyWageInput;
+      estimatedWage += record.manDay * wage;
+      if (record.manDay > 0 && record.dailyWage && record.dailyWage !== dailyWageInput) {
+        usesRecordWage = true;
+      }
     });
 
-    const estimatedWage = totalManDay * dailyWageInput;
-
-    return { totalManDay, overtimeCount, dayOffCount, extensionCount, totalExpense, estimatedWage };
+    return { totalManDay, overtimeCount, dayOffCount, extensionCount, totalExpense, estimatedWage, usesRecordWage };
   }, [monthlyRecords, dailyWageInput]);
+
+  // ===== 개인용: 일당 수정 시 프로필 자동 저장 (P2-9) =====
+
+  const handleWageBlur = async () => {
+    if (!user || !userProfile) return;
+    // 값이 실제로 바뀐 경우에만 저장 (매 blur마다 쓰기 방지)
+    if (dailyWageInput > 0 && dailyWageInput !== (userProfile.desiredWage || 0)) {
+      try {
+        await updateUserProfile(user.uid, { desiredWage: dailyWageInput });
+        await refreshProfile();
+        showToast('일당을 프로필에 저장했어요');
+      } catch (err) {
+        console.error('일당 프로필 저장 실패:', err);
+        // 저장 실패해도 계산기 사용에는 지장 없으므로 조용히 넘어감
+      }
+    }
+  };
 
   // ===== 기간 합계 조회 =====
 
@@ -414,11 +439,14 @@ export default function CalculatorPage() {
     if (!periodRecords) return null;
     let totalManDay = 0;
     let totalExpense = 0;
+    let estimatedWage = 0;
     periodRecords.forEach((r) => {
       totalManDay += r.manDay;
       totalExpense += r.expense || 0;
+      // Σ(공수 × 그날 일당) — 일당 미저장 기록은 현재 일당으로 대체 (P2-9)
+      estimatedWage += r.manDay * (r.dailyWage || dailyWageInput);
     });
-    return { totalManDay, totalExpense, estimatedWage: totalManDay * dailyWageInput };
+    return { totalManDay, totalExpense, estimatedWage };
   }, [periodRecords, dailyWageInput]);
 
   // ===== 팀장용: 팀원 추가 =====
@@ -748,7 +776,8 @@ export default function CalculatorPage() {
     extension: boolean,
     setExtension: (v: boolean) => void
   ) => (
-    <div className="flex gap-2 justify-center mb-4">
+    <>
+      <div className="flex gap-2 justify-center mb-4">
       <button
         onClick={() => setOvertime(!overtime)}
         className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
@@ -779,7 +808,14 @@ export default function CalculatorPage() {
       >
         연장
       </button>
-    </div>
+      </div>
+      {/* 잔업/연장은 급여 자동 반영이 아닌 표시용임을 안내 (P2-9) */}
+      {(overtime || extension) && (
+        <p className="text-sm text-gray-500 text-center -mt-2 mb-4">
+          잔업·연장은 표시용이에요. 급여에 넣으려면 공수를 조정해 주세요.
+        </p>
+      )}
+    </>
   );
 
   // ===== 개인용 일별 입력 모달 =====
@@ -815,13 +851,19 @@ export default function CalculatorPage() {
               {parseInt(m)}월 {parseInt(d)}일 ({dayLabel})
             </h3>
 
-            {/* 공수 스테퍼 (가장 중요한 컨트롤 - 크게 표시) */}
-            {renderManDayStepper(editManDay, setEditManDay)}
+            {/* 공수 스테퍼 (가장 중요한 컨트롤 - 크게 표시) — 공수 입력 시 휴무 해제 (모순 방지, P2-9) */}
+            {renderManDayStepper(editManDay, (v) => {
+              setEditManDay(v);
+              if (v > 0) setEditDayOff(false);
+            })}
 
-            {/* 잔업/휴무/연장 토글 */}
+            {/* 잔업/휴무/연장 토글 — 휴무 선택 시 공수 0 (모순 방지, P2-9) */}
             {renderTogglePills(
               editOvertime, setEditOvertime,
-              editDayOff, setEditDayOff,
+              editDayOff, (v) => {
+                setEditDayOff(v);
+                if (v) setEditManDay(0);
+              },
               editExtension, setEditExtension
             )}
 
@@ -954,13 +996,19 @@ export default function CalculatorPage() {
               {parseInt(m)}월 {parseInt(d)}일 ({dayLabel})
             </p>
 
-            {/* 공수 스테퍼 */}
-            {renderManDayStepper(teamEditManDay, setTeamEditManDay)}
+            {/* 공수 스테퍼 — 공수 입력 시 휴무 해제 (모순 방지, P2-9) */}
+            {renderManDayStepper(teamEditManDay, (v) => {
+              setTeamEditManDay(v);
+              if (v > 0) setTeamEditDayOff(false);
+            })}
 
-            {/* 토글 */}
+            {/* 토글 — 휴무 선택 시 공수 0 (모순 방지, P2-9) */}
             {renderTogglePills(
               teamEditOvertime, setTeamEditOvertime,
-              teamEditDayOff, setTeamEditDayOff,
+              teamEditDayOff, (v) => {
+                setTeamEditDayOff(v);
+                if (v) setTeamEditManDay(0);
+              },
               teamEditExtension, setTeamEditExtension
             )}
 
@@ -1142,6 +1190,7 @@ export default function CalculatorPage() {
                   pattern="[0-9]*"
                   value={dailyWageInput || ''}
                   onChange={(e) => setDailyWageInput(Number(e.target.value) || 0)}
+                  onBlur={handleWageBlur}
                   placeholder="일당을 입력하세요"
                   className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
@@ -1161,12 +1210,20 @@ export default function CalculatorPage() {
               <div className="text-2xl font-extrabold text-primary-500">
                 {formatWon(personalSummary.estimatedWage)}
               </div>
-              <div className="text-xs text-gray-400 mt-1">
-                {personalSummary.totalManDay.toFixed(1)}공 &times; {formatWon(dailyWageInput)}
+              <div className="text-sm text-gray-500 mt-1">
+                {personalSummary.usesRecordWage
+                  ? '기록한 날의 일당으로 각각 계산했어요'
+                  : `${personalSummary.totalManDay.toFixed(1)}공 × ${formatWon(dailyWageInput)}`}
               </div>
               <div className="text-sm text-gray-600 mt-2">
                 3.3% 공제 후: {formatWon(Math.round(personalSummary.estimatedWage * 0.967))}
               </div>
+              {/* 잔업/연장은 표시용 — 급여 자동 반영 안 됨 안내 (P2-9) */}
+              {(personalSummary.overtimeCount > 0 || personalSummary.extensionCount > 0) && (
+                <div className="text-sm text-gray-500 mt-2">
+                  잔업·연장 표시는 급여에 자동 반영되지 않아요. 그날 공수로 조정해 주세요.
+                </div>
+              )}
             </div>
 
             {/* 총 경비 표시 */}
