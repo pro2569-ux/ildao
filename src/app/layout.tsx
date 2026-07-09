@@ -4,6 +4,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import BottomNav from '@/components/layout/BottomNav';
 import KakaoSDK from '@/components/KakaoSDK';
 import OfflineBanner from '@/components/ui/OfflineBanner';
+import InstallBanner from '@/components/ui/InstallBanner';
 
 export const metadata: Metadata = {
   title: '일다오 - 건설/일용직 구인구직',
@@ -41,6 +42,8 @@ export default function RootLayout({
           </main>
           {/* 하단 네비게이션 바 */}
           <BottomNav />
+          {/* PWA 설치 유도 배너 (P3-3) */}
+          <InstallBanner />
         </AuthProvider>
       </body>
     </html>

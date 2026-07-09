@@ -198,7 +198,7 @@
 - [x] **P3-2. Firestore 오프라인 캐시 + 오프라인 배너** [M]
   - `persistentLocalCache` 활성화(코드 몇 줄) → 지하/산간 현장에서 이전 조회 데이터·수락 공고 주소 열람 가능. 계산기 기록도 오프라인 큐잉. navigator.onLine 전역 배너.
 
-- [ ] **P3-3. PWA 설치 유도 배너** [M]
+- [x] **P3-3. PWA 설치 유도 배너** [M]
   - beforeinstallprompt 활용 "홈 화면에 일다오 추가"(iOS는 그림 안내). 매일 새벽 접속하는 사용자층에 재방문율 직결.
 
 - [ ] **P3-4. 전역 error.tsx / not-found.tsx** [S]
