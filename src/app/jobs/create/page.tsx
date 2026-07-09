@@ -8,6 +8,8 @@ import { createJob, updateJob, getJob } from '@/lib/firestore';
 import { JobCategory, JobPost } from '@/types';
 import { formatWon, formatManwon } from '@/lib/format';
 import KakaoMap from '@/components/ui/KakaoMap';
+import BackButton from '@/components/ui/BackButton';
+import { useToast } from '@/components/ui/Toast';
 
 /** 사용 가능한 직종 목록 */
 const JOB_CATEGORIES: JobCategory[] = [
@@ -27,6 +29,12 @@ const toDateInput = (date: Date) => {
   const day = String(d.getDate()).padStart(2, '0');
   return `${d.getFullYear()}-${month}-${day}`;
 };
+
+/** 작성 중 임시저장 localStorage 키 (P2-14, 순수 작성 모드 전용) */
+const DRAFT_KEY = 'ildao_job_draft';
+
+/** 일당 프리셋 (P2-14) */
+const WAGE_PRESETS = [150000, 180000, 200000, 250000];
 
 /**
  * 공고 작성 페이지
@@ -60,11 +68,111 @@ function CreateJobContent() {
   const [lng, setLng] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
+  // 검증 실패한 필드 (P2-14) — 해당 필드에 빨간 테두리 + 스크롤
+  const [errorField, setErrorField] = useState<string | null>(null);
   // edit/copy 모드: 기존 공고 불러오는 중 여부, 불러오기 실패/차단 안내
   const [initializing, setInitializing] = useState(isEditMode || isCopyMode);
   const [loadError, setLoadError] = useState('');
   // copy 모드: 시작일 보정 안내
   const [notice, setNotice] = useState('');
+  // 임시저장 복원 여부 (P2-14) — 복원 완료 전에는 저장 effect가 덮어쓰지 않도록
+  const [draftReady, setDraftReady] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
+  const { showToast, toastElement } = useToast();
+
+  /** 순수 작성 모드에서만 임시저장/이탈경고 동작 */
+  const isPureCreate = !isEditMode && !isCopyMode;
+
+  // ===== 임시저장 복원 + 시작일 기본값(내일) (P2-14) =====
+  useEffect(() => {
+    if (!isPureCreate) return;
+    let restoredStart = '';
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (d.title || d.category || d.dailyWage || d.addressDetail || d.description) {
+          setTitle(d.title || '');
+          setCategory(d.category || '');
+          setDailyWage(d.dailyWage || '');
+          setRegion(d.region || '');
+          setAddressDetail(d.addressDetail || '');
+          setStartDate(d.startDate || '');
+          setEndDate(d.endDate || '');
+          setWorkHours(d.workHours || '08:00~17:00');
+          setNumberOfWorkers(d.numberOfWorkers || '1');
+          setDescription(d.description || '');
+          restoredStart = d.startDate || '';
+          setDraftRestored(true);
+        }
+      }
+    } catch {
+      // 복원 실패 시 빈 폼으로 시작 (임시저장은 편의 기능)
+    }
+    // 시작일 기본값: 내일 (복원된 값이 없을 때만)
+    if (!restoredStart) {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      setStartDate(toDateInput(tomorrow));
+    }
+    setDraftReady(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ===== 작성 내용 임시저장 (P2-14) — 전화·이탈로 날아가지 않게 =====
+  useEffect(() => {
+    if (!isPureCreate || !draftReady) return;
+    const hasContent = title || category || dailyWage || addressDetail || description;
+    try {
+      if (hasContent) {
+        localStorage.setItem(
+          DRAFT_KEY,
+          JSON.stringify({
+            title, category, dailyWage, region, addressDetail,
+            startDate, endDate, workHours, numberOfWorkers, description,
+          })
+        );
+      } else {
+        localStorage.removeItem(DRAFT_KEY);
+      }
+    } catch {
+      // 저장소 접근 실패는 무시 (작성 자체에는 지장 없음)
+    }
+  }, [isPureCreate, draftReady, title, category, dailyWage, region, addressDetail, startDate, endDate, workHours, numberOfWorkers, description]);
+
+  // ===== 브라우저 이탈(새로고침·탭 닫기) 경고 (P2-14) =====
+  useEffect(() => {
+    if (!isPureCreate) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      const hasContent = title || category || dailyWage || description;
+      if (hasContent && !isSaving) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isPureCreate, title, category, dailyWage, description, isSaving]);
+
+  /** 임시저장 버리고 새로 쓰기 (P2-14) */
+  const clearDraft = () => {
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+    } catch {}
+    setTitle('');
+    setCategory('');
+    setDailyWage('');
+    setRegion('');
+    setAddressDetail('');
+    setEndDate('');
+    setWorkHours('08:00~17:00');
+    setNumberOfWorkers('1');
+    setDescription('');
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    setStartDate(toDateInput(tomorrow));
+    setDraftRestored(false);
+  };
 
   useEffect(() => {
     if (!isEditMode && !isCopyMode) return;
@@ -147,14 +255,35 @@ function CreateJobContent() {
     }
   };
 
+  /** 검증 실패 필드 강조 + 해당 위치로 스크롤 (P2-14) */
+  const focusError = (field: string, message: string) => {
+    setError(message);
+    setErrorField(field);
+    document.getElementById(`field-${field}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
   /** 폼 제출 */
   const handleSubmit = async () => {
-    // 유효성 검사
-    if (!title.trim()) { setError('제목을 입력해주세요.'); return; }
-    if (!category) { setError('직종을 선택해주세요.'); return; }
-    if (!dailyWage) { setError('일당을 입력해주세요.'); return; }
-    if (!region) { setError('지역을 선택해주세요.'); return; }
-    if (!startDate) { setError('근무 시작일을 선택해주세요.'); return; }
+    // 유효성 검사 — 실패한 필드로 스크롤 + 빨간 테두리 (P2-14)
+    setError('');
+    setErrorField(null);
+    if (!title.trim()) return focusError('title', '제목을 입력해주세요.');
+    if (!category) return focusError('category', '직종을 선택해주세요.');
+    if (!dailyWage) return focusError('wage', '일당을 입력해주세요.');
+    if (!region) return focusError('region', '지역을 선택해주세요.');
+    if (!startDate) return focusError('startDate', '근무 시작일을 선택해주세요.');
+    if (!isEditMode) {
+      // 새 공고는 지난 날짜로 시작할 수 없음 (수정 모드는 진행 중 공고가 있어 제외)
+      const s = new Date(startDate + 'T00:00:00');
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (s.getTime() < today.getTime()) {
+        return focusError('startDate', '시작일은 오늘 이후로 선택해주세요.');
+      }
+    }
+    if (endDate && endDate < startDate) {
+      return focusError('endDate', '종료일은 시작일보다 빠를 수 없어요.');
+    }
     if (!user || !userProfile) { setError('로그인이 필요합니다.'); return; }
 
     setIsSaving(true);
@@ -204,7 +333,15 @@ function CreateJobContent() {
         await createJob(createData);
       }
 
-      router.push('/my-jobs');
+      // 등록 완료: 임시저장 비우고 토스트를 잠깐 보여준 뒤 이동 (P2-14)
+      // 성공 시 isSaving을 유지해 이동 전 중복 제출 방지
+      if (isPureCreate) {
+        try {
+          localStorage.removeItem(DRAFT_KEY);
+        } catch {}
+      }
+      showToast(isEditMode ? '공고를 수정했어요' : '공고를 등록했어요');
+      setTimeout(() => router.push('/my-jobs'), 700);
     } catch (err: any) {
       console.error(isEditMode ? '공고 수정 실패:' : '공고 작성 실패:', err);
       setError(
@@ -212,7 +349,6 @@ function CreateJobContent() {
           ? '공고 수정에 실패했어요. 인터넷 연결을 확인하고 다시 시도해주세요.'
           : '공고 등록에 실패했어요. 인터넷 연결을 확인하고 다시 시도해주세요.'
       );
-    } finally {
       setIsSaving(false);
     }
   };
@@ -222,6 +358,10 @@ function CreateJobContent() {
     const raw = value.replace(/\D/g, '');
     return raw ? Number(raw).toLocaleString() : '';
   };
+
+  /** 검증 실패 필드 테두리 클래스 (P2-14) */
+  const fieldBorder = (field: string) =>
+    errorField === field ? 'border-red-500 ring-2 ring-red-100' : 'border-gray-300';
 
   const pageTitle = isEditMode ? '공고 수정' : isCopyMode ? '공고 다시 올리기' : '공고 작성';
 
@@ -239,11 +379,7 @@ function CreateJobContent() {
     return (
       <div className="px-4 pt-6 pb-24 min-h-screen">
         <div className="flex items-center gap-3 mb-6">
-          <button onClick={() => router.back()} className="p-1">
-            <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
+          <BackButton className="-ml-2" />
           <h1 className="text-xl font-bold">{pageTitle}</h1>
         </div>
         <div className="text-center py-12">
@@ -263,11 +399,7 @@ function CreateJobContent() {
     <div className="px-4 pt-6 pb-24 min-h-screen">
       {/* 상단 */}
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => router.back()} className="p-1">
-          <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
+        <BackButton className="-ml-2" />
         <h1 className="text-xl font-bold">{pageTitle}</h1>
       </div>
 
@@ -279,22 +411,39 @@ function CreateJobContent() {
           </div>
         )}
 
+        {/* 임시저장 복원 안내 (P2-14) */}
+        {draftRestored && (
+          <div className="p-3 bg-primary-50 text-primary-600 text-sm rounded-lg flex items-center justify-between gap-2">
+            <span>작성 중이던 내용을 불러왔어요.</span>
+            <button
+              type="button"
+              onClick={clearDraft}
+              className="flex-shrink-0 underline font-semibold min-h-[44px] px-1"
+            >
+              새로 쓰기
+            </button>
+          </div>
+        )}
+
         {/* 제목 */}
-        <div>
+        <div id="field-title">
           <label className="block text-sm font-semibold text-gray-700 mb-1.5">
             제목 <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => { setTitle(e.target.value); if (errorField === 'title') setErrorField(null); }}
             placeholder="예: 철근공 3명 급구"
-            className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+            className={`w-full py-3 px-4 border ${fieldBorder('title')} rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm`}
           />
         </div>
 
         {/* 직종 선택 */}
-        <div>
+        <div
+          id="field-category"
+          className={errorField === 'category' ? 'rounded-xl ring-2 ring-red-300 p-2 -m-2' : ''}
+        >
           <label className="block text-sm font-semibold text-gray-700 mb-1.5">
             직종 <span className="text-red-500">*</span>
           </label>
@@ -303,7 +452,7 @@ function CreateJobContent() {
               <button
                 key={cat}
                 type="button"
-                onClick={() => setCategory(cat)}
+                onClick={() => { setCategory(cat); if (errorField === 'category') setErrorField(null); }}
                 className={`py-1.5 px-3 rounded-full text-sm font-medium transition-colors ${
                   category === cat
                     ? 'bg-primary-500 text-white'
@@ -317,18 +466,35 @@ function CreateJobContent() {
         </div>
 
         {/* 일당 */}
-        <div>
+        <div id="field-wage">
           <label className="block text-sm font-semibold text-gray-700 mb-1.5">
             일당 (원) <span className="text-red-500">*</span>
           </label>
+          {/* 일당 프리셋 (P2-14) — 자주 쓰는 값 원탭 입력 */}
+          <div className="flex gap-2 mb-2">
+            {WAGE_PRESETS.map((w) => (
+              <button
+                key={w}
+                type="button"
+                onClick={() => { setDailyWage(w.toLocaleString()); if (errorField === 'wage') setErrorField(null); }}
+                className={`flex-1 min-h-[44px] rounded-lg text-sm font-bold transition-colors ${
+                  dailyWage === w.toLocaleString()
+                    ? 'bg-primary-500 text-white'
+                    : 'bg-gray-100 text-gray-700 active:bg-gray-200'
+                }`}
+              >
+                {w / 10000}만
+              </button>
+            ))}
+          </div>
           <input
             type="text"
             inputMode="numeric"
             pattern="[0-9]*"
             value={dailyWage}
-            onChange={(e) => setDailyWage(formatWage(e.target.value))}
+            onChange={(e) => { setDailyWage(formatWage(e.target.value)); if (errorField === 'wage') setErrorField(null); }}
             placeholder="예: 250,000"
-            className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+            className={`w-full py-3 px-4 border ${fieldBorder('wage')} rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm`}
           />
           {/* 금액 확인 도움말 (0 개수 확인용 만원 환산) */}
           {dailyWage && (
@@ -339,15 +505,15 @@ function CreateJobContent() {
         </div>
 
         {/* 근무 위치 */}
-        <div>
+        <div id="field-region">
           <label className="block text-sm font-semibold text-gray-700 mb-1.5">
             근무 위치 <span className="text-red-500">*</span>
           </label>
           <div className="grid grid-cols-3 gap-2 mb-2">
             <select
               value={region}
-              onChange={(e) => setRegion(e.target.value)}
-              className="col-span-1 py-3 px-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white"
+              onChange={(e) => { setRegion(e.target.value); if (errorField === 'region') setErrorField(null); }}
+              className={`col-span-1 py-3 px-3 border ${fieldBorder('region')} rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white`}
             >
               <option value="">시/도</option>
               {REGIONS.map((r) => (
@@ -381,26 +547,28 @@ function CreateJobContent() {
 
         {/* 근무 날짜 */}
         <div className="grid grid-cols-2 gap-3">
-          <div>
+          <div id="field-startDate">
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               시작일 <span className="text-red-500">*</span>
             </label>
             <input
               type="date"
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+              min={!isEditMode ? toDateInput(new Date()) : undefined}
+              onChange={(e) => { setStartDate(e.target.value); if (errorField === 'startDate') setErrorField(null); }}
+              className={`w-full py-3 px-4 border ${fieldBorder('startDate')} rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm`}
             />
           </div>
-          <div>
+          <div id="field-endDate">
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               종료일
             </label>
             <input
               type="date"
               value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+              min={startDate || undefined}
+              onChange={(e) => { setEndDate(e.target.value); if (errorField === 'endDate') setErrorField(null); }}
+              className={`w-full py-3 px-4 border ${fieldBorder('endDate')} rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm`}
             />
           </div>
         </div>
@@ -419,21 +587,34 @@ function CreateJobContent() {
           />
         </div>
 
-        {/* 필요 인원 */}
+        {/* 필요 인원 — 스테퍼 (P2-14) */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1.5">
             필요 인원
           </label>
-          <input
-            type="number"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            value={numberOfWorkers}
-            onChange={(e) => setNumberOfWorkers(e.target.value)}
-            min="1"
-            max="100"
-            className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
-          />
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setNumberOfWorkers(String(Math.max(1, (Number(numberOfWorkers) || 1) - 1)))}
+              disabled={(Number(numberOfWorkers) || 1) <= 1}
+              className="w-12 h-12 rounded-xl bg-gray-100 text-2xl font-bold text-gray-700 flex items-center justify-center disabled:opacity-30 active:bg-gray-200 transition-colors"
+              aria-label="인원 줄이기"
+            >
+              -
+            </button>
+            <div className="flex-1 text-center text-lg font-bold text-gray-800">
+              {Number(numberOfWorkers) || 1}명
+            </div>
+            <button
+              type="button"
+              onClick={() => setNumberOfWorkers(String(Math.min(100, (Number(numberOfWorkers) || 1) + 1)))}
+              disabled={(Number(numberOfWorkers) || 1) >= 100}
+              className="w-12 h-12 rounded-xl bg-gray-100 text-2xl font-bold text-gray-700 flex items-center justify-center disabled:opacity-30 active:bg-gray-200 transition-colors"
+              aria-label="인원 늘리기"
+            >
+              +
+            </button>
+          </div>
         </div>
 
         {/* 상세 설명 */}
@@ -468,6 +649,9 @@ function CreateJobContent() {
             : isEditMode ? '수정 완료' : '공고 등록'}
         </button>
       </div>
+
+      {/* 등록/수정 성공 토스트 (P2-14) */}
+      {toastElement}
     </div>
   );
 }
