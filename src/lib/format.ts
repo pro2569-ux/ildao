@@ -104,3 +104,18 @@ export function isTomorrow(input: DateInput): boolean {
   tomorrow.setDate(tomorrow.getDate() + 1);
   return isSameLocalDay(d, tomorrow);
 }
+
+/**
+ * 오늘 이전(지난 날짜)인지 판별 — "시작일 지남" 뱃지·정렬용 (P2-16).
+ * 오늘 시작은 아직 유효하므로 지난 날짜로 치지 않음.
+ */
+export function isPastDay(input: DateInput): boolean {
+  const d = toLocalDate(input);
+  if (!d) return false;
+  // toLocalDate는 Date 입력을 그대로 반환하므로 복사 후 비교 (원본 훼손 방지)
+  const target = new Date(d);
+  target.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return target.getTime() < today.getTime();
+}

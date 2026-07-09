@@ -8,7 +8,7 @@ import { getJobs } from '@/lib/firestore';
 import { JobPost, JobCategory } from '@/types';
 import ErrorState from '@/components/ui/ErrorState';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { formatWon, formatDate } from '@/lib/format';
+import { formatWon, formatDate, isPastDay } from '@/lib/format';
 import { REGIONS } from '@/lib/constants';
 
 /** 직종 필터 목록 */
@@ -170,6 +170,12 @@ function JobsContent() {
               <div className="flex items-center justify-between mb-1.5">
                 <div className="flex items-center gap-1.5">
                   <StatusBadge status={job.status} />
+                  {/* 시작일 지난 공고 표시 (P2-16) — 모집중인데 시작일이 지난 죽은 공고 구분 */}
+                  {job.status === 'open' && isPastDay(job.startDate) && (
+                    <span className="text-sm font-medium px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 whitespace-nowrap">
+                      시작일 지남
+                    </span>
+                  )}
                   <span className="text-sm font-medium px-2.5 py-1 rounded-full bg-blue-100 text-primary-600">
                     {job.category}
                   </span>

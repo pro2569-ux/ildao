@@ -8,6 +8,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { matchesRegion } from '@/lib/constants';
+import { isPastDay } from '@/lib/format';
 import { JobPost, Application, UserProfile, JobCategory, JobStatus, ApplicationStatus, DailyWorkRecord, TeamMember, TeamDailyWork, Favorite } from '@/types';
 
 // ===== 날짜 변환 헬퍼 =====
@@ -93,6 +94,14 @@ export async function getJobs(filters?: {
         ? (a.dailyWage || 0) - (b.dailyWage || 0)
         : (b.dailyWage || 0) - (a.dailyWage || 0)
     );
+  }
+
+  // 시작일 지난 공고는 목록 하단으로 (P2-16) — 정렬 순서는 그룹 안에서 유지.
+  // 구인자 본인 목록(employerId 조회)은 관리 목적이므로 제외.
+  if (!filters?.employerId) {
+    const fresh = jobs.filter((job) => !isPastDay(job.startDate));
+    const stale = jobs.filter((job) => isPastDay(job.startDate));
+    jobs = [...fresh, ...stale];
   }
 
   if (filters?.limitCount && limitOnClient) {
