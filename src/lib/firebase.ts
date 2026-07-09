@@ -1,6 +1,11 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore, getFirestore } from 'firebase/firestore';
+import {
+  initializeFirestore,
+  getFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getMessaging, isSupported } from 'firebase/messaging';
 
@@ -22,7 +27,14 @@ const app = isNewApp ? initializeApp(firebaseConfig) : getApp();
 // ignoreUndefinedProperties: undefined 필드가 섞여도 저장이 실패하지 않도록 함
 export const auth = getAuth(app);
 export const db = isNewApp
-  ? initializeFirestore(app, { ignoreUndefinedProperties: true })
+  ? initializeFirestore(app, {
+      ignoreUndefinedProperties: true,
+      // 오프라인 캐시 (P3-2): 지하/산간 현장에서 이전 조회 데이터 열람 + 오프라인 쓰기 큐잉.
+      // IndexedDB는 브라우저 전용이므로 SSR/빌드에서는 기본(메모리) 캐시 사용.
+      ...(typeof window !== 'undefined'
+        ? { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }
+        : {}),
+    })
   : getFirestore(app);
 export const storage = getStorage(app);
 

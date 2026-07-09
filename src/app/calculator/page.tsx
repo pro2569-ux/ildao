@@ -328,13 +328,34 @@ export default function CalculatorPage() {
     setSaveError(null);
   };
 
+  // ===== 오프라인 쓰기 큐잉 (P3-2) =====
+
+  /**
+   * 오프라인이면 Firestore 쓰기 promise가 서버 응답까지 멈춰 있어 모달이 "저장 중..."에 갇힘.
+   * → 오프라인일 땐 await 없이 큐에만 넣고(연결 시 SDK가 자동 전송) 즉시 진행한다.
+   * 반환값으로 온라인/오프라인 저장 여부를 알려 토스트 문구를 구분한다.
+   */
+  const writeWithOfflineQueue = async (write: () => Promise<void>): Promise<'online' | 'offline'> => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      write().catch((err) => console.error('오프라인 큐 쓰기 실패:', err));
+      return 'offline';
+    }
+    await write();
+    return 'online';
+  };
+
+  /** 오프라인 저장 여부에 맞는 토스트 */
+  const showSaveToast = (mode: 'online' | 'offline', onlineMessage: string) => {
+    showToast(mode === 'offline' ? '오프라인 저장 — 연결되면 자동 반영돼요' : onlineMessage);
+  };
+
   // ===== 개인용: 공수 저장 =====
 
   const handleSavePersonal = async () => {
     if (!user || !selectedDate) return;
     setIsSaving(true);
     try {
-      await saveDailyWork(user.uid, selectedDate, {
+      const mode = await writeWithOfflineQueue(() => saveDailyWork(user.uid, selectedDate, {
         manDay: editManDay,
         overtime: editOvertime,
         dayOff: editDayOff,
@@ -343,7 +364,7 @@ export default function CalculatorPage() {
         memo: editMemo,
         weather: editWeather,
         dailyWage: dailyWageInput,
-      });
+      }));
       // 로컬 상태 업데이트
       setMonthlyRecords((prev) => {
         const next = new Map(prev);
@@ -362,7 +383,7 @@ export default function CalculatorPage() {
         return next;
       });
       closeDayModal();
-      showToast('공수를 저장했어요');
+      showSaveToast(mode, '공수를 저장했어요');
     } catch (err) {
       console.error('공수 저장 실패:', err);
       setSaveError('저장에 실패했습니다. 다시 시도해주세요.');
@@ -378,7 +399,7 @@ export default function CalculatorPage() {
     setIsDeleting(true);
     setDeleteError(null);
     try {
-      await deleteDailyWork(user.uid, selectedDate);
+      const mode = await writeWithOfflineQueue(() => deleteDailyWork(user.uid, selectedDate));
       setMonthlyRecords((prev) => {
         const next = new Map(prev);
         next.delete(selectedDate);
@@ -386,7 +407,7 @@ export default function CalculatorPage() {
       });
       setDeleteTarget(null);
       closeDayModal();
-      showToast('기록을 삭제했어요');
+      showSaveToast(mode, '기록을 삭제했어요');
     } catch (err) {
       console.error('기록 삭제 실패:', err);
       setDeleteError('삭제에 실패했습니다. 다시 시도해주세요.');
@@ -587,14 +608,16 @@ export default function CalculatorPage() {
     if (!user || !selectedMember || !teamSelectedDate) return;
     setIsSaving(true);
     try {
-      await saveTeamDailyWork(user.uid, selectedMember.id, teamSelectedDate, {
-        memberName: selectedMember.name,
-        manDay: teamEditManDay,
-        overtime: teamEditOvertime,
-        dayOff: teamEditDayOff,
-        extension: teamEditExtension,
-        memo: teamEditMemo,
-      });
+      const mode = await writeWithOfflineQueue(() =>
+        saveTeamDailyWork(user.uid, selectedMember.id, teamSelectedDate, {
+          memberName: selectedMember.name,
+          manDay: teamEditManDay,
+          overtime: teamEditOvertime,
+          dayOff: teamEditDayOff,
+          extension: teamEditExtension,
+          memo: teamEditMemo,
+        })
+      );
       // 로컬 상태 업데이트
       setTeamWorks((prev) => {
         const idx = prev.findIndex(
@@ -619,7 +642,7 @@ export default function CalculatorPage() {
         return [...prev, newRecord];
       });
       closeTeamDayModal();
-      showToast(`${selectedMember.name}님 공수를 저장했어요`);
+      showSaveToast(mode, `${selectedMember.name}님 공수를 저장했어요`);
     } catch (err) {
       console.error('팀원 공수 저장 실패:', err);
       setSaveError('저장에 실패했습니다. 다시 시도해주세요.');
@@ -635,7 +658,9 @@ export default function CalculatorPage() {
     setIsDeleting(true);
     setDeleteError(null);
     try {
-      await deleteTeamDailyWork(user.uid, selectedMember.id, teamSelectedDate);
+      const mode = await writeWithOfflineQueue(() =>
+        deleteTeamDailyWork(user.uid, selectedMember.id, teamSelectedDate)
+      );
       setTeamWorks((prev) =>
         prev.filter(
           (w) => !(w.memberId === selectedMember.id && w.date === teamSelectedDate)
@@ -643,7 +668,7 @@ export default function CalculatorPage() {
       );
       setDeleteTarget(null);
       closeTeamDayModal();
-      showToast('기록을 삭제했어요');
+      showSaveToast(mode, '기록을 삭제했어요');
     } catch (err) {
       console.error('팀원 기록 삭제 실패:', err);
       setDeleteError('삭제에 실패했습니다. 다시 시도해주세요.');
@@ -716,7 +741,9 @@ export default function CalculatorPage() {
             extension: existing?.extension ?? false,
             memo: existing?.memo ?? '',
           };
-          await saveTeamDailyWork(user.uid, member.id, dateKey, data);
+          await writeWithOfflineQueue(() =>
+            saveTeamDailyWork(user.uid, member.id, dateKey, data)
+          );
           savedRecords.push({
             teamLeaderId: user.uid,
             memberId: member.id,
@@ -725,6 +752,7 @@ export default function CalculatorPage() {
           });
         })
       );
+      const offline = typeof navigator !== 'undefined' && !navigator.onLine;
       // 로컬 상태 반영
       setTeamWorks((prev) => {
         const rest = prev.filter(
@@ -733,7 +761,10 @@ export default function CalculatorPage() {
         return [...rest, ...savedRecords];
       });
       setBulkOpen(false);
-      showToast(`팀원 ${teamMembers.length}명 오늘 공수를 저장했어요`);
+      showSaveToast(
+        offline ? 'offline' : 'online',
+        `팀원 ${teamMembers.length}명 오늘 공수를 저장했어요`
+      );
     } catch (err) {
       console.error('전원 기록 저장 실패:', err);
       setBulkError('저장에 실패했습니다. 다시 시도해주세요.');

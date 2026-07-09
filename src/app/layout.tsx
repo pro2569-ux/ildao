@@ -3,6 +3,7 @@ import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import BottomNav from '@/components/layout/BottomNav';
 import KakaoSDK from '@/components/KakaoSDK';
+import OfflineBanner from '@/components/ui/OfflineBanner';
 
 export const metadata: Metadata = {
   title: '일다오 - 건설/일용직 구인구직',
@@ -31,6 +32,8 @@ export default function RootLayout({
       <body>
         {/* 카카오 SDK v2 로드 및 초기화 (Client Component) */}
         <KakaoSDK />
+        {/* 전역 오프라인 배너 (P3-2) */}
+        <OfflineBanner />
         <AuthProvider>
           {/* 메인 콘텐츠 영역 */}
           <main className="main-content min-h-screen max-w-lg mx-auto">
