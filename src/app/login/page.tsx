@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -181,11 +182,11 @@ function LoginContent() {
         </div>
       )}
 
-      {/* 하단 안내 */}
-      <p className="mt-8 text-xs text-gray-400 text-center leading-relaxed">
+      {/* 하단 안내 — 실제 약관 페이지로 연결 (P3-6) */}
+      <p className="mt-8 text-sm text-gray-500 text-center leading-relaxed">
         로그인 시 일다오의{' '}
-        <span className="underline">이용약관</span>과{' '}
-        <span className="underline">개인정보처리방침</span>에<br />
+        <Link href="/terms" className="underline">이용약관</Link>과{' '}
+        <Link href="/privacy" className="underline">개인정보처리방침</Link>에<br />
         동의하는 것으로 간주됩니다.
       </p>
     </div>

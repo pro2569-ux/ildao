@@ -663,6 +663,19 @@ export async function updateUserProfile(uid: string, data: Record<string, any>):
   });
 }
 
+// ===== Phase 3: 계정 관리 (P3-6) =====
+
+/**
+ * 회원탈퇴 — users 문서 삭제
+ * - 프로필 정보(users)만 삭제한다.
+ * - 구인공고(jobs)·지원 기록(applications)은 임금 분쟁 등에 대비해 보존한다.
+ *   (개인정보처리방침 4조 보관 기간 참고 — 법정 기간 경과 후 별도 정리)
+ * - Firebase Auth 계정 삭제(user.delete())는 호출 측에서 별도로 처리한다.
+ */
+export async function deleteUserAccount(uid: string): Promise<void> {
+  await deleteDoc(doc(db, 'users', uid));
+}
+
 // ===== Phase 2: 구인자 대시보드 통계 =====
 
 /**
