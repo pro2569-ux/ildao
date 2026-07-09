@@ -4,15 +4,19 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   saveDailyWork,
+  deleteDailyWork,
   getMonthlyWorks,
   getWorksByDateRange,
   saveTeamMembers,
   getTeamMembers,
   saveTeamDailyWork,
+  deleteTeamDailyWork,
   getTeamMonthlyWorks,
 } from '@/lib/firestore';
 import { DailyWorkRecord, WeatherType, TeamMember, TeamDailyWork } from '@/types';
 import { formatManwon } from '@/lib/format';
+import ConfirmSheet from '@/components/ui/ConfirmSheet';
+import { useToast } from '@/components/ui/Toast';
 
 // ===== 상수 정의 =====
 
@@ -86,6 +90,14 @@ export default function CalculatorPage() {
   const [editWeather, setEditWeather] = useState<WeatherType>('none');
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  // 기록 삭제 확인 시트 상태 (P2-8) — 개인용/팀원용 모달 공용
+  const [deleteTarget, setDeleteTarget] = useState<'personal' | 'team' | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // 저장/삭제 성공 피드백 토스트 (P2-8)
+  const { showToast, toastElement } = useToast();
 
   // 기간 조회 상태
   const [periodStart, setPeriodStart] = useState('');
@@ -327,11 +339,36 @@ export default function CalculatorPage() {
         return next;
       });
       closeDayModal();
+      showToast('공수를 저장했어요');
     } catch (err) {
       console.error('공수 저장 실패:', err);
       setSaveError('저장에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // ===== 개인용: 기록 삭제 (P2-8) =====
+
+  const handleDeletePersonal = async () => {
+    if (!user || !selectedDate) return;
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      await deleteDailyWork(user.uid, selectedDate);
+      setMonthlyRecords((prev) => {
+        const next = new Map(prev);
+        next.delete(selectedDate);
+        return next;
+      });
+      setDeleteTarget(null);
+      closeDayModal();
+      showToast('기록을 삭제했어요');
+    } catch (err) {
+      console.error('기록 삭제 실패:', err);
+      setDeleteError('삭제에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -502,11 +539,36 @@ export default function CalculatorPage() {
         return [...prev, newRecord];
       });
       closeTeamDayModal();
+      showToast(`${selectedMember.name}님 공수를 저장했어요`);
     } catch (err) {
       console.error('팀원 공수 저장 실패:', err);
       setSaveError('저장에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // ===== 팀장용: 팀원 기록 삭제 (P2-8) =====
+
+  const handleDeleteTeamWork = async () => {
+    if (!user || !selectedMember || !teamSelectedDate) return;
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      await deleteTeamDailyWork(user.uid, selectedMember.id, teamSelectedDate);
+      setTeamWorks((prev) =>
+        prev.filter(
+          (w) => !(w.memberId === selectedMember.id && w.date === teamSelectedDate)
+        )
+      );
+      setDeleteTarget(null);
+      closeTeamDayModal();
+      showToast('기록을 삭제했어요');
+    } catch (err) {
+      console.error('팀원 기록 삭제 실패:', err);
+      setDeleteError('삭제에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -729,13 +791,15 @@ export default function CalculatorPage() {
     const [, m, d] = selectedDate.split('-');
     const dateObj = new Date(selectedDate + 'T00:00:00');
     const dayLabel = DAY_LABELS[dateObj.getDay()];
+    // 저장된 기록이 있는 날만 삭제 버튼 표시 (P2-8)
+    const hasRecord = monthlyRecords.has(selectedDate);
 
     return (
       <>
-        {/* 배경 오버레이 */}
+        {/* 배경 오버레이 — 저장 중에는 탭해도 닫히지 않음 (P2-8) */}
         <div
           className="fixed inset-0 bg-black/40 z-40"
-          onClick={closeDayModal}
+          onClick={isSaving ? undefined : closeDayModal}
         />
 
         {/* 바텀시트 모달 */}
@@ -823,14 +887,34 @@ export default function CalculatorPage() {
               <p className="text-sm text-red-500 text-center mb-3">{saveError}</p>
             )}
 
-            {/* 저장 버튼 */}
-            <button
-              onClick={handleSavePersonal}
-              disabled={isSaving}
-              className="btn-primary w-full py-3 text-base font-bold disabled:opacity-50"
-            >
-              {isSaving ? '저장 중...' : '저장'}
-            </button>
+            {/* 취소/저장 버튼 (P2-8: 배경 탭 없이도 닫을 수 있게) */}
+            <div className="flex gap-3">
+              <button
+                onClick={closeDayModal}
+                disabled={isSaving}
+                className="flex-1 min-h-[48px] py-3 bg-gray-100 text-gray-700 text-base font-bold rounded-lg disabled:opacity-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleSavePersonal}
+                disabled={isSaving}
+                className="btn-primary flex-[2] py-3 text-base font-bold disabled:opacity-50"
+              >
+                {isSaving ? '저장 중...' : '저장'}
+              </button>
+            </div>
+
+            {/* 기록 삭제 (P2-8) — 저장된 기록이 있는 날만 */}
+            {hasRecord && (
+              <button
+                onClick={() => setDeleteTarget('personal')}
+                disabled={isSaving}
+                className="w-full min-h-[44px] mt-2 text-red-500 text-base font-medium disabled:opacity-50"
+              >
+                이 날 기록 삭제
+              </button>
+            )}
           </div>
         </div>
       </>
@@ -845,12 +929,17 @@ export default function CalculatorPage() {
     const [, m, d] = teamSelectedDate.split('-');
     const dateObj = new Date(teamSelectedDate + 'T00:00:00');
     const dayLabel = DAY_LABELS[dateObj.getDay()];
+    // 저장된 기록이 있는 날만 삭제 버튼 표시 (P2-8)
+    const hasRecord = teamWorks.some(
+      (w) => w.memberId === selectedMember.id && w.date === teamSelectedDate
+    );
 
     return (
       <>
+        {/* 배경 오버레이 — 저장 중에는 탭해도 닫히지 않음 (P2-8) */}
         <div
           className="fixed inset-0 bg-black/40 z-40"
-          onClick={closeTeamDayModal}
+          onClick={isSaving ? undefined : closeTeamDayModal}
         />
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl max-h-[85vh] overflow-y-auto animate-slide-up">
           <div className="max-w-lg mx-auto px-4 pt-4 pb-8">
@@ -892,13 +981,34 @@ export default function CalculatorPage() {
               <p className="text-sm text-red-500 text-center mb-3">{saveError}</p>
             )}
 
-            <button
-              onClick={handleSaveTeamWork}
-              disabled={isSaving}
-              className="btn-primary w-full py-3 text-base font-bold disabled:opacity-50"
-            >
-              {isSaving ? '저장 중...' : '저장'}
-            </button>
+            {/* 취소/저장 버튼 (P2-8) */}
+            <div className="flex gap-3">
+              <button
+                onClick={closeTeamDayModal}
+                disabled={isSaving}
+                className="flex-1 min-h-[48px] py-3 bg-gray-100 text-gray-700 text-base font-bold rounded-lg disabled:opacity-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleSaveTeamWork}
+                disabled={isSaving}
+                className="btn-primary flex-[2] py-3 text-base font-bold disabled:opacity-50"
+              >
+                {isSaving ? '저장 중...' : '저장'}
+              </button>
+            </div>
+
+            {/* 기록 삭제 (P2-8) — 저장된 기록이 있는 날만 */}
+            {hasRecord && (
+              <button
+                onClick={() => setDeleteTarget('team')}
+                disabled={isSaving}
+                className="w-full min-h-[44px] mt-2 text-red-500 text-base font-medium disabled:opacity-50"
+              >
+                이 날 기록 삭제
+              </button>
+            )}
           </div>
         </div>
       </>
@@ -1305,6 +1415,26 @@ export default function CalculatorPage() {
       {/* ===== 모달들 ===== */}
       {renderPersonalDayModal()}
       {renderTeamDayModal()}
+
+      {/* 기록 삭제 확인 시트 (P2-8) — 일별 모달(z-50) 위에 표시됨 */}
+      <ConfirmSheet
+        open={deleteTarget !== null}
+        title="이 날 기록을 삭제할까요?"
+        description="삭제한 기록은 되돌릴 수 없어요"
+        confirmText="삭제"
+        danger
+        loading={isDeleting}
+        loadingText="삭제 중..."
+        error={deleteError}
+        onConfirm={deleteTarget === 'personal' ? handleDeletePersonal : handleDeleteTeamWork}
+        onCancel={() => {
+          setDeleteTarget(null);
+          setDeleteError(null);
+        }}
+      />
+
+      {/* 저장/삭제 성공 토스트 (P2-8) */}
+      {toastElement}
 
       {/* 바텀시트 슬라이드업 애니메이션 */}
       <style jsx global>{`
