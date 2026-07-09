@@ -39,11 +39,24 @@ export default function KakaoMap({ mode, address, lat, lng, onSelect, height = '
   const markerRef = useRef<any>(null);
   const [searchQuery, setSearchQuery] = useState(address || '');
   const [sdkLoaded, setSdkLoaded] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [error, setError] = useState('');
 
-  /** SDK 스크립트 동적 로드 */
+  // 좌표 유효성 검사 (P3-9): (0,0) 또는 NaN이면 지도 대신 주소 텍스트 폴백
+  // 좌표 없는 데이터로 대서양 한가운데(위도0/경도0)가 표시되는 것을 방지
+  const hasValidCoords =
+    typeof lat === 'number' &&
+    typeof lng === 'number' &&
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    lat !== 0 &&
+    lng !== 0;
+
+  /** SDK 스크립트 동적 로드 (8초 타임아웃 폴백 포함, P3-9) */
   useEffect(() => {
     if (!KAKAO_MAP_KEY) return;
+    // view 모드에서 좌표가 유효하지 않으면 지도를 그리지 않으므로 SDK 로드 생략
+    if (mode === 'view' && !hasValidCoords) return;
 
     // 이미 로드된 경우
     if (window.kakao && window.kakao.maps) {
@@ -55,21 +68,34 @@ export default function KakaoMap({ mode, address, lat, lng, onSelect, height = '
       return;
     }
 
+    // 현장(지하/산간)의 느린 네트워크에서 무한 스피너 방지: 8초 내 로드 실패 시 폴백
+    let timedOut = false;
+    const timeoutId = setTimeout(() => {
+      timedOut = true;
+      setLoadFailed(true);
+    }, 8000);
+
     const script = document.createElement('script');
     script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_MAP_KEY}&libraries=services&autoload=false`;
     script.async = true;
 
     script.onload = () => {
+      clearTimeout(timeoutId);
+      if (timedOut) return; // 이미 폴백으로 전환된 경우 무시
       window.kakao.maps.load(() => {
         setSdkLoaded(true);
       });
     };
 
     script.onerror = () => {
-      setError('카카오맵 SDK 로드에 실패했습니다.');
+      clearTimeout(timeoutId);
+      setLoadFailed(true);
     };
 
     document.head.appendChild(script);
+
+    return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /** 지도 초기화 */
@@ -173,54 +199,67 @@ export default function KakaoMap({ mode, address, lat, lng, onSelect, height = '
     });
   }, [sdkLoaded, searchQuery, placeMarker, onSelect]);
 
-  // === API 키 없을 때 Fallback UI ===
+  /** 주소 텍스트 폴백 UI (API 키 없음 / SDK 로드 실패 / 좌표 없음 공용) */
+  const renderFallback = (emptyMessage: string) => (
+    <div
+      className="bg-gray-100 rounded-xl flex flex-col items-center justify-center border border-gray-200"
+      style={{ height }}
+    >
+      {/* 지도 아이콘 */}
+      <svg className="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.5}
+          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.5}
+          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+        />
+      </svg>
+
+      {address ? (
+        <p className="text-sm text-gray-600 text-center px-4">{address}</p>
+      ) : (
+        <p className="text-xs text-gray-400">{emptyMessage}</p>
+      )}
+
+      {/* select 모드: 간단한 주소 입력 */}
+      {mode === 'select' && (
+        <div className="mt-2 w-full px-4">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onBlur={() => {
+              if (searchQuery.trim()) {
+                onSelect?.({ address: searchQuery.trim(), lat: 0, lng: 0 });
+              }
+            }}
+            placeholder="주소를 입력해주세요"
+            className="w-full py-2 px-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
+        </div>
+      )}
+    </div>
+  );
+
+  // === API 키 없을 때 Fallback ===
   if (!KAKAO_MAP_KEY) {
-    return (
-      <div
-        className="bg-gray-100 rounded-xl flex flex-col items-center justify-center border border-gray-200"
-        style={{ height }}
-      >
-        {/* 지도 아이콘 */}
-        <svg className="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-          />
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-          />
-        </svg>
+    return renderFallback('지도를 사용하려면 카카오맵 API 키가 필요합니다');
+  }
 
-        {address ? (
-          <p className="text-sm text-gray-600 text-center px-4">{address}</p>
-        ) : (
-          <p className="text-xs text-gray-400">지도를 사용하려면 카카오맵 API 키가 필요합니다</p>
-        )}
+  // === view 모드에서 좌표가 유효하지 않을 때 Fallback (P3-9) ===
+  if (mode === 'view' && !hasValidCoords) {
+    return renderFallback('위치 정보가 없습니다');
+  }
 
-        {/* select 모드: 간단한 주소 입력 */}
-        {mode === 'select' && (
-          <div className="mt-2 w-full px-4">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onBlur={() => {
-                if (searchQuery.trim()) {
-                  onSelect?.({ address: searchQuery.trim(), lat: 0, lng: 0 });
-                }
-              }}
-              placeholder="주소를 입력해주세요"
-              className="w-full py-2 px-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-          </div>
-        )}
-      </div>
-    );
+  // === SDK 로드 실패/타임아웃 Fallback (P3-9) ===
+  if (loadFailed) {
+    return renderFallback('지도를 불러오지 못했습니다');
   }
 
   // === SDK 로드 중 ===

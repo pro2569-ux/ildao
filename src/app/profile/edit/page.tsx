@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { updateUserProfile } from '@/lib/firestore';
+import { uploadProfileImage } from '@/lib/storage';
 import { JobCategory } from '@/types';
 import { formatWon, formatManwon } from '@/lib/format';
 
@@ -36,6 +37,11 @@ export default function ProfileEditPage() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [profileImage, setProfileImage] = useState('');
+
+  // 프로필 사진 업로드 상태 (P3-7)
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 구직자(근로자) 전용 필드
   const [skills, setSkills] = useState<JobCategory[]>([]);
@@ -122,6 +128,27 @@ export default function ProfileEditPage() {
     setMainJobCategories((prev) =>
       prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category]
     );
+  };
+
+  /** 프로필 사진 선택 → 즉시 Storage 업로드 (P3-7) */
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // 같은 파일 재선택도 동작하도록 입력값 초기화
+    e.target.value = '';
+    if (!file || !user) return;
+
+    setIsUploading(true);
+    setUploadError('');
+
+    try {
+      const url = await uploadProfileImage(user.uid, file);
+      // 업로드 성공 → 상태에만 반영, 실제 저장은 하단 저장 버튼 흐름 그대로
+      setProfileImage(url);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : '사진 올리기에 실패했습니다.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   /** 전화번호 포맷팅 (010-0000-0000) */
@@ -213,13 +240,14 @@ export default function ProfileEditPage() {
         <h1 className="text-xl font-bold text-gray-900">프로필 수정</h1>
       </div>
 
-      {/* 프로필 이미지 섹션 */}
+      {/* 프로필 사진 섹션 (P3-7: 갤러리에서 사진 선택 → Storage 업로드) */}
       <div className="card mb-5">
         <div className="flex flex-col items-center gap-3">
-          {/* 현재 프로필 이미지 또는 플레이스홀더 */}
-          <div className="w-20 h-20 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
+          {/* 현재 프로필 사진 또는 기본 아바타 (원형 미리보기) */}
+          <div className="relative w-24 h-24 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
             {profileImage ? (
               <img
+                key={profileImage}
                 src={profileImage}
                 alt="프로필"
                 className="w-full h-full object-cover"
@@ -230,33 +258,64 @@ export default function ProfileEditPage() {
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-primary-100">
-                <svg className="w-10 h-10 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-12 h-12 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
             )}
+
+            {/* 업로드 중 오버레이 스피너 */}
+            {isUploading && (
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-7 w-7 border-2 border-white border-t-transparent" />
+              </div>
+            )}
           </div>
 
-          {/* 프로필 사진 URL 입력 */}
-          <div className="w-full">
-            <label className="block text-sm font-medium text-gray-500 mb-1">
-              프로필 사진 URL
-            </label>
-            <input
-              type="url"
-              value={profileImage}
-              onChange={(e) => setProfileImage(e.target.value)}
-              placeholder="https://example.com/photo.jpg"
-              className="w-full py-2.5 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
-            />
-          </div>
+          {/* 숨겨진 파일 입력 (갤러리에서 사진 선택) */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageSelect}
+            className="hidden"
+          />
 
-          {/* URL 미리보기 */}
-          {profileImage && (
-            <p className="text-xs text-gray-400 truncate w-full text-center">
-              미리보기: {profileImage}
-            </p>
+          {/* 사진 선택 버튼 (큰 터치 영역) */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+            className="w-full py-3.5 bg-primary-500 text-white rounded-xl font-semibold text-base hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isUploading ? (
+              <span className="flex items-center justify-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                사진 올리는 중...
+              </span>
+            ) : (
+              '사진 선택'
+            )}
+          </button>
+
+          {/* 사진 삭제 (작은 버튼) */}
+          {profileImage && !isUploading && (
+            <button
+              type="button"
+              onClick={() => {
+                setProfileImage('');
+                setUploadError('');
+              }}
+              className="text-sm text-gray-400 underline hover:text-gray-600 transition-colors"
+            >
+              사진 삭제
+            </button>
+          )}
+
+          {/* 업로드 실패 에러 메시지 */}
+          {uploadError && (
+            <p className="text-sm text-red-500 text-center">{uploadError}</p>
           )}
         </div>
       </div>
