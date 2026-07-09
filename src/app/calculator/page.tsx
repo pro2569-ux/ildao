@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   saveDailyWork,
@@ -15,7 +16,7 @@ import {
   updateUserProfile,
 } from '@/lib/firestore';
 import { DailyWorkRecord, WeatherType, TeamMember, TeamDailyWork } from '@/types';
-import { formatManwon } from '@/lib/format';
+import { formatManwon, formatDate } from '@/lib/format';
 import ConfirmSheet from '@/components/ui/ConfirmSheet';
 import { useToast } from '@/components/ui/Toast';
 
@@ -107,6 +108,8 @@ export default function CalculatorPage() {
   const [periodStart, setPeriodStart] = useState('');
   const [periodEnd, setPeriodEnd] = useState('');
   const [periodRecords, setPeriodRecords] = useState<DailyWorkRecord[] | null>(null);
+  // 기간 합계 일별 상세 리스트 접기/펼치기 (P3-10) — 기본은 접힘
+  const [showPeriodDetail, setShowPeriodDetail] = useState(false);
 
   // ===== 팀장용 상태 =====
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -470,6 +473,7 @@ export default function CalculatorPage() {
     try {
       const records = await getWorksByDateRange(user.uid, periodStart, periodEnd);
       setPeriodRecords(records);
+      setShowPeriodDetail(false); // 새로 조회하면 상세는 다시 접힘 (P3-10)
     } catch (err) {
       console.error('기간 조회 실패:', err);
       setError('기간 조회에 실패했습니다.');
@@ -805,6 +809,13 @@ export default function CalculatorPage() {
       <div className="px-4 pt-6 pb-24 text-center">
         <h1 className="text-xl font-bold mb-4">공수 계산기</h1>
         <p className="text-gray-500 mb-4">로그인 후 이용할 수 있습니다.</p>
+        {/* 큰 로그인 버튼 — 텍스트만 있으면 다음 행동을 알기 어려움 (P3-10) */}
+        <Link
+          href="/login?returnUrl=/calculator"
+          className="btn-primary inline-flex items-center justify-center w-full max-w-xs min-h-[52px] py-3 text-lg font-bold"
+        >
+          로그인하기
+        </Link>
       </div>
     );
   }
@@ -852,12 +863,17 @@ export default function CalculatorPage() {
           let cellBg: string;
           let manDayValue: number | undefined;
           let isDayOffDay = false;
+          let weatherIcon: string | null = null; // 기록된 날씨 이모지 (개인용, P3-10)
 
           if (mode === 'personal') {
             cellBg = getCellColor(dateKey);
             const rec = monthlyRecords.get(dateKey);
             manDayValue = rec?.manDay;
             isDayOffDay = !!rec?.dayOff;
+            // 날씨가 'none'이 아닐 때만 셀에 작게 표시 (셀이 좁아 항상 표시하면 복잡해짐)
+            if (rec?.weather && rec.weather !== 'none') {
+              weatherIcon = WEATHER_OPTIONS.find((w) => w.type === rec.weather)?.icon ?? null;
+            }
           } else {
             cellBg = selectedMember ? getTeamCellColor(selectedMember.id, dateKey) : 'bg-gray-50';
             const tw = teamWorks.find(
@@ -885,10 +901,16 @@ export default function CalculatorPage() {
                 {day}
               </span>
               {manDayValue !== undefined && manDayValue > 0 ? (
-                <span className="text-sm font-bold text-gray-700">{manDayValue}</span>
+                // 날짜 숫자는 유지하고 공수값 자리에 "날씨 이모지+공수" 조합 (P3-10)
+                <span className="text-sm font-bold text-gray-700 leading-tight">
+                  {weatherIcon && <span className="text-[10px] mr-0.5">{weatherIcon}</span>}
+                  {manDayValue}
+                </span>
               ) : isDayOffDay ? (
-                // 휴무 기록일 표시 (P2-10)
-                <span className="text-xs font-medium text-gray-500">휴</span>
+                // 휴무 기록일 표시 (P2-10) — 비·눈으로 쉰 날은 날씨도 함께 (P3-10)
+                <span className="text-xs font-medium text-gray-500 leading-tight">
+                  {weatherIcon && <span className="text-[10px] mr-0.5">{weatherIcon}</span>}휴
+                </span>
               ) : null}
             </button>
           );
@@ -943,8 +965,8 @@ export default function CalculatorPage() {
           <div className="text-xs text-gray-400 mt-1">공수</div>
         </div>
         <button
-          onClick={() => setValue(Math.min(2.0, Math.round((value + 0.1) * 10) / 10))}
-          disabled={value >= 2.0}
+          onClick={() => setValue(Math.min(3.0, Math.round((value + 0.1) * 10) / 10))}
+          disabled={value >= 3.0}
           className="w-14 h-14 rounded-full bg-gray-100 text-2xl font-bold text-gray-700 flex items-center justify-center disabled:opacity-30 active:bg-gray-200 transition-colors"
         >
           +
@@ -1054,9 +1076,9 @@ export default function CalculatorPage() {
               editExtension, setEditExtension
             )}
 
-            {/* 경비 입력 */}
+            {/* 경비 입력 — 의미 명확화 (P3-10) */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-600 mb-1">경비</label>
+              <label className="block text-sm font-medium text-gray-600 mb-1">경비 (내가 받을 돈)</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₩</span>
                 <input
@@ -1069,6 +1091,8 @@ export default function CalculatorPage() {
                   className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
+              {/* 경비 의미 도움말 (P3-10) */}
+              <p className="mt-1 text-sm text-gray-500">자재비·주유비 등 회사에 청구할 금액</p>
               {/* 금액 확인 도움말 (0 개수 확인용 만원 환산) */}
               {editExpense > 0 && (
                 <p className="mt-1 text-sm text-gray-600">
@@ -1564,6 +1588,51 @@ export default function CalculatorPage() {
                     {formatWon(periodSummary.estimatedWage)}
                   </span>
                 </div>
+
+                {/* 일별 상세 리스트 (P3-10) — 기본은 접힘, 토글로 펼치기 */}
+                {periodRecords && periodRecords.length > 0 && (
+                  <div className="mt-3 pt-2 border-t border-gray-200">
+                    <button
+                      onClick={() => setShowPeriodDetail(!showPeriodDetail)}
+                      className="w-full min-h-[44px] flex items-center justify-center gap-1 text-base font-medium text-primary-500 active:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      {showPeriodDetail ? '일별 상세 접기' : `일별 상세 보기 (${periodRecords.length}일)`}
+                      <svg
+                        className={`w-5 h-5 transition-transform ${showPeriodDetail ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {showPeriodDetail && (
+                      <ul className="mt-1 divide-y divide-gray-200">
+                        {periodRecords.map((r) => (
+                          <li key={r.date} className="min-h-[44px] py-2 flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="text-base font-medium text-gray-700">
+                                {formatDate(r.date)} · {r.dayOff && r.manDay <= 0 ? '휴무' : `${r.manDay.toFixed(1)}공`}
+                              </div>
+                              {r.memo && (
+                                <div className="text-sm text-gray-500 truncate">{r.memo}</div>
+                              )}
+                            </div>
+                            <div className="text-base font-bold text-gray-700 whitespace-nowrap">
+                              {formatWon(r.manDay * (r.dailyWage || dailyWageInput))}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {/* 금액 산정 기준 안내 — 일당 미저장 기록은 현재 일당으로 계산됨 */}
+                    {showPeriodDetail && (
+                      <p className="text-sm text-gray-500 text-center mt-1">
+                        금액은 그날 저장된 일당 기준이에요.
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
