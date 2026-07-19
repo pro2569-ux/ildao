@@ -4,7 +4,7 @@ import {
   collection, doc, addDoc, getDoc, getDocs, updateDoc, deleteDoc, setDoc,
   query, where, orderBy, limit, serverTimestamp, Timestamp, writeBatch,
   arrayUnion, arrayRemove, onSnapshot, getCountFromServer, documentId,
-  DocumentData, QueryConstraint, QueryDocumentSnapshot, Unsubscribe
+  DocumentData, Query, QueryConstraint, QueryDocumentSnapshot, Unsubscribe
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { matchesRegion } from '@/lib/constants';
@@ -228,11 +228,16 @@ export async function cancelApplication(applicationId: string): Promise<void> {
   }
 }
 
-/** 특정 구인글의 지원 목록 (createdAt 내림차순 — 클라이언트 정렬) */
-export async function getApplicationsByJob(jobId: string): Promise<Application[]> {
+/**
+ * 특정 구인글의 지원 목록 (createdAt 내림차순 — 클라이언트 정렬)
+ * - 보안 규칙(applications read는 당사자 한정)을 통과하려면 employerId 제약이 필요 —
+ *   호출자는 반드시 해당 공고의 소유자(구인자 본인 uid)를 전달해야 함.
+ */
+export async function getApplicationsByJob(jobId: string, employerId: string): Promise<Application[]> {
   const q = query(
     collection(db, 'applications'),
-    where('jobId', '==', jobId)
+    where('jobId', '==', jobId),
+    where('employerId', '==', employerId)
   );
   const snapshot = await getDocs(q);
   return snapshot.docs.map(mapApplication).sort(byCreatedAtDesc);
@@ -241,9 +246,10 @@ export async function getApplicationsByJob(jobId: string): Promise<Application[]
 /**
  * 특정 구인글의 지원 목록 + 지원자 프로필 (지원자 목록 화면용)
  * - 프로필은 병렬 fetch, 조회 실패(탈퇴 등) 시 workerProfile: null
+ * - employerId: 해당 공고의 소유자(구인자 본인 uid) — 보안 규칙 통과에 필요
  */
-export async function getApplicationsByJobWithProfiles(jobId: string): Promise<ApplicationWithProfile[]> {
-  const applications = await getApplicationsByJob(jobId);
+export async function getApplicationsByJobWithProfiles(jobId: string, employerId: string): Promise<ApplicationWithProfile[]> {
+  const applications = await getApplicationsByJob(jobId, employerId);
   const profiles = await Promise.all(
     applications.map((app) => getUserProfile(app.workerId).catch(() => null))
   );
@@ -288,17 +294,20 @@ export function subscribeToApplicationsByWorker(
 
 /**
  * 특정 구인글의 지원 목록 실시간 구독 (createdAt 내림차순 — 클라이언트 정렬)
+ * - employerId: 해당 공고의 소유자(구인자 본인 uid) — 보안 규칙(당사자 한정 read) 통과에 필요
  * @param onError 구독 실패 콜백 (선택 — ErrorState 표시용, P2). 미전달 시 콘솔 로그만.
  * @returns unsubscribe 함수 — useEffect cleanup에서 반드시 호출할 것
  */
 export function subscribeToApplicationsByJob(
   jobId: string,
+  employerId: string,
   callback: (applications: Application[]) => void,
   onError?: (error: Error) => void
 ): Unsubscribe {
   const q = query(
     collection(db, 'applications'),
-    where('jobId', '==', jobId)
+    where('jobId', '==', jobId),
+    where('employerId', '==', employerId)
   );
   return onSnapshot(
     q,
@@ -388,11 +397,16 @@ export async function toggleProfilePublic(uid: string, isPublic: boolean): Promi
   });
 }
 
-/** 지원자 수 가져오기 (구인글별) — getCountFromServer 집계 사용 */
-export async function getApplicationCount(jobId: string): Promise<number> {
+/**
+ * 지원자 수 가져오기 (구인글별) — getCountFromServer 집계 사용
+ * - 집계 read도 보안 규칙(당사자 한정)을 받으므로 employerId 제약이 필요 —
+ *   호출자는 해당 공고의 소유자(구인자 본인 uid)를 전달해야 함.
+ */
+export async function getApplicationCount(jobId: string, employerId: string): Promise<number> {
   const q = query(
     collection(db, 'applications'),
-    where('jobId', '==', jobId)
+    where('jobId', '==', jobId),
+    where('employerId', '==', employerId)
   );
   const snapshot = await getCountFromServer(q);
   return snapshot.data().count;
@@ -401,13 +415,13 @@ export async function getApplicationCount(jobId: string): Promise<number> {
 /**
  * 여러 공고의 지원자 수 일괄 집계 (P3-9)
  * - 공고별 getCountFromServer를 Promise.all로 병렬 실행 — 문서 전체를 읽지 않아 비용 절감
- * - equality where 하나만 사용 (복합 인덱스 불필요)
+ * - employerId: 공고 소유자(구인자 본인 uid) — 보안 규칙 통과에 필요 (equality where 2개, 복합 인덱스 불필요)
  */
-export async function getApplicantCounts(jobIds: string[]): Promise<Map<string, number>> {
+export async function getApplicantCounts(jobIds: string[], employerId: string): Promise<Map<string, number>> {
   const result = new Map<string, number>();
   await Promise.all(
     jobIds.map(async (jobId) => {
-      result.set(jobId, await getApplicationCount(jobId));
+      result.set(jobId, await getApplicationCount(jobId, employerId));
     })
   );
   return result;
@@ -425,9 +439,10 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
 }
 
 /**
- * 사용자 프로필 배치 조회 (P3-8)
- * - documentId 'in' 쿼리 (30개 제한 → 30개씩 청크 + 병렬)
- * - 존재하지 않는 uid(탈퇴 등)는 결과 Map에 포함되지 않음
+ * 사용자 프로필 배치 조회 (P3-8, A7)
+ * - 개별 getDoc 병렬 조회 — users 규칙은 단건 get은 허용하지만 documentId 'in' list 쿼리는
+ *   isPublic/본인 제약을 증명하지 못해 permission-denied가 되므로 in 쿼리를 쓰지 않는다.
+ * - 존재하지 않는 uid(탈퇴 등)는 결과 Map에 포함되지 않음 (기존 계약 유지)
  */
 export async function getUsersByIds(ids: string[]): Promise<Map<string, UserProfile>> {
   const result = new Map<string, UserProfile>();
@@ -435,17 +450,15 @@ export async function getUsersByIds(ids: string[]): Promise<Map<string, UserProf
   if (uniqueIds.length === 0) return result;
 
   await Promise.all(
-    chunkArray(uniqueIds, 30).map(async (chunk) => {
-      const q = query(collection(db, 'users'), where(documentId(), 'in', chunk));
-      const snapshot = await getDocs(q);
-      snapshot.docs.forEach((d) => {
-        const data = d.data();
-        result.set(d.id, {
-          ...data,
-          createdAt: toDate(data.createdAt),
-          updatedAt: toDate(data.updatedAt),
-        } as UserProfile);
-      });
+    uniqueIds.map(async (id) => {
+      const snap = await getDoc(doc(db, 'users', id));
+      if (!snap.exists()) return;
+      const data = snap.data();
+      result.set(id, {
+        ...data,
+        createdAt: toDate(data.createdAt),
+        updatedAt: toDate(data.updatedAt),
+      } as UserProfile);
     })
   );
   return result;
@@ -748,14 +761,32 @@ export async function updateUserProfile(uid: string, data: Record<string, any>):
 
 // ===== Phase 3: 계정 관리 (P3-6) =====
 
+/** 쿼리 결과 문서를 배치(청크)로 삭제 — writeBatch 500건 한도 대응 */
+async function deleteQueryDocs(q: Query): Promise<void> {
+  const snapshot = await getDocs(q);
+  for (const chunk of chunkArray(snapshot.docs, 450)) {
+    const batch = writeBatch(db);
+    chunk.forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+  }
+}
+
 /**
- * 회원탈퇴 — users 문서 삭제
- * - 프로필 정보(users)만 삭제한다.
+ * 회원탈퇴 — 본인 소유 개인정보 정리 후 users 문서 삭제 (A6)
+ * - 정리 대상: dailyWorks(공수), teamDailyWorks(팀원 공수), teams(팀원 연락처), favorites(즐겨찾기)
  * - 구인공고(jobs)·지원 기록(applications)은 임금 분쟁 등에 대비해 보존한다.
- *   (개인정보처리방침 4조 보관 기간 참고 — 법정 기간 경과 후 별도 정리)
- * - Firebase Auth 계정 삭제(user.delete())는 호출 측에서 별도로 처리한다.
+ *   (개인정보처리방침 보관 기간 참고 — 법정 기간 경과 후 별도 정리)
+ * - users 문서는 다른 데이터의 앵커이므로 마지막에 삭제한다.
+ * - Firebase Auth 계정 삭제(user.delete())는 호출 측에서 이 함수 이후에 처리한다
+ *   (auth를 먼저 지우면 인증이 무효화되어 Firestore 정리가 permission-denied가 됨).
  */
 export async function deleteUserAccount(uid: string): Promise<void> {
+  await Promise.all([
+    deleteQueryDocs(query(collection(db, 'dailyWorks'), where('userId', '==', uid))),
+    deleteQueryDocs(query(collection(db, 'teamDailyWorks'), where('teamLeaderId', '==', uid))),
+    deleteQueryDocs(query(collection(db, 'favorites'), where('userId', '==', uid))),
+    deleteDoc(doc(db, 'teams', uid)).catch(() => {}), // 팀 문서가 없을 수 있음
+  ]);
   await deleteDoc(doc(db, 'users', uid));
 }
 

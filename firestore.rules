@@ -15,19 +15,22 @@ service cloud.firestore {
 
     // users 컬렉션
     // - get(단건): 로그인 사용자 허용 — 공고 상세의 업체 정보, 지원자 프로필 표시에 필요.
-    //   전화번호 노출 정책(지원 = 연락 동의, 인력검색은 isPublic만)은 UI에서 통제.
+    //   ※ 전화번호 등 연락처는 아직 users 문서에 있음. 로그인 사용자가 임의 uid로 단건 조회하면
+    //     연락처가 노출되므로, 런칭 후 phone/email/fcmTokens를 users/{uid}/private 서브컬렉션으로
+    //     분리해 관계 기반으로만 열도록 후속 조치 예정(LAUNCH-PLAN A1 ②).
     // - list(목록 쿼리): 본인 문서 또는 isPublic == true 프로필만 (인력검색용)
+    // - delete: 본인만 (회원탈퇴 — LAUNCH-PLAN A6)
     match /users/{userId} {
       allow get: if request.auth != null;
       allow list: if request.auth != null
         && (request.auth.uid == userId || resource.data.isPublic == true);
       allow create: if request.auth != null && request.auth.uid == userId;
       allow update: if request.auth != null && request.auth.uid == userId;
-      allow delete: if false;
+      allow delete: if request.auth != null && request.auth.uid == userId;
     }
 
     // 개인 공수 기록
-    // - delete: 본인 기록만 (P2 — 공수 삭제 기능)
+    // - delete: 본인 기록만 (P2 — 공수 삭제 기능 / 회원탈퇴 정리)
     match /dailyWorks/{docId} {
       allow read: if request.auth != null && resource.data.userId == request.auth.uid;
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
@@ -42,7 +45,7 @@ service cloud.firestore {
     }
 
     // 팀원 공수 기록
-    // - delete: 팀장 본인 기록만 (P2 — 팀원 공수 삭제 기능)
+    // - delete: 팀장 본인 기록만 (P2 — 팀원 공수 삭제 기능 / 회원탈퇴 정리)
     match /teamDailyWorks/{docId} {
       allow read: if request.auth != null && resource.data.teamLeaderId == request.auth.uid;
       allow create: if request.auth != null && request.resource.data.teamLeaderId == request.auth.uid;
@@ -51,27 +54,43 @@ service cloud.firestore {
     }
 
     // 구인 공고
-    // - update: 작성자(구인자) 본인, 또는 지원자가 applicants 배열에 자기 uid만 추가/제거
+    // - read: 전체 공개 — 비로그인 게스트도 목록/상세 열람 가능 (연락처는 users에 있어 로그인 필요).
+    //         공고는 공개 게시물이라는 제품 결정 (LAUNCH-PLAN A5).
+    // - create: 본인(employerId) 명의만, 초기 상태·배열·프리미엄 값 강제 (사칭·조작 차단, A4)
+    // - update: 작성자 본인(employerId·createdAt 변경 불가), 또는 지원자가 applicants 배열에 자기 uid만 추가/제거
+    // - delete: 작성자 본인만
     match /jobs/{docId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null
-        && (resource.data.employerId == request.auth.uid || isSelfApplicantsChange());
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.employerId == request.auth.uid
+        && request.resource.data.status == 'open'
+        && request.resource.data.applicants.size() == 0
+        && request.resource.data.isPremium == false;
+      allow update: if request.auth != null && (
+        (resource.data.employerId == request.auth.uid
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['employerId', 'createdAt']))
+        || isSelfApplicantsChange()
+      );
       allow delete: if request.auth != null && resource.data.employerId == request.auth.uid;
     }
 
     // 지원 내역 (문서 ID 규칙: `${jobId}_${workerId}`)
-    // - read: 로그인 사용자 (문서에는 uid/상태만 있고 연락처 등 개인정보 없음)
-    //   ※ getCountFromServer 집계 read도 이 규칙으로 허용됨
-    // - create: 본인 지원만, 문서 ID 규칙 강제, 초기 상태는 pending
+    // - read: 당사자(지원자 본인 또는 해당 공고 구인자)만 — 전 회원 지원 이력 대량 수집 차단 (A1 ①).
+    //   ※ getCountFromServer 집계 read도 이 규칙으로 평가되므로, 구인자 쪽 쿼리는
+    //     반드시 where('employerId','==',uid) 제약을 포함해야 함 (firestore.ts 참고).
+    // - create: 본인 지원만, 문서 ID 규칙 강제, 초기 상태 pending,
+    //   employerId가 실제 공고 소유자와 일치하는지 검증(사칭·위조 차단, A3), 필드 화이트리스트(A8)
     // - update: 해당 공고의 구인자만, status 필드만 변경 가능 (수락/거절)
     // - delete: 본인의 pending 지원만 (지원 취소)
     match /applications/{docId} {
-      allow read: if request.auth != null;
+      allow read: if request.auth != null
+        && (resource.data.workerId == request.auth.uid || resource.data.employerId == request.auth.uid);
       allow create: if request.auth != null
         && request.resource.data.workerId == request.auth.uid
         && docId == request.resource.data.jobId + '_' + request.resource.data.workerId
-        && request.resource.data.status == 'pending';
+        && request.resource.data.status == 'pending'
+        && request.resource.data.employerId == get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.employerId
+        && request.resource.data.keys().hasOnly(['jobId', 'workerId', 'employerId', 'status', 'createdAt']);
       allow update: if request.auth != null
         && resource.data.employerId == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])

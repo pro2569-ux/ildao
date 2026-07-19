@@ -69,7 +69,7 @@ export default function JobApplicantsPage() {
       }
       setJob(jobData);
 
-      const apps = await getApplicationsByJobWithProfiles(jobId);
+      const apps = await getApplicationsByJobWithProfiles(jobId, user!.uid);
       setApplicants(apps);
     } catch (error) {
       console.error('지원자 목록 로드 실패:', error);

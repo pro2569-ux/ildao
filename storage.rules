@@ -1,0 +1,19 @@
+rules_version = '2';
+
+// Firebase Storage 보안 규칙
+// - 프로필 사진: profile-images/{uid} — 본인만 업로드(5MB·이미지 한정), 로그인 사용자 조회 허용
+// - 그 외 경로는 전부 거부 (클라이언트 SDK 직접 호출로도 우회 불가)
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /profile-images/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

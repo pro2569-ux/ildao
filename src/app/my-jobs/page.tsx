@@ -53,7 +53,7 @@ export default function MyJobsPage() {
       setJobs(jobsData);
 
       // 각 공고의 지원자 수 — getCountFromServer 병렬 집계 (P3-9, 문서 전체를 읽지 않음)
-      const countMap = await getApplicantCounts(jobsData.map((job) => job.id));
+      const countMap = await getApplicantCounts(jobsData.map((job) => job.id), user!.uid);
       setAppCounts(Object.fromEntries(countMap));
     } catch (error) {
       console.error('공고 로드 실패:', error);

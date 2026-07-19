@@ -174,6 +174,16 @@ function CreateJobContent() {
     setDraftRestored(false);
   };
 
+  // 순수 작성 모드: 로그인 가드 (A9) — 비로그인 시 로그인 후 이 화면으로 복귀
+  // (임시저장 덕에 로그인 후 작성 내용은 복원됨)
+  useEffect(() => {
+    if (!isPureCreate) return;
+    if (authLoading) return;
+    if (!user) {
+      router.replace(`/login?returnUrl=${encodeURIComponent('/jobs/create')}`);
+    }
+  }, [isPureCreate, authLoading, user, router]);
+
   useEffect(() => {
     if (!isEditMode && !isCopyMode) return;
     if (authLoading) return;
@@ -370,6 +380,37 @@ function CreateJobContent() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent" />
+      </div>
+    );
+  }
+
+  // 순수 작성 모드: 로그인 확인 중이거나 비로그인(로그인 페이지로 리다이렉트 대기) (A9)
+  if (isPureCreate && (authLoading || !user)) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent" />
+      </div>
+    );
+  }
+
+  // 순수 작성 모드: 구직자는 공고를 작성할 수 없음 (A9)
+  if (isPureCreate && userProfile && userProfile.role !== 'employer') {
+    return (
+      <div className="px-4 pt-6 pb-24 min-h-screen">
+        <div className="flex items-center gap-3 mb-6">
+          <BackButton className="-ml-2" />
+          <h1 className="text-xl font-bold">{pageTitle}</h1>
+        </div>
+        <div className="text-center py-12">
+          <p className="text-gray-600 text-base mb-2">공고는 구인자만 작성할 수 있어요.</p>
+          <p className="text-gray-500 text-sm mb-5">구인자로 활동하려면 내 정보에서 역할을 바꿔주세요.</p>
+          <Link
+            href="/profile"
+            className="inline-block py-2.5 px-6 bg-primary-500 text-white text-sm font-medium rounded-lg"
+          >
+            내 정보로 가기
+          </Link>
+        </div>
       </div>
     );
   }
