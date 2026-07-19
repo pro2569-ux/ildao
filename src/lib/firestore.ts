@@ -3,7 +3,7 @@
 import {
   collection, doc, addDoc, getDoc, getDocs, updateDoc, deleteDoc, setDoc,
   query, where, orderBy, limit, serverTimestamp, Timestamp, writeBatch,
-  arrayUnion, arrayRemove, onSnapshot, getCountFromServer,
+  arrayUnion, arrayRemove, onSnapshot, getCountFromServer, documentId,
   DocumentData, QueryConstraint, QueryDocumentSnapshot, Unsubscribe
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -396,6 +396,89 @@ export async function getApplicationCount(jobId: string): Promise<number> {
   );
   const snapshot = await getCountFromServer(q);
   return snapshot.data().count;
+}
+
+/**
+ * 여러 공고의 지원자 수 일괄 집계 (P3-9)
+ * - 공고별 getCountFromServer를 Promise.all로 병렬 실행 — 문서 전체를 읽지 않아 비용 절감
+ * - equality where 하나만 사용 (복합 인덱스 불필요)
+ */
+export async function getApplicantCounts(jobIds: string[]): Promise<Map<string, number>> {
+  const result = new Map<string, number>();
+  await Promise.all(
+    jobIds.map(async (jobId) => {
+      result.set(jobId, await getApplicationCount(jobId));
+    })
+  );
+  return result;
+}
+
+// ===== P3-8: 배치 조회 헬퍼 (N+1 방지) =====
+
+/** 배열을 지정 크기로 청크 분할 — Firestore 'in' 쿼리 30개 제한 대응 */
+function chunkArray<T>(arr: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    chunks.push(arr.slice(i, i + size));
+  }
+  return chunks;
+}
+
+/**
+ * 사용자 프로필 배치 조회 (P3-8)
+ * - documentId 'in' 쿼리 (30개 제한 → 30개씩 청크 + 병렬)
+ * - 존재하지 않는 uid(탈퇴 등)는 결과 Map에 포함되지 않음
+ */
+export async function getUsersByIds(ids: string[]): Promise<Map<string, UserProfile>> {
+  const result = new Map<string, UserProfile>();
+  const uniqueIds = Array.from(new Set(ids)).filter(Boolean);
+  if (uniqueIds.length === 0) return result;
+
+  await Promise.all(
+    chunkArray(uniqueIds, 30).map(async (chunk) => {
+      const q = query(collection(db, 'users'), where(documentId(), 'in', chunk));
+      const snapshot = await getDocs(q);
+      snapshot.docs.forEach((d) => {
+        const data = d.data();
+        result.set(d.id, {
+          ...data,
+          createdAt: toDate(data.createdAt),
+          updatedAt: toDate(data.updatedAt),
+        } as UserProfile);
+      });
+    })
+  );
+  return result;
+}
+
+/**
+ * 구인글 배치 조회 (P3-8)
+ * - documentId 'in' 쿼리 (30개 제한 → 30개씩 청크 + 병렬)
+ * - 삭제된 공고는 결과 Map에 포함되지 않음
+ */
+export async function getJobsByIds(ids: string[]): Promise<Map<string, JobPost>> {
+  const result = new Map<string, JobPost>();
+  const uniqueIds = Array.from(new Set(ids)).filter(Boolean);
+  if (uniqueIds.length === 0) return result;
+
+  await Promise.all(
+    chunkArray(uniqueIds, 30).map(async (chunk) => {
+      const q = query(collection(db, 'jobs'), where(documentId(), 'in', chunk));
+      const snapshot = await getDocs(q);
+      snapshot.docs.forEach((d) => {
+        const data = d.data();
+        result.set(d.id, {
+          ...data,
+          id: d.id,
+          startDate: toDate(data.startDate),
+          endDate: data.endDate ? toDate(data.endDate) : undefined,
+          createdAt: toDate(data.createdAt),
+          updatedAt: toDate(data.updatedAt),
+        } as JobPost);
+      });
+    })
+  );
+  return result;
 }
 
 // ===== Phase 2: 공수 기록 관련 =====

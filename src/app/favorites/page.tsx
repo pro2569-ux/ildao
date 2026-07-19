@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { getFavorites, removeFavorite, getUserProfile, getJob } from '@/lib/firestore';
+import { getFavorites, removeFavorite, getUsersByIds, getJobsByIds } from '@/lib/firestore';
 import { Favorite, UserProfile, JobPost } from '@/types';
 import ConfirmSheet from '@/components/ui/ConfirmSheet';
 import ErrorState from '@/components/ui/ErrorState';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import StatusBadge from '@/components/ui/StatusBadge';
 import BackButton from '@/components/ui/BackButton';
 import { useToast } from '@/components/ui/Toast';
@@ -81,15 +82,12 @@ export default function FavoritesPage() {
 
     try {
       if (isEmployer) {
-        // 구인자: 즐겨찾기 구직자 로드
+        // 구인자: 즐겨찾기 구직자 로드 — 프로필은 배치 조회 (P3-8, N+1 방지)
         const favs = await getFavorites(user.uid, 'user');
-        const withProfiles = await Promise.all(
-          favs.map(async (fav) => {
-            const worker = await getUserProfile(fav.targetId);
-            return { ...fav, worker };
-          })
+        const workerMap = await getUsersByIds(favs.map((f) => f.targetId));
+        setFavoriteWorkers(
+          favs.map((fav) => ({ ...fav, worker: workerMap.get(fav.targetId) ?? null }))
         );
-        setFavoriteWorkers(withProfiles);
       } else {
         // 구직자: 즐겨찾기 업체 + 즐겨찾기 공고 로드
         const [userFavs, jobFavs] = await Promise.all([
@@ -97,23 +95,17 @@ export default function FavoritesPage() {
           getFavorites(user.uid, 'job'),
         ]);
 
-        // 즐겨찾기 업체 프로필 로드
-        const companiesWithProfiles = await Promise.all(
-          userFavs.map(async (fav) => {
-            const company = await getUserProfile(fav.targetId);
-            return { ...fav, company };
-          })
+        // 업체 프로필 / 공고 상세 배치 조회 (P3-8, N+1 방지)
+        const [companyMap, jobMap] = await Promise.all([
+          getUsersByIds(userFavs.map((f) => f.targetId)),
+          getJobsByIds(jobFavs.map((f) => f.targetId)),
+        ]);
+        setFavoriteCompanies(
+          userFavs.map((fav) => ({ ...fav, company: companyMap.get(fav.targetId) ?? null }))
         );
-        setFavoriteCompanies(companiesWithProfiles);
-
-        // 즐겨찾기 공고 상세 로드
-        const jobsWithDetails = await Promise.all(
-          jobFavs.map(async (fav) => {
-            const job = await getJob(fav.targetId);
-            return { ...fav, job };
-          })
+        setFavoriteJobs(
+          jobFavs.map((fav) => ({ ...fav, job: jobMap.get(fav.targetId) ?? null }))
         );
-        setFavoriteJobs(jobsWithDetails);
       }
     } catch (err: any) {
       console.error('즐겨찾기 로드 실패:', err);
@@ -163,7 +155,7 @@ export default function FavoritesPage() {
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent" />
+        <LoadingSpinner />
       </div>
     );
   }
@@ -218,8 +210,8 @@ export default function FavoritesPage() {
 
       {/* 로딩 상태 */}
       {loading && !loadError && (
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary-500 border-t-transparent" />
+        <div className="py-8">
+          <LoadingSpinner />
         </div>
       )}
 

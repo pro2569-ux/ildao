@@ -1,10 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getPublicWorkers } from '@/lib/firestore';
+import { useAuth } from '@/contexts/AuthContext';
+import { getPublicWorkers, getFavorites, addFavorite, removeFavorite } from '@/lib/firestore';
 import { UserProfile, JobCategory } from '@/types';
 import BackButton from '@/components/ui/BackButton';
 import ErrorState from '@/components/ui/ErrorState';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { useToast } from '@/components/ui/Toast';
 import { formatWon } from '@/lib/format';
 import { REGIONS } from '@/lib/constants';
 
@@ -25,16 +28,66 @@ const matchesWorkerRegion = (worker: UserProfile, region: string): boolean => {
  * - 직종/지역 필터
  */
 export default function WorkersPage() {
+  const { user, userProfile } = useAuth();
+  const { showToast, toastElement } = useToast();
   const [workers, setWorkers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<JobCategory | '전체'>('전체');
   const [selectedRegion, setSelectedRegion] = useState<string>('전국');
 
+  // 즐겨찾기 상태 (P3-8) — 구인자만 사용
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  const isEmployer = userProfile?.role === 'employer';
+
   useEffect(() => {
     loadWorkers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory]);
+
+  // 즐겨찾기 목록 로드 (P3-8) — 카드마다 isFavorited N번 호출 대신 한 번에 Set 구성
+  useEffect(() => {
+    if (!user || !isEmployer) return;
+    (async () => {
+      try {
+        const favs = await getFavorites(user.uid, 'user');
+        setFavoriteIds(new Set(favs.map((f) => f.targetId)));
+      } catch (err) {
+        // 즐겨찾기 로드 실패해도 구직자 목록 자체는 정상 표시
+        console.error('즐겨찾기 목록 로드 실패:', err);
+      }
+    })();
+  }, [user, isEmployer]);
+
+  /** 즐겨찾기 토글 (P3-8) */
+  const handleToggleFavorite = async (worker: UserProfile) => {
+    if (!user || togglingId) return; // 처리 중 중복 탭 방지
+    const isFav = favoriteIds.has(worker.uid);
+
+    setTogglingId(worker.uid);
+    try {
+      if (isFav) {
+        await removeFavorite(user.uid, worker.uid);
+        setFavoriteIds((prev) => {
+          const next = new Set(prev);
+          next.delete(worker.uid);
+          return next;
+        });
+        showToast('즐겨찾기에서 해제했어요');
+      } else {
+        await addFavorite(user.uid, worker.uid, 'user');
+        setFavoriteIds((prev) => new Set(prev).add(worker.uid));
+        showToast(`${worker.name}님을 즐겨찾기에 추가했어요`);
+      }
+    } catch (err) {
+      console.error('즐겨찾기 처리 실패:', err);
+      showToast('즐겨찾기 처리에 실패했어요. 다시 시도해주세요.', 'error');
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   const loadWorkers = async () => {
     setLoading(true);
@@ -101,8 +154,8 @@ export default function WorkersPage() {
 
       {/* 구직자 목록 */}
       {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary-500 border-t-transparent" />
+        <div className="py-8">
+          <LoadingSpinner />
         </div>
       ) : error ? (
         <ErrorState onRetry={loadWorkers} />
@@ -170,6 +223,36 @@ export default function WorkersPage() {
                     )}
                   </div>
                 </div>
+
+                {/* 즐겨찾기 토글 버튼 (P3-8) — 구인자 전용, 44px 터치 영역 */}
+                {isEmployer && (
+                  <button
+                    onClick={() => handleToggleFavorite(worker)}
+                    disabled={togglingId === worker.uid}
+                    aria-label={
+                      favoriteIds.has(worker.uid)
+                        ? `${worker.name} 즐겨찾기 해제`
+                        : `${worker.name} 즐겨찾기 추가`
+                    }
+                    className="flex-shrink-0 w-11 h-11 -mt-2 -mr-2 flex items-center justify-center disabled:opacity-50"
+                  >
+                    <svg
+                      className={`w-7 h-7 ${
+                        favoriteIds.has(worker.uid) ? 'text-accent-500' : 'text-gray-400'
+                      }`}
+                      fill={favoriteIds.has(worker.uid) ? 'currentColor' : 'none'}
+                      stroke="currentColor"
+                      strokeWidth={1.8}
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.5.04.701.663.32.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.563.563 0 00-.182-.557l-4.204-3.602a.563.563 0 01.32-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"
+                      />
+                    </svg>
+                  </button>
+                )}
               </div>
 
               {/* 전화하기 버튼 — 전화번호 등록된 구직자만 표시 */}
@@ -191,6 +274,9 @@ export default function WorkersPage() {
           ))}
         </div>
       )}
+
+      {/* 토스트 알림 */}
+      {toastElement}
     </div>
   );
 }

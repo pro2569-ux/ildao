@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { getJobs, updateJob, deleteJob, getApplicationCount } from '@/lib/firestore';
+import { getJobs, updateJob, deleteJob, getApplicantCounts } from '@/lib/firestore';
 import { JobPost } from '@/types';
 import ConfirmSheet from '@/components/ui/ConfirmSheet';
 import ErrorState from '@/components/ui/ErrorState';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import StatusBadge from '@/components/ui/StatusBadge';
 import BackButton from '@/components/ui/BackButton';
 import { useToast } from '@/components/ui/Toast';
@@ -51,14 +52,9 @@ export default function MyJobsPage() {
       const jobsData = await getJobs({ employerId: user!.uid });
       setJobs(jobsData);
 
-      // 각 공고의 지원자 수 조회
-      const counts: Record<string, number> = {};
-      await Promise.all(
-        jobsData.map(async (job) => {
-          counts[job.id] = await getApplicationCount(job.id);
-        })
-      );
-      setAppCounts(counts);
+      // 각 공고의 지원자 수 — getCountFromServer 병렬 집계 (P3-9, 문서 전체를 읽지 않음)
+      const countMap = await getApplicantCounts(jobsData.map((job) => job.id));
+      setAppCounts(Object.fromEntries(countMap));
     } catch (error) {
       console.error('공고 로드 실패:', error);
       setLoadError(true);
@@ -119,7 +115,7 @@ export default function MyJobsPage() {
   if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent" />
+        <LoadingSpinner />
       </div>
     );
   }
