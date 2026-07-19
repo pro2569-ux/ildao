@@ -322,12 +322,14 @@ export default function ProfilePage() {
         )}
         {/* 하단 네비에서 빠진 즐겨찾기 진입점 (P2-12) */}
         <MenuItem label="즐겨찾기" onClick={() => router.push('/favorites')} />
-        {/* 푸시 알림 켜기 (P3-1) */}
-        <MenuItem
-          label="알림 설정"
-          badge={pushBusy ? '설정 중...' : pushEnabled ? '켜짐' : '꺼짐'}
-          onClick={handleNotificationSetting}
-        />
+        {/* 푸시 알림 켜기 (P3-1) — 웹 런칭은 푸시 미지원, VAPID 키 설정 시에만 노출 */}
+        {process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY && (
+          <MenuItem
+            label="알림 설정"
+            badge={pushBusy ? '설정 중...' : pushEnabled ? '켜짐' : '꺼짐'}
+            onClick={handleNotificationSetting}
+          />
+        )}
         {/* TODO: 대표 전화(tel:) 또는 카카오채널로 교체 */}
         <MenuItem
           label="문의하기"
