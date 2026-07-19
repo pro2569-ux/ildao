@@ -24,6 +24,7 @@ export interface UserProfile {
   isPublic?: boolean;       // 프로필 공개 여부 (구직자)
   introduction?: string;    // 자기소개 (구직자)
   companyIntro?: string;    // 업체 소개 (구인자)
+  fcmTokens?: string[];     // FCM 푸시 알림 토큰 목록 (기기별, P3-1)
   createdAt: Date;
   updatedAt: Date;
 }

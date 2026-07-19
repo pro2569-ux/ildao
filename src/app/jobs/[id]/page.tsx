@@ -4,12 +4,22 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { getJob, hasApplied, applyToJob, getUserProfile } from '@/lib/firestore';
+import {
+  getJob,
+  hasApplied,
+  applyToJob,
+  getUserProfile,
+  addFavorite,
+  removeFavorite,
+  isFavorited,
+} from '@/lib/firestore';
+import { notifyUser } from '@/lib/fcm';
 import { JobPost, UserProfile } from '@/types';
 import KakaoMap from '@/components/ui/KakaoMap';
 import BackButton from '@/components/ui/BackButton';
 import ErrorState from '@/components/ui/ErrorState';
 import StatusBadge from '@/components/ui/StatusBadge';
+import { useToast } from '@/components/ui/Toast';
 import { formatWon, formatDate } from '@/lib/format';
 
 /**
@@ -24,10 +34,14 @@ export default function JobDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user, userProfile, loading: authLoading } = useAuth();
+  const { showToast, toastElement } = useToast();
 
   const [job, setJob] = useState<JobPost | null>(null);
   const [employer, setEmployer] = useState<UserProfile | null>(null);
   const [applied, setApplied] = useState(false);
+  // 즐겨찾기 (P3-8) — 로그인한 구직자만
+  const [favorited, setFavorited] = useState(false);
+  const [favBusy, setFavBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [applying, setApplying] = useState(false);
@@ -57,6 +71,17 @@ export default function JobDetailPage() {
       }
     };
     checkApplied();
+
+    // 즐겨찾기 여부 확인 (P3-8)
+    const checkFavorited = async () => {
+      try {
+        const fav = await isFavorited(user.uid, jobId);
+        if (!cancelled) setFavorited(fav);
+      } catch (error) {
+        console.error('즐겨찾기 여부 확인 실패:', error);
+      }
+    };
+    checkFavorited();
 
     return () => {
       cancelled = true;
@@ -100,6 +125,18 @@ export default function JobDetailPage() {
       setApplied(true);
       setShowConfirmSheet(false);
       setShowCompleteSheet(true);
+
+      // 구인자에게 새 지원자 푸시 알림 (P3-1) — fire-and-forget, 실패해도 지원 흐름에 영향 없음
+      try {
+        void notifyUser(user, {
+          toUserId: job.employerId,
+          title: '새 지원자가 있어요',
+          body: `${job.title} 공고에 새 지원자가 왔어요. 확인해보세요`,
+          url: `/my-jobs/${jobId}/applicants`,
+        });
+      } catch (notifyError) {
+        console.warn('지원 알림 발송 실패(무시):', notifyError);
+      }
     } catch (error) {
       console.error('지원 실패:', error);
       if (error instanceof Error && error.message.includes('이미 지원')) {
@@ -112,6 +149,28 @@ export default function JobDetailPage() {
       }
     } finally {
       setApplying(false);
+    }
+  };
+
+  /** 즐겨찾기 하트 토글 (P3-8) */
+  const handleToggleFavorite = async () => {
+    if (!user || favBusy) return;
+    setFavBusy(true);
+    try {
+      if (favorited) {
+        await removeFavorite(user.uid, jobId);
+        setFavorited(false);
+        showToast('즐겨찾기에서 뺐어요');
+      } else {
+        await addFavorite(user.uid, jobId, 'job');
+        setFavorited(true);
+        showToast('즐겨찾기에 담았어요');
+      }
+    } catch (error) {
+      console.error('즐겨찾기 처리 실패:', error);
+      showToast('잠시 후 다시 시도해주세요', 'error');
+    } finally {
+      setFavBusy(false);
     }
   };
 
@@ -143,6 +202,27 @@ export default function JobDetailPage() {
       <div className="sticky top-0 bg-white border-b border-gray-100 px-4 py-2 flex items-center gap-2 z-10">
         <BackButton className="-ml-2" />
         <h1 className="text-lg font-bold truncate flex-1">공고 상세</h1>
+        {/* 즐겨찾기 하트 (P3-8) — 로그인한 구직자만, 터치 44px */}
+        {user && userProfile?.role === 'worker' && (
+          <button
+            onClick={handleToggleFavorite}
+            disabled={favBusy}
+            aria-label={favorited ? '즐겨찾기 빼기' : '즐겨찾기 담기'}
+            aria-pressed={favorited}
+            className="w-11 h-11 -mr-2 flex items-center justify-center flex-shrink-0 disabled:opacity-50"
+          >
+            {favorited ? (
+              <svg className="w-7 h-7 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
+            ) : (
+              <svg className="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round"
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            )}
+          </button>
+        )}
       </div>
 
       <div className="px-4 pt-4">
@@ -384,6 +464,9 @@ export default function JobDetailPage() {
           </div>
         </>
       )}
+
+      {/* 토스트 알림 */}
+      {toastElement}
 
       {/* 바텀시트 슬라이드업 애니메이션 */}
       <style jsx global>{`

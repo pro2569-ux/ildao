@@ -10,6 +10,7 @@ import {
   updateApplicationStatus,
   ApplicationWithProfile,
 } from '@/lib/firestore';
+import { notifyUser } from '@/lib/fcm';
 import { JobPost, ApplicationStatus } from '@/types';
 import ConfirmSheet from '@/components/ui/ConfirmSheet';
 import ErrorState from '@/components/ui/ErrorState';
@@ -93,6 +94,22 @@ export default function JobApplicantsPage() {
       );
       setStatusTarget(null);
       showToast(`지원을 ${label}했어요`);
+
+      // 구직자에게 결과 푸시 알림 (P3-1) — fire-and-forget, 실패해도 수락/거절 흐름에 영향 없음
+      try {
+        const jobTitle = job?.title || '지원한 공고';
+        void notifyUser(user!, {
+          toUserId: app.workerId,
+          title: status === 'accepted' ? '축하해요! 수락됐어요' : '지원 결과가 나왔어요',
+          body:
+            status === 'accepted'
+              ? `${jobTitle}에 수락됐어요. 사장님과 통화해보세요`
+              : `${jobTitle} 지원 결과가 나왔어요`,
+          url: '/my-applications',
+        });
+      } catch (notifyError) {
+        console.warn('지원 결과 알림 발송 실패(무시):', notifyError);
+      }
     } catch (error) {
       console.error('지원 상태 변경 실패:', error);
       setStatusTarget(null);

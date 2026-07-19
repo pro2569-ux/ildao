@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { toggleProfilePublic, updateUserProfile, deleteUserAccount } from '@/lib/firestore';
+import { enablePush, isPushPermissionGranted, listenForegroundMessages } from '@/lib/fcm';
 import ConfirmSheet from '@/components/ui/ConfirmSheet';
 
 /**
@@ -28,6 +29,9 @@ export default function ProfilePage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   // 탈퇴 중 최근 로그인 필요(auth/requires-recent-login) 상태 — 재로그인 유도
   const [needsRelogin, setNeedsRelogin] = useState(false);
+  // 푸시 알림 설정 (P3-1)
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /** 토스트 표시 (3초 후 자동으로 사라짐) */
@@ -50,6 +54,44 @@ export default function ProfilePage() {
       router.replace('/login');
     }
   }, [user, loading, router]);
+
+  // 푸시 알림 상태 확인 + 이미 허용된 경우 포그라운드 리스너 등록 (P3-1)
+  useEffect(() => {
+    const granted = isPushPermissionGranted();
+    setPushEnabled(granted);
+    if (granted) {
+      void listenForegroundMessages();
+    }
+  }, []);
+
+  /** 알림 설정 클릭 (P3-1) */
+  const handleNotificationSetting = async () => {
+    if (!user || pushBusy) return;
+
+    // 이미 허용된 상태 — 안내만
+    if (pushEnabled) {
+      showToast('알림이 켜져 있어요');
+      return;
+    }
+
+    setPushBusy(true);
+    try {
+      const result = await enablePush(user.uid);
+      if (result === 'granted') {
+        setPushEnabled(true);
+        showToast('알림을 켰어요');
+      } else if (result === 'denied') {
+        showToast('브라우저 설정에서 알림을 허용해주세요');
+      } else {
+        showToast('이 브라우저는 알림을 지원하지 않아요');
+      }
+    } catch (error) {
+      console.error('알림 설정 실패:', error);
+      showToast('알림 설정에 실패했어요. 다시 시도해주세요');
+    } finally {
+      setPushBusy(false);
+    }
+  };
 
   /** 로그아웃 핸들러 */
   const handleSignOut = async () => {
@@ -280,7 +322,12 @@ export default function ProfilePage() {
         )}
         {/* 하단 네비에서 빠진 즐겨찾기 진입점 (P2-12) */}
         <MenuItem label="즐겨찾기" onClick={() => router.push('/favorites')} />
-        <MenuItem label="알림 설정" badge="준비중" onClick={() => showToast('준비 중인 기능이에요')} />
+        {/* 푸시 알림 켜기 (P3-1) */}
+        <MenuItem
+          label="알림 설정"
+          badge={pushBusy ? '설정 중...' : pushEnabled ? '켜짐' : '꺼짐'}
+          onClick={handleNotificationSetting}
+        />
         {/* TODO: 대표 전화(tel:) 또는 카카오채널로 교체 */}
         <MenuItem
           label="문의하기"
