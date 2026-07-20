@@ -38,14 +38,11 @@ export async function POST(request: NextRequest) {
 
     if (!tokenResponse.ok) {
       const errorData = await tokenResponse.text();
+      // 상세(원문·redirect_uri)는 서버 콘솔에만 — 응답에 내부 정보 노출하지 않음
       console.error('카카오 토큰 교환 실패:', errorData);
       console.error('사용된 redirect_uri:', redirectUri);
       console.error('KAKAO_REST_API_KEY 존재:', !!process.env.KAKAO_REST_API_KEY);
-      return NextResponse.json({
-        error: '카카오 토큰 교환에 실패했습니다.',
-        detail: errorData,
-        redirectUri,
-      }, { status: 400 });
+      return NextResponse.json({ error: '카카오 토큰 교환에 실패했습니다.' }, { status: 400 });
     }
 
     const tokenData = await tokenResponse.json();
@@ -74,6 +71,13 @@ export async function POST(request: NextRequest) {
     const uid = `kakao:${kakaoId}`;
 
     // 4. Firebase 사용자 생성 또는 업데이트
+    //    이메일이 이미 다른 계정(구글 등)에 있으면 auth/email-already-exists 발생 →
+    //    500 대신 409로 명확히 안내(콜백에서 표시).
+    const emailConflict = () =>
+      NextResponse.json(
+        { error: '이미 다른 방법(구글 등)으로 가입된 이메일이에요. 구글 로그인을 이용해주세요.', code: 'email-conflict' },
+        { status: 409 }
+      );
     try {
       await adminAuth.updateUser(uid, {
         displayName,
@@ -83,12 +87,19 @@ export async function POST(request: NextRequest) {
     } catch (updateError: any) {
       if (updateError.code === 'auth/user-not-found') {
         // 신규 사용자 생성
-        await adminAuth.createUser({
-          uid,
-          displayName,
-          ...(email && { email }),
-          ...(photoURL && { photoURL }),
-        });
+        try {
+          await adminAuth.createUser({
+            uid,
+            displayName,
+            ...(email && { email }),
+            ...(photoURL && { photoURL }),
+          });
+        } catch (createError: any) {
+          if (createError.code === 'auth/email-already-exists') return emailConflict();
+          throw createError;
+        }
+      } else if (updateError.code === 'auth/email-already-exists') {
+        return emailConflict();
       } else {
         throw updateError;
       }
