@@ -285,14 +285,16 @@ export default function ProfilePage() {
             {/* p-2로 터치 영역 44px 이상 확보 (시각 크기는 유지) */}
             <button
               onClick={handleTogglePublic}
+              role="switch"
+              aria-checked={userProfile.isPublic}
               aria-label="프로필 공개 전환"
               className="p-2 -m-2 flex-shrink-0"
             >
               <span className={`relative block w-12 h-7 rounded-full transition-colors ${
                 userProfile.isPublic ? 'bg-primary-500' : 'bg-gray-300'
               }`}>
-                <span className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform ${
-                  userProfile.isPublic ? 'translate-x-5' : 'translate-x-0.5'
+                <span className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${
+                  userProfile.isPublic ? 'translate-x-5' : 'translate-x-0'
                 }`} />
               </span>
             </button>
