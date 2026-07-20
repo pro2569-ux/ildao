@@ -1,4 +1,4 @@
-# 일다오(ildao) 런칭 플랜
+﻿# 일다오(ildao) 런칭 플랜
 
 > 작성일: 2026-07-20 · 목표: 이번 주 내 실서비스 런칭
 > 근거: 7개 영역 병렬 심층 감사(37 에이전트, 전 소스 코드 대조 검증) + 인프라 실측(Vercel/Firebase/GitHub)
@@ -80,10 +80,10 @@
 
 # 파트 B — 배포 전 콘솔/환경 세팅 (대부분 사용자 작업)
 
-- [ ] **B1. Firebase Auth 승인된 도메인 등록** [BLOCKER · S · 사용자]
+- [x] **B1. Firebase Auth 승인된 도메인 등록** ✅완료 (2026-07-20 사용자 확인) [BLOCKER · S · 사용자]
   - Firebase 콘솔 > Authentication > Settings > 승인된 도메인에 프로덕션 도메인(ildao.vercel.app 및 커스텀 도메인) 추가. **미등록 시 구글 로그인이 auth/unauthorized-domain으로 즉사**(카카오는 커스텀토큰이라 무관 → 구글만 조용히 죽음).
 
-- [ ] **B2. 카카오 개발자 콘솔 Redirect URI + 플랫폼 도메인 등록** [BLOCKER · S · 사용자]
+- [x] **B2. 카카오 개발자 콘솔 Redirect URI + 플랫폼 도메인 등록** ✅완료 (2026-07-20 사용자 확인) [BLOCKER · S · 사용자]
   - 카카오 로그인 > Redirect URI에 `https://<프로덕션도메인>/auth/kakao/callback` 정확히 등록(미등록 시 KOE006 즉시 실패). 앱 설정 > 플랫폼 > Web에 프로덕션 도메인 등록(지도 SDK·JS SDK 로드 허용). www/apex 둘 다 쓰면 둘 다.
   - ⚠️ Vercel 프리뷰 URL(*-*.vercel.app)은 매번 바뀌어 카카오 로그인 테스트 불가 — 정상. 프로덕션 도메인에서만 테스트.
 
@@ -91,7 +91,7 @@
   - Vercel Production·Preview에 `NEXT_PUBLIC_KAKAO_MAP_KEY` 등록(값은 프로덕션 JS 키와 동일 — 동일 카카오 앱 확인됨). `.env.local`에도 추가. NEXT_PUBLIC_*은 빌드타임 인라인이라 **다음 배포부터 적용**.
   - 남은 조건: 카카오 콘솔 > 플랫폼 > Web에 프로덕션 도메인 등록(B2와 동일 작업)이 돼야 지도 SDK 로드 허용됨.
 
-- [ ] **B4. Firebase 요금제(Blaze) + Storage 버킷 + 예산 알림** [HIGH · S · 사용자]
+- [x] **B4. Firebase 요금제(Blaze) + Storage 버킷 + 예산 알림** ✅완료 — 버킷 생성됨(ildao-fcbf6.firebasestorage.app), storage.rules 배포 완료, env 정합 확인(로컬·Vercel 모두 일치). 예산 알림 설정은 권장 잔여 [HIGH · S · 사용자]
   - **2026-07-20 확인됨: Storage가 프로젝트에 아예 미설정(버킷 없음)** — `firebase deploy --only storage` 시도 시 "Firebase Storage has not been set up" 에러. 즉 프로필 사진 업로드는 현재 어느 환경에서도 동작한 적 없음(클라이언트는 "사진 올리기에 실패했습니다" 표시).
   - 할 일(사용자): Firebase 콘솔 > Storage > 시작하기(신규 프로젝트는 Blaze 요금제 필요) → 완료 후 Claude에게 알리면 `firebase deploy --only storage`로 규칙 배포. Blaze 전환 시 GCP 예산 알림(일/월 한도) 설정 권장.
 
