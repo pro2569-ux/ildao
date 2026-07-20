@@ -15,10 +15,10 @@ export default function PrivacyPage() {
       {/* 헤더 */}
       <div className="flex items-center gap-2 mb-6">
         <BackButton className="-ml-2" />
-        <h1 className="text-xl font-bold">개인정보처리방침</h1>
+        <h1 className="text-xl font-bold text-ink">개인정보처리방침</h1>
       </div>
 
-      <div className="space-y-6 text-base text-gray-700 leading-relaxed">
+      <div className="card p-5 space-y-6 text-base text-ink-soft leading-relaxed">
         <Section title="1. 수집하는 개인정보">
           일다오는 서비스 제공을 위해 아래 정보를 수집합니다.
           <ul className="list-disc pl-5 mt-2 space-y-1">
@@ -67,12 +67,12 @@ export default function PrivacyPage() {
 
         <Section title="7. 문의처">
           개인정보 관련 문의는 아래로 연락해주세요.
-          <p className="mt-2 font-medium text-gray-900">
+          <p className="mt-2 font-medium text-ink">
             이메일: pro2569@gmail.com
           </p>
         </Section>
 
-        <p className="text-sm text-gray-500 pt-2">시행일: 2026년 7월 10일</p>
+        <p className="text-sm text-ink-soft pt-2">시행일: 2026년 7월 10일</p>
       </div>
     </div>
   );
@@ -82,7 +82,7 @@ export default function PrivacyPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h2 className="text-lg font-bold text-gray-900 mb-2">{title}</h2>
+      <h2 className="text-lg font-bold text-ink mb-2">{title}</h2>
       <div>{children}</div>
     </section>
   );

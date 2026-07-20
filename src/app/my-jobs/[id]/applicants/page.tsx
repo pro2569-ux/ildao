@@ -135,7 +135,7 @@ export default function JobApplicantsPage() {
   const header = (
     <div className="flex items-center gap-2 mb-4">
       <BackButton className="-ml-2" />
-      <h1 className="text-xl font-bold">지원자 목록</h1>
+      <h1 className="text-xl font-bold text-ink">지원자 목록</h1>
     </div>
   );
 
@@ -153,12 +153,12 @@ export default function JobApplicantsPage() {
       <div className="px-4 pt-6 pb-24">
         {header}
         <div className="text-center py-12">
-          <p className="text-gray-500 text-base mb-4">
+          <p className="text-ink-soft text-base mb-4">
             {notFound ? '공고를 찾을 수 없어요' : '내 공고만 볼 수 있어요'}
           </p>
           <Link
             href="/my-jobs"
-            className="inline-block py-3 px-6 bg-primary-500 text-white text-base font-medium rounded-lg"
+            className="btn-primary inline-block text-base"
           >
             내 공고 보러가기
           </Link>
@@ -183,19 +183,19 @@ export default function JobApplicantsPage() {
 
       {/* 공고 요약 */}
       <div className="card mb-4">
-        <h2 className="font-semibold text-base">{job.title}</h2>
-        <p className="text-lg font-bold text-accent-600 mt-1">{formatWon(job.dailyWage)}</p>
-        <p className="text-sm text-gray-600 mt-0.5">{formatFullDate(job.startDate)} 시작</p>
+        <h2 className="font-semibold text-base text-ink">{job.title}</h2>
+        <p className="text-accent-500 font-extrabold text-xl tnum mt-1">{formatWon(job.dailyWage)}</p>
+        <p className="text-sm text-ink-soft mt-0.5">{formatFullDate(job.startDate)} 시작</p>
       </div>
 
       {/* 지원자 목록 */}
       {applicants.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-500 text-base">아직 지원한 사람이 없습니다</p>
+          <p className="text-ink-soft text-base">아직 지원한 사람이 없습니다</p>
         </div>
       ) : (
         <>
-          <p className="text-sm text-gray-600 mb-3">지원자 {applicants.length}명</p>
+          <p className="text-sm text-ink-soft mb-3">지원자 {applicants.length}명</p>
           <div className="space-y-3">
             {applicants.map((app) => {
               const worker = app.workerProfile;
@@ -204,13 +204,13 @@ export default function JobApplicantsPage() {
                   {/* 상태 + 지원일 */}
                   <div className="flex items-center justify-between mb-2">
                     <StatusBadge status={app.status} />
-                    <span className="text-sm text-gray-500">지원일 {formatDate(app.createdAt)}</span>
+                    <span className="text-sm text-ink-soft">지원일 {formatDate(app.createdAt)}</span>
                   </div>
 
                   {/* 지원자 프로필 */}
                   {worker ? (
                     <div className="flex items-start gap-3">
-                      <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
+                      <div className="w-12 h-12 rounded-full bg-line overflow-hidden flex-shrink-0">
                         {worker.profileImage ? (
                           <img
                             src={worker.profileImage}
@@ -229,9 +229,9 @@ export default function JobApplicantsPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold text-base">{worker.name}</h3>
+                          <h3 className="font-semibold text-base text-ink">{worker.name}</h3>
                           {worker.experience != null && (
-                            <span className="text-sm text-gray-600">경력 {worker.experience}년</span>
+                            <span className="text-sm text-ink-soft">경력 {worker.experience}년</span>
                           )}
                         </div>
                         {worker.skills && worker.skills.length > 0 && (
@@ -239,7 +239,7 @@ export default function JobApplicantsPage() {
                             {worker.skills.map((skill) => (
                               <span
                                 key={skill}
-                                className="text-sm px-2 py-0.5 bg-blue-50 text-primary-600 rounded-full"
+                                className="cat-tag bg-primary-50 text-primary-700"
                               >
                                 {skill}
                               </span>
@@ -247,22 +247,22 @@ export default function JobApplicantsPage() {
                           </div>
                         )}
                         {worker.desiredWage ? (
-                          <span className="text-sm font-semibold text-accent-600">
+                          <span className="text-base font-bold text-accent-500 tnum">
                             희망 {worker.desiredWage.toLocaleString()}원
                           </span>
                         ) : null}
                       </div>
                     </div>
                   ) : (
-                    <p className="text-base text-gray-500">지원자 정보를 불러올 수 없어요</p>
+                    <p className="text-base text-ink-soft">지원자 정보를 불러올 수 없어요</p>
                   )}
 
                   {/* 액션 버튼 */}
-                  <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
+                  <div className="mt-3 pt-3 border-t border-line space-y-2">
                     {worker?.phone ? (
                       <a
                         href={`tel:${worker.phone}`}
-                        className="flex items-center justify-center gap-2 w-full min-h-[44px] py-3 bg-green-500 text-white text-base font-semibold rounded-lg"
+                        className="flex items-center justify-center gap-2 w-full min-h-[44px] py-3 bg-ok text-white text-base font-bold rounded-xl"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -271,7 +271,7 @@ export default function JobApplicantsPage() {
                         전화하기
                       </a>
                     ) : (
-                      <div className="w-full py-3 bg-gray-100 text-gray-500 text-base font-medium rounded-lg text-center">
+                      <div className="w-full py-3 bg-paper text-ink-soft text-base font-medium rounded-xl text-center border border-line">
                         전화번호 미등록
                       </div>
                     )}
@@ -282,14 +282,14 @@ export default function JobApplicantsPage() {
                         <button
                           onClick={() => setStatusTarget({ app, status: 'rejected' })}
                           disabled={processing}
-                          className="flex-1 min-h-[44px] py-3 border border-gray-300 text-gray-600 text-base font-semibold rounded-lg disabled:opacity-50"
+                          className="btn-ghost flex-1 min-h-[44px] text-base disabled:opacity-50"
                         >
                           거절
                         </button>
                         <button
                           onClick={() => setStatusTarget({ app, status: 'accepted' })}
                           disabled={processing}
-                          className="flex-1 min-h-[44px] py-3 bg-primary-500 text-white text-base font-semibold rounded-lg disabled:opacity-50"
+                          className="btn-primary flex-1 min-h-[44px] text-base disabled:opacity-50"
                         >
                           수락
                         </button>

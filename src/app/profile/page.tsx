@@ -183,13 +183,13 @@ export default function ProfilePage() {
 
   return (
     <div className="px-4 pt-6 pb-24">
-      <h1 className="text-xl font-bold mb-6">내 정보</h1>
+      <h1 className="text-2xl font-bold text-ink mb-6">내 정보</h1>
 
       {/* 프로필 카드 */}
       <div className="card mb-4">
         <div className="flex items-center gap-4">
           {/* 프로필 이미지 */}
-          <div className="w-16 h-16 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
+          <div className="w-16 h-16 rounded-full bg-primary-50 overflow-hidden flex-shrink-0">
             {avatarUrl ? (
               <img
                 key={avatarUrl}
@@ -212,15 +212,15 @@ export default function ProfilePage() {
           </div>
 
           <div className="flex-1 min-w-0">
-            <h2 className="font-bold text-lg truncate">
+            <h2 className="font-bold text-lg text-ink truncate">
               {userProfile?.name || user.displayName || '사용자'}
             </h2>
-            <p className="text-sm text-gray-500 truncate">{user.email}</p>
+            <p className="text-sm text-ink-soft truncate">{user.email}</p>
             {userProfile && (
-              <span className={`inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full ${
+              <span className={`cat-tag mt-1.5 ${
                 userProfile.role === 'worker'
-                  ? 'bg-blue-100 text-primary-600'
-                  : 'bg-orange-100 text-accent-500'
+                  ? 'bg-primary-50 text-primary-700'
+                  : 'bg-warn-50 text-accent-500'
               }`}>
                 {userProfile.role === 'worker' ? '구직자' : '구인자'}
               </span>
@@ -232,7 +232,7 @@ export default function ProfilePage() {
       {/* 프로필 상세 정보 */}
       {userProfile && (
         <div className="card mb-4 space-y-3">
-          <h3 className="font-semibold text-sm text-gray-500 uppercase tracking-wider">프로필 정보</h3>
+          <h3 className="font-semibold text-sm text-ink-soft uppercase tracking-wider">프로필 정보</h3>
 
           <InfoRow label="연락처" value={userProfile.phone} />
 
@@ -277,8 +277,8 @@ export default function ProfilePage() {
         <div className="card mb-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-semibold text-base text-gray-800">프로필 공개</h3>
-              <p className="text-sm text-gray-500 mt-0.5">
+              <h3 className="font-semibold text-base text-ink">프로필 공개</h3>
+              <p className="text-sm text-ink-soft mt-0.5">
                 구인자에게 내 프로필이 노출됩니다
               </p>
             </div>
@@ -305,7 +305,7 @@ export default function ProfilePage() {
       {/* 프로필 미설정 안내 */}
       {!userProfile && (
         <div className="card mb-4 text-center py-6">
-          <p className="text-gray-500 text-base mb-3">프로필이 설정되지 않았습니다.</p>
+          <p className="text-ink-soft text-base mb-3">프로필이 설정되지 않았습니다.</p>
           <button
             onClick={() => router.push('/register')}
             className="btn-primary text-base py-3 px-5 min-h-[44px]"
@@ -316,7 +316,7 @@ export default function ProfilePage() {
       )}
 
       {/* 메뉴 */}
-      <div className="card mb-4 divide-y divide-gray-100">
+      <div className="card mb-4 divide-y divide-line">
         <MenuItem label="프로필 수정" onClick={() => router.push('/profile/edit')} />
         {/* 역할 변경 — 구직자↔구인자 전환 (P3-6) */}
         {userProfile && (
@@ -353,7 +353,7 @@ export default function ProfilePage() {
       {/* 로그아웃 — 확인 시트 경유 (P2-18) */}
       <button
         onClick={() => setShowLogoutSheet(true)}
-        className="w-full py-3 min-h-[44px] text-center text-base text-red-500 font-medium bg-white rounded-xl border border-gray-100 hover:bg-red-50 transition-colors"
+        className="w-full py-3 min-h-[44px] text-center text-base text-red-500 font-semibold bg-white rounded-2xl border border-line hover:bg-red-50 transition-colors"
       >
         로그아웃
       </button>
@@ -366,7 +366,7 @@ export default function ProfilePage() {
             setNeedsRelogin(false);
             setShowDeleteSheet(true);
           }}
-          className="inline-block px-4 py-3 min-h-[44px] text-sm text-gray-500 underline underline-offset-2"
+          className="inline-block px-4 py-3 min-h-[44px] text-sm text-ink-soft underline underline-offset-2"
         >
           회원탈퇴
         </button>
@@ -409,11 +409,11 @@ export default function ProfilePage() {
       />
 
       {/* 버전 정보 */}
-      <p className="text-center text-sm text-gray-500 mt-4">일다오 v1.0.0</p>
+      <p className="text-center text-sm text-ink-soft mt-4">일다오 v1.0.0</p>
 
       {/* 토스트 메시지 */}
       {toastMessage && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-black/70 text-white text-sm px-4 py-2.5 rounded-full whitespace-nowrap">
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-ink/90 text-white text-sm px-4 py-2.5 rounded-full whitespace-nowrap">
           {toastMessage}
         </div>
       )}
@@ -424,9 +424,9 @@ export default function ProfilePage() {
 /** 정보 행 컴포넌트 */
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between">
-      <span className="text-sm text-gray-500">{label}</span>
-      <span className="text-base font-medium text-gray-900">{value}</span>
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-sm text-ink-soft flex-shrink-0">{label}</span>
+      <span className="text-base font-semibold text-ink text-right">{value}</span>
     </div>
   );
 }
@@ -436,17 +436,17 @@ function MenuItem({ label, badge, onClick }: { label: string; badge?: string; on
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center justify-between py-3.5 min-h-[44px] text-base text-gray-700 hover:bg-gray-50 transition-colors"
+      className="w-full flex items-center justify-between py-3.5 min-h-[44px] text-base text-ink hover:bg-primary-50 transition-colors"
     >
       <span className="flex items-center gap-1.5">
         {label}
         {badge && (
-          <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full">
+          <span className="text-xs text-primary-700 bg-primary-50 px-1.5 py-0.5 rounded-full">
             {badge}
           </span>
         )}
       </span>
-      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-4 h-4 text-ink-soft" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
       </svg>
     </button>

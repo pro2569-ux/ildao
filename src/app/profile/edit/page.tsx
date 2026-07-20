@@ -230,21 +230,21 @@ export default function ProfileEditPage() {
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={() => router.back()}
-          className="p-2 -ml-2 rounded-lg hover:bg-gray-100 transition-colors"
+          className="p-2 -ml-2 rounded-lg hover:bg-primary-50 transition-colors"
           aria-label="뒤로가기"
         >
-          <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 text-ink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <h1 className="text-xl font-bold text-gray-900">프로필 수정</h1>
+        <h1 className="text-xl font-bold text-ink">프로필 수정</h1>
       </div>
 
       {/* 프로필 사진 섹션 (P3-7: 갤러리에서 사진 선택 → Storage 업로드) */}
       <div className="card mb-5">
         <div className="flex flex-col items-center gap-3">
           {/* 현재 프로필 사진 또는 기본 아바타 (원형 미리보기) */}
-          <div className="relative w-24 h-24 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
+          <div className="relative w-24 h-24 rounded-full bg-primary-50 overflow-hidden flex-shrink-0 ring-1 ring-line">
             {profileImage ? (
               <img
                 key={profileImage}
@@ -257,8 +257,8 @@ export default function ProfileEditPage() {
                 }}
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-primary-100">
-                <svg className="w-12 h-12 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-full h-full flex items-center justify-center bg-primary-50">
+                <svg className="w-12 h-12 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
@@ -287,7 +287,7 @@ export default function ProfileEditPage() {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="w-full py-3.5 bg-primary-500 text-white rounded-xl font-semibold text-base hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3.5 btn-primary rounded-xl font-semibold text-base disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isUploading ? (
               <span className="flex items-center justify-center gap-2">
@@ -307,7 +307,7 @@ export default function ProfileEditPage() {
                 setProfileImage('');
                 setUploadError('');
               }}
-              className="text-sm text-gray-400 underline hover:text-gray-600 transition-colors"
+              className="text-base text-ink-soft underline hover:text-ink transition-colors"
             >
               사진 삭제
             </button>
@@ -315,7 +315,7 @@ export default function ProfileEditPage() {
 
           {/* 업로드 실패 에러 메시지 */}
           {uploadError && (
-            <p className="text-sm text-red-500 text-center">{uploadError}</p>
+            <p className="text-base text-red-600 text-center">{uploadError}</p>
           )}
         </div>
       </div>
@@ -324,7 +324,7 @@ export default function ProfileEditPage() {
       <div className="space-y-5">
         {/* 이름 */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+          <label className="block text-base font-semibold text-ink mb-1.5">
             이름 <span className="text-red-500">*</span>
           </label>
           <input
@@ -332,13 +332,13 @@ export default function ProfileEditPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="홍길동"
-            className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+            className="w-full py-3 px-4 border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base"
           />
         </div>
 
         {/* 연락처 */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+          <label className="block text-base font-semibold text-ink mb-1.5">
             연락처 <span className="text-red-500">*</span>
           </label>
           <input
@@ -346,7 +346,7 @@ export default function ProfileEditPage() {
             value={phone}
             onChange={(e) => setPhone(formatPhone(e.target.value))}
             placeholder="010-0000-0000"
-            className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+            className="w-full py-3 px-4 border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base"
           />
         </div>
 
@@ -355,7 +355,7 @@ export default function ProfileEditPage() {
           <>
             {/* 보유 기술 */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              <label className="block text-base font-semibold text-ink mb-1.5">
                 보유 기술
               </label>
               <div className="flex flex-wrap gap-2">
@@ -364,10 +364,10 @@ export default function ProfileEditPage() {
                     key={cat}
                     type="button"
                     onClick={() => toggleSkill(cat)}
-                    className={`py-1.5 px-3 rounded-full text-sm font-medium transition-colors ${
+                    className={`py-2 px-3.5 rounded-full text-base font-medium transition-colors ${
                       skills.includes(cat)
                         ? 'bg-primary-500 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        : 'bg-primary-50 text-primary-700 hover:bg-primary-100'
                     }`}
                   >
                     {cat}
@@ -378,7 +378,7 @@ export default function ProfileEditPage() {
 
             {/* 경력 */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              <label className="block text-base font-semibold text-ink mb-1.5">
                 경력
               </label>
               <div className="relative">
@@ -391,9 +391,9 @@ export default function ProfileEditPage() {
                   placeholder="예: 5"
                   min="0"
                   max="50"
-                  className="w-full py-3 px-4 pr-10 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                  className="w-full py-3 px-4 pr-10 border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base"
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-base text-ink-soft">
                   년
                 </span>
               </div>
@@ -401,13 +401,13 @@ export default function ProfileEditPage() {
 
             {/* 선호 지역 */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              <label className="block text-base font-semibold text-ink mb-1.5">
                 선호 지역
               </label>
               <select
                 value={region}
                 onChange={(e) => setRegion(e.target.value)}
-                className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm bg-white appearance-none"
+                className="w-full py-3 px-4 border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base bg-white appearance-none"
               >
                 <option value="">지역 선택</option>
                 {REGIONS.map((r) => (
@@ -420,7 +420,7 @@ export default function ProfileEditPage() {
 
             {/* 희망 일당 */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              <label className="block text-base font-semibold text-ink mb-1.5">
                 희망 일당
               </label>
               <div className="relative">
@@ -434,15 +434,15 @@ export default function ProfileEditPage() {
                     setDesiredWage(raw ? Number(raw).toLocaleString() : '');
                   }}
                   placeholder="예: 250,000"
-                  className="w-full py-3 px-4 pr-10 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                  className="w-full py-3 px-4 pr-10 border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base"
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-base text-ink-soft">
                   원
                 </span>
               </div>
               {/* 금액 확인 도움말 (0 개수 확인용 만원 환산) */}
               {desiredWage && (
-                <p className="mt-1 text-sm text-gray-600">
+                <p className="mt-1.5 text-base font-extrabold text-accent-500 tnum">
                   {formatWon(Number(desiredWage.replace(/,/g, '')))} ({formatManwon(Number(desiredWage.replace(/,/g, '')))})
                 </p>
               )}
@@ -450,7 +450,7 @@ export default function ProfileEditPage() {
 
             {/* 자기소개 */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              <label className="block text-base font-semibold text-ink mb-1.5">
                 자기소개
               </label>
               <textarea
@@ -458,7 +458,7 @@ export default function ProfileEditPage() {
                 onChange={(e) => setIntroduction(e.target.value)}
                 placeholder="간단한 자기소개를 입력해주세요"
                 rows={4}
-                className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm resize-none"
+                className="w-full py-3 px-4 border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base resize-none"
               />
             </div>
           </>
@@ -469,7 +469,7 @@ export default function ProfileEditPage() {
           <>
             {/* 업체명 */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              <label className="block text-base font-semibold text-ink mb-1.5">
                 업체명
               </label>
               <input
@@ -477,13 +477,13 @@ export default function ProfileEditPage() {
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
                 placeholder="(주) 건설이엔지"
-                className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                className="w-full py-3 px-4 border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base"
               />
             </div>
 
             {/* 대표자명 */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              <label className="block text-base font-semibold text-ink mb-1.5">
                 대표자명
               </label>
               <input
@@ -491,13 +491,13 @@ export default function ProfileEditPage() {
                 value={representativeName}
                 onChange={(e) => setRepresentativeName(e.target.value)}
                 placeholder="대표자 이름"
-                className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                className="w-full py-3 px-4 border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base"
               />
             </div>
 
             {/* 주요 직종 */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              <label className="block text-base font-semibold text-ink mb-1.5">
                 주요 직종
               </label>
               <div className="flex flex-wrap gap-2">
@@ -506,10 +506,10 @@ export default function ProfileEditPage() {
                     key={cat}
                     type="button"
                     onClick={() => toggleMainCategory(cat)}
-                    className={`py-1.5 px-3 rounded-full text-sm font-medium transition-colors ${
+                    className={`py-2 px-3.5 rounded-full text-base font-medium transition-colors ${
                       mainJobCategories.includes(cat)
                         ? 'bg-accent-500 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        : 'bg-primary-50 text-primary-700 hover:bg-primary-100'
                     }`}
                   >
                     {cat}
@@ -520,7 +520,7 @@ export default function ProfileEditPage() {
 
             {/* 업체 소개 */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              <label className="block text-base font-semibold text-ink mb-1.5">
                 업체 소개
               </label>
               <textarea
@@ -528,7 +528,7 @@ export default function ProfileEditPage() {
                 onChange={(e) => setCompanyIntro(e.target.value)}
                 placeholder="업체에 대한 간단한 소개를 입력해주세요"
                 rows={4}
-                className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm resize-none"
+                className="w-full py-3 px-4 border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base resize-none"
               />
             </div>
           </>
@@ -537,20 +537,20 @@ export default function ProfileEditPage() {
 
       {/* 에러 메시지 */}
       {error && (
-        <div className="mt-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg">
+        <div className="mt-4 p-3 bg-red-50 text-red-600 text-base rounded-xl">
           {error}
         </div>
       )}
 
       {/* 성공 메시지 */}
       {success && (
-        <div className="mt-4 p-3 bg-green-50 text-green-600 text-sm rounded-lg">
+        <div className="mt-4 p-3 bg-ok-50 text-ok-700 text-base rounded-xl">
           프로필이 저장되었습니다!
         </div>
       )}
 
       {/* 하단 고정 저장 버튼 (z-40: 하단 네비/배너에 가리지 않도록) */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 p-4 bg-white border-t border-gray-100">
+      <div className="fixed bottom-0 left-0 right-0 z-40 p-4 bg-white border-t border-line">
         <div className="max-w-lg mx-auto">
           <button
             onClick={handleSave}

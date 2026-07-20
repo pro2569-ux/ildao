@@ -15,10 +15,10 @@ export default function TermsPage() {
       {/* 헤더 */}
       <div className="flex items-center gap-2 mb-6">
         <BackButton className="-ml-2" />
-        <h1 className="text-xl font-bold">이용약관</h1>
+        <h1 className="text-xl font-bold text-ink">이용약관</h1>
       </div>
 
-      <div className="space-y-6 text-base text-gray-700 leading-relaxed">
+      <div className="card p-5 space-y-6 text-base text-ink leading-relaxed">
         <Section title="제1조 (목적)">
           이 약관은 일다오(이하 &quot;서비스&quot;)가 제공하는 건설·일용직 구인구직
           중개 서비스의 이용 조건과 절차, 회사와 회원의 권리·의무를 정하는 것을
@@ -74,12 +74,12 @@ export default function TermsPage() {
 
         <Section title="문의처">
           약관에 대해 궁금한 점은 아래로 문의해주세요.
-          <p className="mt-2 font-medium text-gray-900">
+          <p className="mt-2 font-medium text-ink">
             이메일: pro2569@gmail.com
           </p>
         </Section>
 
-        <p className="text-sm text-gray-500 pt-2">시행일: 2026년 7월 10일</p>
+        <p className="text-sm text-ink-soft pt-2">시행일: 2026년 7월 10일</p>
       </div>
     </div>
   );
@@ -89,7 +89,7 @@ export default function TermsPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h2 className="text-lg font-bold text-gray-900 mb-2">{title}</h2>
+      <h2 className="text-lg font-bold text-ink mb-2">{title}</h2>
       <div>{children}</div>
     </section>
   );
