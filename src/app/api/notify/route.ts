@@ -32,8 +32,10 @@ export async function POST(request: NextRequest) {
     if (!idToken) {
       return NextResponse.json({ error: '인증 토큰이 없습니다.' }, { status: 401 });
     }
+    let senderUid = '';
     try {
-      await adminAuth.verifyIdToken(idToken);
+      const decoded = await adminAuth.verifyIdToken(idToken);
+      senderUid = decoded.uid;
     } catch {
       return NextResponse.json({ error: '인증에 실패했습니다.' }, { status: 401 });
     }
@@ -42,6 +44,13 @@ export async function POST(request: NextRequest) {
     if (!toUserId || typeof toUserId !== 'string' || !title || typeof title !== 'string') {
       return NextResponse.json({ error: 'toUserId와 title이 필요합니다.' }, { status: 400 });
     }
+
+    // 남용 추적용 — 누가 누구에게 보냈는지 기록(발신자 uid 확보)
+    console.log(`[notify] from=${senderUid} to=${toUserId}`);
+
+    // 제목/본문 길이 제한 (스팸·과다 payload 방지)
+    const safeTitle = title.slice(0, 100);
+    const safeBody = (typeof body === 'string' ? body : '').slice(0, 300);
 
     // 대상 사용자의 FCM 토큰 조회
     const userRef = adminDb.collection('users').doc(toUserId);
@@ -53,17 +62,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ skipped: true, reason: 'no-tokens' });
     }
 
-    // webpush 링크는 절대 URL이어야 함 — 상대 경로면 요청 origin 기준으로 변환
-    const path = typeof url === 'string' && url ? url : '/';
-    const link = path.startsWith('http')
-      ? path
-      : new URL(path, request.nextUrl.origin).toString();
+    // 링크는 내부 경로('/'로 시작, '//' 제외)만 허용 — 외부 http URL 주입(피싱) 차단
+    const path =
+      typeof url === 'string' && url.startsWith('/') && !url.startsWith('//') ? url : '/';
+    const link = new URL(path, request.nextUrl.origin).toString();
 
     const result = await adminMessaging.sendEachForMulticast({
       tokens,
       notification: {
-        title,
-        body: typeof body === 'string' ? body : '',
+        title: safeTitle,
+        body: safeBody,
       },
       data: { url: path },
       webpush: {
