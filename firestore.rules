@@ -75,15 +75,21 @@ service cloud.firestore {
     }
 
     // 지원 내역 (문서 ID 규칙: `${jobId}_${workerId}`)
-    // - read: 당사자(지원자 본인 또는 해당 공고 구인자)만 — 전 회원 지원 이력 대량 수집 차단 (A1 ①).
-    //   ※ getCountFromServer 집계 read도 이 규칙으로 평가되므로, 구인자 쪽 쿼리는
+    // - get(단건): 당사자(지원자/구인자)만. 단, 존재하지 않는 문서(resource == null)는 허용 —
+    //   지원 전 중복 확인(applyToJob의 getDoc)이 신규 지원 시 막히지 않도록. 없는 문서엔 노출할 데이터도 없음.
+    // - list(목록 쿼리): 당사자만 — 전 회원 지원 이력 대량 수집 차단 (A1 ①).
+    //   ※ getCountFromServer 집계도 이 규칙으로 평가되므로, 구인자 쪽 쿼리는
     //     반드시 where('employerId','==',uid) 제약을 포함해야 함 (firestore.ts 참고).
     // - create: 본인 지원만, 문서 ID 규칙 강제, 초기 상태 pending,
     //   employerId가 실제 공고 소유자와 일치하는지 검증(사칭·위조 차단, A3), 필드 화이트리스트(A8)
     // - update: 해당 공고의 구인자만, status 필드만 변경 가능 (수락/거절)
     // - delete: 본인의 pending 지원만 (지원 취소)
     match /applications/{docId} {
-      allow read: if request.auth != null
+      allow get: if request.auth != null
+        && (resource == null
+            || resource.data.workerId == request.auth.uid
+            || resource.data.employerId == request.auth.uid);
+      allow list: if request.auth != null
         && (resource.data.workerId == request.auth.uid || resource.data.employerId == request.auth.uid);
       allow create: if request.auth != null
         && request.resource.data.workerId == request.auth.uid
