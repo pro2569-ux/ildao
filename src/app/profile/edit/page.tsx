@@ -549,8 +549,8 @@ export default function ProfileEditPage() {
         </div>
       )}
 
-      {/* 하단 고정 저장 버튼 */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100">
+      {/* 하단 고정 저장 버튼 (z-40: 하단 네비/배너에 가리지 않도록) */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 p-4 bg-white border-t border-gray-100">
         <div className="max-w-lg mx-auto">
           <button
             onClick={handleSave}

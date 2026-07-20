@@ -4,8 +4,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
-/** 네비게이션을 숨길 경로 목록 */
-const HIDDEN_PATHS = ['/login', '/register'];
+/** 네비게이션을 숨길 경로 목록
+ *  - /profile/edit: 하단 고정 '저장하기' 바가 있는 집중 편집 화면 (네비와 겹침 방지) */
+const HIDDEN_PATHS = ['/login', '/register', '/profile/edit'];
 
 /** SVG 아이콘 컴포넌트들 */
 const icons = {
