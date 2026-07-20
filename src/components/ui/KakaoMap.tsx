@@ -2,8 +2,14 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-/** 카카오맵 API 키 (없으면 지도 대신 주소 텍스트만 표시) */
-const KAKAO_MAP_KEY = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
+/**
+ * 카카오맵 API 키 (없으면 지도 대신 주소 텍스트만 표시)
+ * - 카카오맵 SDK의 appkey는 카카오 JavaScript 키와 동일 값이므로 JS 키로 폴백.
+ *   (Vercel의 Sensitive 타입 env는 빌드타임 인라인이 안 돼 MAP_KEY가 비는 사고 회피 —
+ *    별도 카카오 앱으로 분리할 때만 MAP_KEY를 설정하면 됨)
+ */
+const KAKAO_MAP_KEY =
+  process.env.NEXT_PUBLIC_KAKAO_MAP_KEY || process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
 
 interface KakaoMapProps {
   /** 표시 모드: view=읽기전용, select=위치선택 */

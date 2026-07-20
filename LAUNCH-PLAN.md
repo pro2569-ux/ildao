@@ -87,9 +87,10 @@
   - 카카오 로그인 > Redirect URI에 `https://<프로덕션도메인>/auth/kakao/callback` 정확히 등록(미등록 시 KOE006 즉시 실패). 앱 설정 > 플랫폼 > Web에 프로덕션 도메인 등록(지도 SDK·JS SDK 로드 허용). www/apex 둘 다 쓰면 둘 다.
   - ⚠️ Vercel 프리뷰 URL(*-*.vercel.app)은 매번 바뀌어 카카오 로그인 테스트 불가 — 정상. 프로덕션 도메인에서만 테스트.
 
-- [x] **B3. 카카오맵 키 이름 정합** ✅완료 [HIGH · S]
-  - Vercel Production·Preview에 `NEXT_PUBLIC_KAKAO_MAP_KEY` 등록(값은 프로덕션 JS 키와 동일 — 동일 카카오 앱 확인됨). `.env.local`에도 추가. NEXT_PUBLIC_*은 빌드타임 인라인이라 **다음 배포부터 적용**.
-  - 남은 조건: 카카오 콘솔 > 플랫폼 > Web에 프로덕션 도메인 등록(B2와 동일 작업)이 돼야 지도 SDK 로드 허용됨.
+- [x] **B3. 카카오맵 키 정합** ✅완료 (코드 폴백 방식으로 변경) [HIGH · S]
+  - 1차 시도(Vercel env 등록)는 실패 — **CLI로 추가한 env가 Sensitive 타입으로 강제되고, Sensitive는 빌드타임에 노출되지 않아 NEXT_PUBLIC 인라인이 빈 값이 됨**(캐시 없는 강제 재배포로 검증). 
+  - 최종 해법: KakaoMap.tsx가 `NEXT_PUBLIC_KAKAO_MAP_KEY || NEXT_PUBLIC_KAKAO_JS_KEY` 폴백 — JS 키는 정상 인라인됨(같은 카카오 앱·같은 값). 별도 지도 앱 분리 시에만 MAP_KEY 사용.
+  - ⚠️ 추가 발견: dapi.kakao.com이 ildao.vercel.app referer에 **403**(미등록 도메인은 401) → 도메인 등록은 됐고 **카카오맵 서비스 '사용 설정'이 꺼져 있을 가능성** — 카카오 디벨로퍼스 > 해당 앱 > 카카오맵 > 사용 설정 ON 필요(사용자).
 
 - [x] **B4. Firebase 요금제(Blaze) + Storage 버킷 + 예산 알림** ✅완료 — 버킷 생성됨(ildao-fcbf6.firebasestorage.app), storage.rules 배포 완료, env 정합 확인(로컬·Vercel 모두 일치). 예산 알림 설정은 권장 잔여 [HIGH · S · 사용자]
   - **2026-07-20 확인됨: Storage가 프로젝트에 아예 미설정(버킷 없음)** — `firebase deploy --only storage` 시도 시 "Firebase Storage has not been set up" 에러. 즉 프로필 사진 업로드는 현재 어느 환경에서도 동작한 적 없음(클라이언트는 "사진 올리기에 실패했습니다" 표시).
