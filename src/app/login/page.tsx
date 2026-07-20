@@ -83,7 +83,13 @@ function LoginContent() {
     } catch (err) {
       console.error('복귀 경로 저장 실패:', err);
     }
-    signInWithKakao();
+    try {
+      signInWithKakao();
+    } catch (err: any) {
+      // 설정 누락(NEXT_PUBLIC_KAKAO_JS_KEY 미설정) 등 — 버튼 잠금 해제 + 안내 (B6)
+      setError(err?.message || '카카오 로그인을 시작하지 못했어요. 다시 시도해주세요.');
+      setKakaoRedirecting(false);
+    }
   };
 
   // 로딩 중

@@ -106,7 +106,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithKakao = () => {
     if (typeof window === 'undefined') return;
 
-    const clientId = process.env.NEXT_PUBLIC_KAKAO_JS_KEY || '80b8cae0927e7a3757684435be41eaf8';
+    // 하드코딩 폴백 없음 — env 미설정 시 명시적으로 실패시켜 배포 설정 오류를 즉시 드러냄 (LAUNCH-PLAN B6)
+    const clientId = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
+    if (!clientId) {
+      console.error('[Kakao] NEXT_PUBLIC_KAKAO_JS_KEY가 설정되지 않아 카카오 로그인을 시작할 수 없습니다.');
+      throw new Error('카카오 로그인 설정이 완료되지 않았어요. 잠시 후 다시 시도해주세요.');
+    }
     const redirectUri = window.location.origin + '/auth/kakao/callback';
     /** SDK 없이도 동작하는 직접 인증 URL (authorize()와 동일 엔드포인트) */
     const goAuthorizeUrl = () => {
