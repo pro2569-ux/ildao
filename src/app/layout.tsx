@@ -7,12 +7,29 @@ import OfflineBanner from '@/components/ui/OfflineBanner';
 import InstallBanner from '@/components/ui/InstallBanner';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://ildao.vercel.app'),
   title: '일다오 - 건설/일용직 구인구직',
   description: '건설현장, 일용직 일자리를 빠르게 찾아보세요. 구인·구직·공수계산까지 한번에.',
   manifest: '/manifest.json',
-  icons: {
-    icon: '/icons/icon-192x192.png',
-    apple: '/icons/icon-192x192.png',
+  // 파비콘/애플 아이콘은 src/app/icon.png · apple-icon.png (Next 관례)로 자동 처리
+  appleWebApp: {
+    capable: true,
+    title: '일다오',
+    statusBarStyle: 'default',
+  },
+  // 카톡·SNS 공유 미리보기 — og:image는 src/app/opengraph-image.png(Next 관례)로 자동
+  openGraph: {
+    title: '일다오 - 건설/일용직 구인구직',
+    description: '건설현장, 일용직 일자리를 빠르게 찾아보세요. 구인·구직·공수계산까지 한번에.',
+    siteName: '일다오',
+    locale: 'ko_KR',
+    type: 'website',
+    url: 'https://ildao.vercel.app',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '일다오 - 건설/일용직 구인구직',
+    description: '건설현장, 일용직 일자리를 빠르게 찾아보세요.',
   },
 };
 

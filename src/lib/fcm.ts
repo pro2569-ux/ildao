@@ -149,7 +149,7 @@ export async function listenForegroundMessages(): Promise<void> {
 
         const notification = new Notification(title, {
           body,
-          icon: '/icons/icon-192x192.svg',
+          icon: '/icons/icon-192x192.png',
           data: { url },
         });
         notification.onclick = () => {

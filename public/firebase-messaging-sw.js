@@ -71,7 +71,7 @@ try {
     const title = data.title || '일다오';
     self.registration.showNotification(title, {
       body: data.body || '',
-      icon: '/icons/icon-192x192.svg',
+      icon: '/icons/icon-192x192.png',
       data: { url: data.url || '/' },
     });
   });
