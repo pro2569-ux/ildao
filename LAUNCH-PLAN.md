@@ -95,10 +95,10 @@
   - **2026-07-20 확인됨: Storage가 프로젝트에 아예 미설정(버킷 없음)** — `firebase deploy --only storage` 시도 시 "Firebase Storage has not been set up" 에러. 즉 프로필 사진 업로드는 현재 어느 환경에서도 동작한 적 없음(클라이언트는 "사진 올리기에 실패했습니다" 표시).
   - 할 일(사용자): Firebase 콘솔 > Storage > 시작하기(신규 프로젝트는 Blaze 요금제 필요) → 완료 후 Claude에게 알리면 `firebase deploy --only storage`로 규칙 배포. Blaze 전환 시 GCP 예산 알림(일/월 한도) 설정 권장.
 
-- [ ] **B5. .env.local.example 코드 기준 재작성** [BLOCKER(문서) · S]
+- [x] **B5. .env.local.example 코드 기준 재작성** ✅완료 (A파트 커밋에 포함) [BLOCKER(문서) · S]
   - FIREBASE_SERVICE_ACCOUNT_KEY → FIREBASE_PROJECT_ID/CLIENT_EMAIL/PRIVATE_KEY, NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY → _JS_KEY, NEXT_PUBLIC_KAKAO_MAP_API_KEY → _MAP_KEY, KAKAO_REST_API_KEY·VAPID·REDIRECT_URI(선택) 추가. NEXT_PUBLIC_FIREBASE_* 6종은 그대로 유지. → 재발 방지.
 
-- [ ] **B6. 하드코딩 카카오 JS 키 폴백 제거** [LOW · S]
+- [x] **B6. 하드코딩 카카오 JS 키 폴백 제거** ✅완료 (커밋 66b6d67) [LOW · S]
   - `AuthContext.tsx:109`·`KakaoSDK.tsx:5`의 `|| '80b8cae0...'` 폴백 제거(env 미설정을 은폐, 공개 저장소에 키 노출). env 없으면 콘솔 에러 + 버튼 비활성.
 
 ---
