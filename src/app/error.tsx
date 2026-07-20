@@ -1,5 +1,6 @@
 'use client';
 
+import * as Sentry from '@sentry/nextjs';
 import { useEffect } from 'react';
 import Link from 'next/link';
 
@@ -15,8 +16,9 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  // 에러 로깅 (추후 Sentry 등 모니터링 도구 연동 지점)
+  // 에러 로깅 — Sentry 보고(설정 시) + 콘솔
   useEffect(() => {
+    Sentry.captureException(error);
     console.error('전역 에러 발생:', error);
   }, [error]);
 
