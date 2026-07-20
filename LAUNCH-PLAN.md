@@ -87,12 +87,13 @@
   - 카카오 로그인 > Redirect URI에 `https://<프로덕션도메인>/auth/kakao/callback` 정확히 등록(미등록 시 KOE006 즉시 실패). 앱 설정 > 플랫폼 > Web에 프로덕션 도메인 등록(지도 SDK·JS SDK 로드 허용). www/apex 둘 다 쓰면 둘 다.
   - ⚠️ Vercel 프리뷰 URL(*-*.vercel.app)은 매번 바뀌어 카카오 로그인 테스트 불가 — 정상. 프로덕션 도메인에서만 테스트.
 
-- [ ] **B3. 카카오맵 키 이름 정합** [HIGH · S]
-  - 문제: 코드는 `NEXT_PUBLIC_KAKAO_MAP_KEY`를 읽는데 Vercel엔 `NEXT_PUBLIC_KAKAO_MAP_API_KEY`(낡은 이름)만 있음 → 지도 미표시 + 공고 작성 위치선택이 폴백 입력창으로 떨어져 **좌표가 (0,0)으로 저장**(나중에 지도 켜도 영구 '위치 없음').
-  - 수정: Vercel에 `NEXT_PUBLIC_KAKAO_MAP_KEY` 추가(값은 JS 키와 동일 카카오 JavaScript 키). NEXT_PUBLIC_*은 빌드타임 인라인이라 추가 후 **재배포 필수**. 3곳(코드/.env.example/CLAUDE.md) 이름 통일.
+- [x] **B3. 카카오맵 키 이름 정합** ✅완료 [HIGH · S]
+  - Vercel Production·Preview에 `NEXT_PUBLIC_KAKAO_MAP_KEY` 등록(값은 프로덕션 JS 키와 동일 — 동일 카카오 앱 확인됨). `.env.local`에도 추가. NEXT_PUBLIC_*은 빌드타임 인라인이라 **다음 배포부터 적용**.
+  - 남은 조건: 카카오 콘솔 > 플랫폼 > Web에 프로덕션 도메인 등록(B2와 동일 작업)이 돼야 지도 SDK 로드 허용됨.
 
 - [ ] **B4. Firebase 요금제(Blaze) + Storage 버킷 + 예산 알림** [HIGH · S · 사용자]
-  - 2024-10-30 이후 신규 프로젝트의 Storage 기본 버킷은 **Blaze에서만 생성** → Spark면 프로필 사진 업로드 전면 실패. 요금제·버킷 존재 확인. Blaze 전환 시 GCP 예산 알림(일/월 한도) 설정으로 rules 구멍·전체조회와 결합된 비용 폭주 방지.
+  - **2026-07-20 확인됨: Storage가 프로젝트에 아예 미설정(버킷 없음)** — `firebase deploy --only storage` 시도 시 "Firebase Storage has not been set up" 에러. 즉 프로필 사진 업로드는 현재 어느 환경에서도 동작한 적 없음(클라이언트는 "사진 올리기에 실패했습니다" 표시).
+  - 할 일(사용자): Firebase 콘솔 > Storage > 시작하기(신규 프로젝트는 Blaze 요금제 필요) → 완료 후 Claude에게 알리면 `firebase deploy --only storage`로 규칙 배포. Blaze 전환 시 GCP 예산 알림(일/월 한도) 설정 권장.
 
 - [ ] **B5. .env.local.example 코드 기준 재작성** [BLOCKER(문서) · S]
   - FIREBASE_SERVICE_ACCOUNT_KEY → FIREBASE_PROJECT_ID/CLIENT_EMAIL/PRIVATE_KEY, NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY → _JS_KEY, NEXT_PUBLIC_KAKAO_MAP_API_KEY → _MAP_KEY, KAKAO_REST_API_KEY·VAPID·REDIRECT_URI(선택) 추가. NEXT_PUBLIC_FIREBASE_* 6종은 그대로 유지. → 재발 방지.
@@ -104,10 +105,14 @@
 
 # 파트 C — 런칭 배포 & 스모크 테스트 (당일)
 
-- [ ] **C1. rules + storage + indexes 배포** [사용자/Claude]
-  - A 파트 rules 수정 후 `firebase deploy --only firestore:rules,storage`. 인덱스는 이미 배포됨(변경 시 함께).
-- [ ] **C2. 프로덕션 배포** [Claude 가능]
-  - `vercel --prod`로 현재 main을 프로덕션 승격(자동배포 미동작 확인됨). 또는 Vercel Git 연결을 main 자동배포로 고치는 것을 먼저 결정.
+> **⚠️ 2026-07-20부터 main push = 프로덕션 자동배포가 동작함** (이날 push가 프로덕션 배포를 트리거해 확인).
+> 이후 main에는 배포 가능한 상태의 커밋만 push할 것. 미완성 작업은 브랜치 사용.
+
+- [x] **C1. rules 배포** ✅부분완료 (2026-07-20)
+  - firestore.rules 배포 완료 + REST 스모크 테스트 통과(게스트 jobs 읽기 허용 / users·applications 비로그인 차단 확인).
+  - storage.rules는 **B4(Storage 미설정) 해소 후** `firebase deploy --only storage` 필요.
+- [x] **C2. 프로덕션 배포** ✅완료 (2026-07-20)
+  - main push가 프로덕션 자동배포를 트리거 — ildao.vercel.app이 현재 main(P0~P3 + A파트 + B6, 카카오맵 키 포함 빌드)을 서빙 중. 새 rules와 정합.
 - [ ] **C3. 실기기 스모크 테스트 5종** — 모바일 브라우저에서 프로덕션 URL로:
   - 구글 로그인 팝업 완료 / 카카오 로그인 완료 / 공고 작성 시 지도 표시 & 핀 좌표 저장 / 지원→구인자 지원자목록 수락→전화 / 회원탈퇴 1회.
 - [ ] **C4. 비로그인 첫 화면** — 로그아웃 상태로 홈·피드·공유링크 상세가 에러 없이 뜨는지(A5 검증).
