@@ -25,14 +25,14 @@ interface StatusBadgeProps {
 
 const STATUS_MAP: Record<BadgeStatus, { label: string; color: string }> = {
   // 공고 상태
-  open: { label: '모집중', color: 'bg-green-100 text-green-700' },
-  in_progress: { label: '진행중', color: 'bg-primary-100 text-primary-700' },
-  closed: { label: '마감', color: 'bg-gray-100 text-gray-600' },
-  completed: { label: '완료', color: 'bg-gray-100 text-gray-600' },
+  open: { label: '모집중', color: 'bg-ok-50 text-ok-700' },
+  in_progress: { label: '진행중', color: 'bg-primary-50 text-primary-700' },
+  closed: { label: '마감', color: 'bg-paper text-ink-soft' },
+  completed: { label: '완료', color: 'bg-paper text-ink-soft' },
   // 지원 상태
-  pending: { label: '대기중', color: 'bg-yellow-100 text-yellow-700' },
-  accepted: { label: '수락됨', color: 'bg-green-100 text-green-700' },
-  rejected: { label: '거절됨', color: 'bg-gray-100 text-gray-600' },
+  pending: { label: '대기중', color: 'bg-warn-50 text-warn' },
+  accepted: { label: '수락됨', color: 'bg-ok-50 text-ok-700' },
+  rejected: { label: '거절됨', color: 'bg-paper text-ink-soft' },
 };
 
 export default function StatusBadge({

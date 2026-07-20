@@ -161,15 +161,15 @@ export default function RegisterPage() {
       {/* 상단 진행 표시 */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2">
-          <div className={`h-1 flex-1 rounded-full ${step >= 1 ? 'bg-primary-500' : 'bg-gray-200'}`} />
-          <div className={`h-1 flex-1 rounded-full ${step >= 2 ? 'bg-primary-500' : 'bg-gray-200'}`} />
+          <div className={`h-1.5 flex-1 rounded-full ${step >= 1 ? 'bg-primary-500' : 'bg-line'}`} />
+          <div className={`h-1.5 flex-1 rounded-full ${step >= 2 ? 'bg-primary-500' : 'bg-line'}`} />
         </div>
         {/* 진행 단계 텍스트 (P2-18) */}
-        <p className="text-sm font-semibold text-primary-500 mb-1">{step}/2 단계</p>
-        <h1 className="text-xl font-bold text-gray-900">
+        <p className="text-sm font-bold text-primary-600 mb-1">{step}/2 단계</p>
+        <h1 className="text-2xl font-extrabold text-ink">
           {step === 1 ? '어떤 용도로 사용하시나요?' : '기본 정보를 입력해주세요'}
         </h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-base text-ink-soft mt-1">
           {step === 1
             ? '맞춤형 서비스를 제공하기 위해 필요합니다.'
             : role === 'worker'
@@ -184,22 +184,22 @@ export default function RegisterPage() {
           {/* 구직자 카드 */}
           <button
             onClick={() => { setRole('worker'); setStep(2); }}
-            className={`w-full text-left p-5 rounded-xl border-2 transition-all ${
+            className={`w-full text-left card !p-5 border-2 transition-all ${
               role === 'worker'
-                ? 'border-primary-500 bg-primary-50'
-                : 'border-gray-200 bg-white hover:border-primary-300'
+                ? '!border-primary-500 bg-primary-50'
+                : '!border-line hover:!border-primary-300'
             }`}
           >
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-primary-50 rounded-2xl flex items-center justify-center flex-shrink-0">
+                <svg className="w-7 h-7 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
               <div>
-                <h3 className="font-bold text-gray-900 mb-1">일자리를 찾고 있어요</h3>
-                <p className="text-sm text-gray-500">구직자 (근로자) · 일자리 검색, 지원, 공수 관리</p>
+                <h3 className="font-bold text-lg text-ink mb-0.5">일자리를 찾고 있어요</h3>
+                <p className="text-sm text-ink-soft">구직자 (근로자) · 일자리 검색, 지원, 공수 관리</p>
               </div>
             </div>
           </button>
@@ -207,22 +207,22 @@ export default function RegisterPage() {
           {/* 구인자 카드 */}
           <button
             onClick={() => { setRole('employer'); setStep(2); }}
-            className={`w-full text-left p-5 rounded-xl border-2 transition-all ${
+            className={`w-full text-left card !p-5 border-2 transition-all ${
               role === 'employer'
-                ? 'border-primary-500 bg-primary-50'
-                : 'border-gray-200 bg-white hover:border-primary-300'
+                ? '!border-primary-500 bg-primary-50'
+                : '!border-line hover:!border-primary-300'
             }`}
           >
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 text-accent-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-accent-50 rounded-2xl flex items-center justify-center flex-shrink-0">
+                <svg className="w-7 h-7 text-accent-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
               </div>
               <div>
-                <h3 className="font-bold text-gray-900 mb-1">인력을 구하고 있어요</h3>
-                <p className="text-sm text-gray-500">구인자 (업체) · 구인 게시, 인력 관리</p>
+                <h3 className="font-bold text-lg text-ink mb-0.5">인력을 구하고 있어요</h3>
+                <p className="text-sm text-ink-soft">구인자 (업체) · 구인 게시, 인력 관리</p>
               </div>
             </div>
           </button>
@@ -234,7 +234,7 @@ export default function RegisterPage() {
         <div className="space-y-5">
           {/* 공통: 이름 */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+            <label className="block text-sm font-bold text-ink mb-1.5">
               이름 <span className="text-red-500">*</span>
             </label>
             <input
@@ -242,13 +242,13 @@ export default function RegisterPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="홍길동"
-              className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+              className="w-full py-3 px-4 bg-white border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base text-ink placeholder:text-ink-soft/60"
             />
           </div>
 
           {/* 공통: 연락처 */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+            <label className="block text-sm font-bold text-ink mb-1.5">
               연락처 <span className="text-red-500">*</span>
             </label>
             <input
@@ -256,7 +256,7 @@ export default function RegisterPage() {
               value={phone}
               onChange={(e) => setPhone(formatPhone(e.target.value))}
               placeholder="010-0000-0000"
-              className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+              className="w-full py-3 px-4 bg-white border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base text-ink placeholder:text-ink-soft/60"
             />
           </div>
 
@@ -265,7 +265,7 @@ export default function RegisterPage() {
             <>
               {/* 보유 기술 선택 */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                <label className="block text-sm font-bold text-ink mb-1.5">
                   보유 기술 / 직종 <span className="text-red-500">*</span>
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -274,10 +274,10 @@ export default function RegisterPage() {
                       key={cat}
                       type="button"
                       onClick={() => toggleSkill(cat)}
-                      className={`py-1.5 px-3 rounded-full text-sm font-medium transition-colors ${
+                      className={`min-h-[44px] py-2.5 px-4 rounded-full text-base font-bold transition-colors ${
                         skills.includes(cat)
                           ? 'bg-primary-500 text-white'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          : 'bg-white text-ink border border-line hover:border-primary-300'
                       }`}
                     >
                       {cat}
@@ -288,7 +288,7 @@ export default function RegisterPage() {
 
               {/* 경력 */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                <label className="block text-sm font-bold text-ink mb-1.5">
                   경력 (년)
                 </label>
                 <input
@@ -300,13 +300,13 @@ export default function RegisterPage() {
                   placeholder="예: 5"
                   min="0"
                   max="50"
-                  className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                  className="w-full py-3 px-4 bg-white border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base text-ink placeholder:text-ink-soft/60"
                 />
               </div>
 
               {/* 희망 일당 */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                <label className="block text-sm font-bold text-ink mb-1.5">
                   희망 일당 (원)
                 </label>
                 <input
@@ -319,12 +319,12 @@ export default function RegisterPage() {
                     setDesiredWage(raw ? Number(raw).toLocaleString() : '');
                   }}
                   placeholder="예: 250,000"
-                  className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                  className="w-full py-3 px-4 bg-white border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base text-ink placeholder:text-ink-soft/60"
                 />
                 {/* 금액 확인 도움말 (0 개수 확인용 만원 환산) */}
                 {desiredWage && (
-                  <p className="mt-1 text-sm text-gray-600">
-                    {formatWon(Number(desiredWage.replace(/,/g, '')))} ({formatManwon(Number(desiredWage.replace(/,/g, '')))})
+                  <p className="mt-1.5 text-sm text-ink-soft">
+                    <span className="text-accent-500 font-extrabold tnum">{formatWon(Number(desiredWage.replace(/,/g, '')))}</span> ({formatManwon(Number(desiredWage.replace(/,/g, '')))})
                   </p>
                 )}
               </div>
@@ -336,7 +336,7 @@ export default function RegisterPage() {
             <>
               {/* 업체명 */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                <label className="block text-sm font-bold text-ink mb-1.5">
                   업체명 <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -344,13 +344,13 @@ export default function RegisterPage() {
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                   placeholder="(주) 건설이엔지"
-                  className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                  className="w-full py-3 px-4 bg-white border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base text-ink placeholder:text-ink-soft/60"
                 />
               </div>
 
               {/* 대표자명 */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                <label className="block text-sm font-bold text-ink mb-1.5">
                   대표자명
                 </label>
                 <input
@@ -358,13 +358,13 @@ export default function RegisterPage() {
                   value={representativeName}
                   onChange={(e) => setRepresentativeName(e.target.value)}
                   placeholder="대표자 이름"
-                  className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                  className="w-full py-3 px-4 bg-white border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base text-ink placeholder:text-ink-soft/60"
                 />
               </div>
 
               {/* 주요 직종 */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                <label className="block text-sm font-bold text-ink mb-1.5">
                   주요 직종
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -373,10 +373,10 @@ export default function RegisterPage() {
                       key={cat}
                       type="button"
                       onClick={() => toggleMainCategory(cat)}
-                      className={`py-1.5 px-3 rounded-full text-sm font-medium transition-colors ${
+                      className={`min-h-[44px] py-2.5 px-4 rounded-full text-base font-bold transition-colors ${
                         mainJobCategories.includes(cat)
                           ? 'bg-accent-500 text-white'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          : 'bg-white text-ink border border-line hover:border-primary-300'
                       }`}
                     >
                       {cat}
@@ -389,7 +389,7 @@ export default function RegisterPage() {
 
           {/* 에러 메시지 */}
           {error && (
-            <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">
+            <div className="p-3.5 bg-red-50 text-red-600 text-base font-semibold rounded-xl border border-red-100">
               {error}
             </div>
           )}
@@ -398,14 +398,14 @@ export default function RegisterPage() {
           <div className="flex gap-3 pt-2">
             <button
               onClick={() => { setStep(1); setError(''); }}
-              className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors"
+              className="flex-1 btn-ghost text-base"
             >
               이전
             </button>
             <button
               onClick={handleSubmit}
               disabled={isSaving}
-              className="flex-[2] py-3 px-4 btn-primary rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-[2] btn-primary text-base disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSaving ? '저장 중...' : '가입 완료'}
             </button>
@@ -417,7 +417,7 @@ export default function RegisterPage() {
       <button
         type="button"
         onClick={handleSwitchAccount}
-        className="w-full mt-8 min-h-[44px] text-center text-base text-gray-500 underline"
+        className="w-full mt-8 min-h-[44px] text-center text-base font-medium text-ink-soft underline"
       >
         다른 계정으로 로그인
       </button>

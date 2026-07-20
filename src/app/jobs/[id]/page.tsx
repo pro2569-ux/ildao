@@ -199,9 +199,9 @@ export default function JobDetailPage() {
   return (
     <div className="pb-24 min-h-screen">
       {/* 상단 바 */}
-      <div className="sticky top-0 bg-white border-b border-gray-100 px-4 py-2 flex items-center gap-2 z-10">
+      <div className="sticky top-0 bg-white border-b border-line px-4 py-2 flex items-center gap-2 z-10">
         <BackButton className="-ml-2" />
-        <h1 className="text-lg font-bold truncate flex-1">공고 상세</h1>
+        <h1 className="text-lg font-bold text-ink truncate flex-1">공고 상세</h1>
         {/* 즐겨찾기 하트 (P3-8) — 로그인한 구직자만, 터치 44px */}
         {user && userProfile?.role === 'worker' && (
           <button
@@ -216,7 +216,7 @@ export default function JobDetailPage() {
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
               </svg>
             ) : (
-              <svg className="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <svg className="w-7 h-7 text-ink-soft" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round"
                   d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
@@ -230,10 +230,10 @@ export default function JobDetailPage() {
         <StatusBadge status={job.status} size="md" className="mb-3" />
 
         {/* 제목 */}
-        <h2 className="text-xl font-bold text-gray-900 mb-2">{job.title}</h2>
+        <h2 className="text-2xl font-bold text-ink mb-2">{job.title}</h2>
 
         {/* 카테고리 */}
-        <span className="inline-block text-sm px-2.5 py-1 bg-blue-50 text-primary-600 rounded-full mb-4">
+        <span className="cat-tag bg-primary-50 text-primary-700 mb-4">
           {job.category}
         </span>
 
@@ -252,7 +252,7 @@ export default function JobDetailPage() {
         {/* 현장 위치 지도 */}
         {job.location.address && (
           <div className="card mb-4">
-            <h3 className="font-semibold text-base text-gray-700 mb-2">현장 위치</h3>
+            <h3 className="font-bold text-base text-ink mb-2">현장 위치</h3>
             <KakaoMap
               mode="view"
               address={job.location.address}
@@ -266,8 +266,8 @@ export default function JobDetailPage() {
         {/* 상세 설명 */}
         {job.description && (
           <div className="card mb-4">
-            <h3 className="font-semibold text-base text-gray-700 mb-2">상세 설명</h3>
-            <p className="text-base text-gray-700 whitespace-pre-wrap leading-relaxed">
+            <h3 className="font-bold text-base text-ink mb-2">상세 설명</h3>
+            <p className="text-base text-ink whitespace-pre-wrap leading-relaxed">
               {job.description}
             </p>
           </div>
@@ -276,28 +276,28 @@ export default function JobDetailPage() {
         {/* 업체 정보 */}
         {employer && (
           <div className="card mb-4">
-            <h3 className="font-semibold text-base text-gray-700 mb-2">업체 정보</h3>
+            <h3 className="font-bold text-base text-ink mb-2">업체 정보</h3>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-accent-50 flex items-center justify-center">
                 <svg className="w-5 h-5 text-accent-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
               </div>
               <div>
-                <p className="font-semibold text-base">{employer.companyName || employer.name}</p>
+                <p className="font-bold text-base text-ink">{employer.companyName || employer.name}</p>
                 {employer.representativeName && (
-                  <p className="text-sm text-gray-600">대표 {employer.representativeName}</p>
+                  <p className="text-sm text-ink-soft">대표 {employer.representativeName}</p>
                 )}
               </div>
             </div>
 
             {/* 구인자 전화하기 — 전화번호 등록된 경우에만 표시 */}
             {employer.phone && (
-              <div className="mt-3 pt-3 border-t border-gray-100">
+              <div className="mt-3 pt-3 border-t border-line">
                 <a
                   href={`tel:${employer.phone}`}
-                  className="flex items-center justify-center gap-2 w-full py-3 bg-primary-500 text-white text-base font-medium rounded-lg"
+                  className="flex items-center justify-center gap-2 w-full btn-primary text-base"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -311,18 +311,18 @@ export default function JobDetailPage() {
         )}
 
         {/* 등록일 */}
-        <p className="text-sm text-gray-500 text-center mb-4">
+        <p className="text-sm text-ink-soft text-center mb-4">
           등록일: {formatDate(job.createdAt, { withYear: true })}
         </p>
       </div>
 
       {/* 하단 버튼 — 비로그인: 로그인 유도 / 구직자: 지원하기 */}
       {!authLoading && !user && (
-        <div className="fixed bottom-16 left-0 right-0 px-4 pb-4 bg-gradient-to-t from-white via-white pt-4">
+        <div className="fixed bottom-16 left-0 right-0 px-4 pb-4 bg-gradient-to-t from-paper via-paper pt-4">
           <div className="max-w-lg mx-auto">
             <Link
               href={`/login?returnUrl=${encodeURIComponent(`/jobs/${jobId}`)}`}
-              className="block w-full py-3.5 btn-primary rounded-xl font-semibold text-center"
+              className="block w-full py-3.5 btn-primary rounded-xl text-lg text-center"
             >
               로그인하고 지원하기
             </Link>
@@ -330,7 +330,7 @@ export default function JobDetailPage() {
         </div>
       )}
       {userProfile?.role === 'worker' && (
-        <div className="fixed bottom-16 left-0 right-0 px-4 pb-4 bg-gradient-to-t from-white via-white pt-4">
+        <div className="fixed bottom-16 left-0 right-0 px-4 pb-4 bg-gradient-to-t from-paper via-paper pt-4">
           <div className="max-w-lg mx-auto">
             {job.status !== 'open' ? (
               <>
@@ -342,7 +342,7 @@ export default function JobDetailPage() {
                 </Link>
                 <button
                   disabled
-                  className="w-full py-3.5 bg-gray-100 text-gray-500 font-semibold rounded-xl"
+                  className="w-full py-3.5 bg-line text-ink-soft font-bold rounded-xl"
                 >
                   마감된 공고예요
                 </button>
@@ -350,7 +350,7 @@ export default function JobDetailPage() {
             ) : applied ? (
               <button
                 disabled
-                className="w-full py-3.5 bg-gray-100 text-gray-500 font-semibold rounded-xl"
+                className="w-full py-3.5 bg-line text-ink-soft font-bold rounded-xl"
               >
                 지원 완료
               </button>
@@ -361,7 +361,7 @@ export default function JobDetailPage() {
                   setShowConfirmSheet(true);
                 }}
                 disabled={applying}
-                className="w-full py-3.5 btn-primary rounded-xl font-semibold disabled:opacity-50"
+                className="w-full py-3.5 btn-primary rounded-xl text-lg disabled:opacity-50"
               >
                 지원하기
               </button>
@@ -386,18 +386,21 @@ export default function JobDetailPage() {
             <div className="max-w-lg mx-auto px-4 pt-4 pb-8">
               {/* 핸들 바 */}
               <div className="flex justify-center mb-3">
-                <div className="w-10 h-1 bg-gray-300 rounded-full" />
+                <div className="w-10 h-1 bg-line rounded-full" />
               </div>
 
-              <h3 className="text-lg font-bold text-center mb-4">이 공고에 지원할까요?</h3>
+              <h3 className="text-lg font-bold text-ink text-center mb-4">이 공고에 지원할까요?</h3>
 
               {/* 공고 요약 */}
-              <div className="bg-gray-50 rounded-xl p-4 mb-5 space-y-2">
-                <p className="text-base font-bold text-gray-900">{job.title}</p>
-                <p className="text-base font-bold text-accent-500">
-                  일당 {job.dailyWage.toLocaleString()}원
+              <div className="bg-paper border border-line rounded-xl p-4 mb-5 space-y-2">
+                <p className="text-base font-bold text-ink">{job.title}</p>
+                <p className="text-ink-soft">
+                  일당{' '}
+                  <span className="text-accent-500 font-extrabold text-xl tnum">
+                    {job.dailyWage.toLocaleString()}원
+                  </span>
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-ink-soft">
                   시작일: {formatDate(job.startDate)}
                 </p>
               </div>
@@ -411,14 +414,14 @@ export default function JobDetailPage() {
               <button
                 onClick={handleApply}
                 disabled={applying}
-                className="w-full py-4 btn-primary rounded-xl text-lg font-bold disabled:opacity-50 mb-3"
+                className="w-full py-4 btn-primary rounded-xl text-lg disabled:opacity-50 mb-3"
               >
                 {applying ? '지원 중...' : '지원할게요'}
               </button>
               <button
                 onClick={() => setShowConfirmSheet(false)}
                 disabled={applying}
-                className="w-full py-4 bg-gray-100 text-gray-600 rounded-xl text-lg font-semibold disabled:opacity-50"
+                className="w-full py-4 btn-ghost rounded-xl text-lg disabled:opacity-50"
               >
                 취소
               </button>
@@ -437,26 +440,26 @@ export default function JobDetailPage() {
           <div className="fixed bottom-0 left-0 right-0 z-[70] bg-white rounded-t-2xl animate-slide-up">
             <div className="max-w-lg mx-auto px-4 pt-6 pb-8 text-center">
               {/* 체크 아이콘 */}
-              <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-16 h-16 rounded-full bg-ok-50 flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-ok-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
 
-              <h3 className="text-xl font-bold text-gray-900 mb-2">지원 접수!</h3>
-              <p className="text-base text-gray-600 mb-6">
+              <h3 className="text-xl font-bold text-ink mb-2">지원 접수!</h3>
+              <p className="text-base text-ink-soft mb-6">
                 사장님이 수락하면 알려드릴게요
               </p>
 
               <Link
                 href="/my-applications"
-                className="block w-full py-4 btn-primary rounded-xl text-lg font-bold mb-3"
+                className="block w-full py-4 btn-primary rounded-xl text-lg mb-3"
               >
                 내 지원 내역 보기
               </Link>
               <button
                 onClick={() => setShowCompleteSheet(false)}
-                className="w-full py-4 bg-gray-100 text-gray-600 rounded-xl text-lg font-semibold"
+                className="w-full py-4 btn-ghost rounded-xl text-lg"
               >
                 닫기
               </button>
@@ -490,10 +493,10 @@ export default function JobDetailPage() {
 function InfoRow({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <span className="text-base text-gray-600 flex-shrink-0">{label}</span>
+      <span className="text-base text-ink-soft flex-shrink-0">{label}</span>
       <span
         className={`text-right ${
-          accent ? 'text-xl text-accent-500 font-bold' : 'text-base font-medium text-gray-900'
+          accent ? 'text-2xl text-accent-500 font-extrabold tnum' : 'text-base font-semibold text-ink'
         }`}
       >
         {value}

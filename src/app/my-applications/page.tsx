@@ -172,7 +172,7 @@ function MyApplicationsContent() {
   const header = (
     <div className="flex items-center gap-2 mb-4">
       <BackButton className="-ml-2" />
-      <h1 className="text-xl font-bold">지원 내역</h1>
+      <h1 className="text-xl font-bold text-ink">지원 내역</h1>
     </div>
   );
 
@@ -209,10 +209,10 @@ function MyApplicationsContent() {
           <button
             key={f.value}
             onClick={() => setFilter(f.value as FilterValue)}
-            className={`min-h-[44px] py-2 px-3.5 rounded-full text-base font-medium transition-colors ${
+            className={`min-h-[44px] py-2 px-3.5 rounded-full text-base font-semibold transition-colors ${
               filter === f.value
                 ? 'bg-primary-500 text-white'
-                : 'bg-white border border-gray-200 text-gray-600'
+                : 'bg-white border border-line text-ink-soft'
             }`}
           >
             {f.label}
@@ -223,13 +223,13 @@ function MyApplicationsContent() {
       {/* 지원 내역 목록 */}
       {filteredApps.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-500 text-base">
+          <p className="text-ink-soft text-base">
             {filter === 'all' ? '아직 지원한 공고가 없습니다' : `${filter === 'pending' ? '대기중인' : filter === 'accepted' ? '수락된' : '거절된'} 지원이 없습니다`}
           </p>
           {filter === 'all' && (
             <Link
               href="/jobs"
-              className="inline-block mt-3 py-3 px-5 bg-primary-500 text-white text-base font-medium rounded-lg"
+              className="btn-primary inline-flex mt-4"
             >
               구인공고 보러가기
             </Link>
@@ -243,49 +243,66 @@ function MyApplicationsContent() {
                 <Link href={`/jobs/${app.jobId}`} className="block">
                   <div className="flex items-center justify-between mb-2">
                     <StatusBadge status={app.status} />
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-ink-soft">
                       지원일 {formatDate(app.createdAt)}
                     </span>
                   </div>
                   {app.job ? (
                     <>
-                      <h3 className="font-semibold text-base">{app.job.title}</h3>
-                      <p className="text-lg font-bold text-accent-600 mt-1">
-                        {formatWon(app.job.dailyWage)}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1 text-sm text-gray-600">
-                        <span>{app.job.category}</span>
-                        <span>·</span>
-                        <span>{app.job.location.address}</span>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <span className="cat-tag bg-primary-50 text-primary-700 mb-1.5">
+                            {app.job.category}
+                          </span>
+                          <h3 className="font-bold text-base text-ink">{app.job.title}</h3>
+                          <p className="text-sm text-ink-soft mt-0.5 flex items-center gap-1">
+                            <svg
+                              className="w-3.5 h-3.5 flex-shrink-0"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth={2.2}
+                            >
+                              <path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" />
+                            </svg>
+                            {app.job.location.address}
+                          </p>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <span className="text-accent-500 font-extrabold text-xl tnum">
+                            {formatWon(app.job.dailyWage)}
+                          </span>
+                          <p className="text-xs text-ink-soft font-semibold">일당</p>
+                        </div>
                       </div>
                       {/* 근무 시작일 — 오늘/내일 시작이면 강조 (P2-17) */}
-                      <p className="mt-1 text-sm">
+                      <p className="mt-2 text-sm">
                         {isToday(app.job.startDate) ? (
-                          <span className="font-bold text-accent-600">오늘 시작</span>
+                          <span className="font-bold text-accent-500">오늘 시작</span>
                         ) : isTomorrow(app.job.startDate) ? (
-                          <span className="font-bold text-accent-600">내일 시작</span>
+                          <span className="font-bold text-accent-500">내일 시작</span>
                         ) : (
-                          <span className="text-gray-600">
+                          <span className="text-ink-soft">
                             {formatStartDate(app.job.startDate)} 시작
                           </span>
                         )}
                       </p>
                     </>
                   ) : (
-                    <p className="text-base text-gray-500">삭제된 공고</p>
+                    <p className="text-base text-ink-soft">삭제된 공고</p>
                   )}
                 </Link>
 
                 {/* 액션 버튼 — 수락됨: 전화하기 / 대기중: 지원 취소 */}
                 {(app.status === 'pending' ||
                   (app.status === 'accepted' && app.employerPhone)) && (
-                  <div className="flex gap-3 mt-3 pt-3 border-t border-gray-100">
+                  <div className="flex gap-3 mt-3 pt-3 border-t border-line">
                     {app.status === 'accepted' && app.employerPhone && (
                       <a
                         href={`tel:${app.employerPhone}`}
-                        className="flex-1 min-h-[44px] py-3 text-center text-base font-semibold bg-primary-500 text-white rounded-lg"
+                        className="btn-primary flex-1"
                       >
-                        📞 전화하기
+                        전화하기
                       </a>
                     )}
                     {app.status === 'pending' && (
@@ -294,7 +311,7 @@ function MyApplicationsContent() {
                           setCancelError(null);
                           setCancelTarget(app);
                         }}
-                        className="flex-1 min-h-[44px] py-3 text-center text-base font-medium border border-gray-200 text-gray-600 rounded-lg"
+                        className="btn-ghost flex-1"
                       >
                         지원 취소
                       </button>
@@ -321,11 +338,11 @@ function MyApplicationsContent() {
             <div className="max-w-lg mx-auto px-4 pt-4 pb-8">
               {/* 핸들 바 */}
               <div className="flex justify-center mb-3">
-                <div className="w-10 h-1 bg-gray-300 rounded-full" />
+                <div className="w-10 h-1 bg-line rounded-full" />
               </div>
 
-              <h3 className="text-lg font-bold text-center mb-2">지원을 취소할까요?</h3>
-              <p className="text-base text-gray-600 text-center mb-6">
+              <h3 className="text-lg font-bold text-ink text-center mb-2">지원을 취소할까요?</h3>
+              <p className="text-base text-ink-soft text-center mb-6">
                 {`'${cancelTarget.job?.title || '해당 공고'}' 지원이 취소돼요.`}
               </p>
 
@@ -338,7 +355,7 @@ function MyApplicationsContent() {
                 <button
                   onClick={() => setCancelTarget(null)}
                   disabled={cancelling}
-                  className="flex-1 min-h-[44px] py-3 text-base font-medium border border-gray-200 text-gray-600 rounded-lg disabled:opacity-50"
+                  className="btn-ghost flex-1 disabled:opacity-50"
                 >
                   돌아가기
                 </button>

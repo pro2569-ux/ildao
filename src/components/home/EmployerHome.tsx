@@ -94,8 +94,8 @@ export default function EmployerHome() {
     <div className="px-4 pt-6 pb-24">
       {/* 상단 인사 */}
       <header className="mb-6">
-        <p className="text-sm text-gray-500">안녕하세요,</p>
-        <h1 className="text-xl font-bold text-gray-900">
+        <p className="text-sm text-ink-soft">안녕하세요,</p>
+        <h1 className="text-2xl font-extrabold text-navy">
           {userProfile?.companyName || userProfile?.name}님
         </h1>
       </header>
@@ -112,16 +112,16 @@ export default function EmployerHome() {
       ) : (
         <div className="grid grid-cols-3 gap-3 mb-6">
           <Link href="/my-jobs" className="card text-center min-h-[44px]">
-            <p className="text-3xl font-bold text-primary-500">{activeJobCount}</p>
-            <p className="text-sm text-gray-600 mt-1">진행중 공고</p>
+            <p className="text-3xl font-extrabold text-primary-600 tnum">{activeJobCount}</p>
+            <p className="text-sm text-ink-soft font-semibold mt-1">진행중 공고</p>
           </Link>
           <Link href="/my-jobs" className="card text-center min-h-[44px]">
-            <p className="text-3xl font-bold text-accent-500">{totalApplicants}</p>
-            <p className="text-sm text-gray-600 mt-1">총 지원자</p>
+            <p className="text-3xl font-extrabold text-accent-500 tnum">{totalApplicants}</p>
+            <p className="text-sm text-ink-soft font-semibold mt-1">총 지원자</p>
           </Link>
           <Link href="/my-jobs" className="card text-center min-h-[44px]">
-            <p className="text-3xl font-bold text-green-500">{pendingCount}</p>
-            <p className="text-sm text-gray-600 mt-1">대기중</p>
+            <p className="text-3xl font-extrabold text-ok tnum">{pendingCount}</p>
+            <p className="text-sm text-ink-soft font-semibold mt-1">대기중</p>
           </Link>
         </div>
       )}
@@ -130,30 +130,30 @@ export default function EmployerHome() {
       <div className="grid grid-cols-2 gap-3 mb-6">
         <Link
           href="/jobs/create"
-          className="flex items-center gap-3 p-4 min-h-[44px] bg-primary-500 text-white rounded-xl"
+          className="btn-primary flex items-center gap-3 p-4 min-h-[44px] rounded-2xl"
         >
-          <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M12 4v16m8-8H4" />
             </svg>
           </div>
           <div>
-            <p className="font-semibold text-base">공고 작성</p>
+            <p className="font-bold text-base">공고 작성</p>
             <p className="text-sm opacity-80">새 공고 등록</p>
           </div>
         </Link>
         <Link
           href="/workers"
-          className="flex items-center gap-3 p-4 min-h-[44px] bg-white border border-gray-200 rounded-xl"
+          className="card flex items-center gap-3 p-4 min-h-[44px]"
         >
-          <div className="w-10 h-10 bg-accent-50 rounded-lg flex items-center justify-center">
+          <div className="w-10 h-10 bg-accent-50 rounded-xl flex items-center justify-center flex-shrink-0">
             <svg className="w-5 h-5 text-accent-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           </div>
           <div>
-            <p className="font-semibold text-base text-gray-900">구직자 찾기</p>
-            <p className="text-sm text-gray-500">이력 검색</p>
+            <p className="font-bold text-base text-ink">구직자 찾기</p>
+            <p className="text-sm text-ink-soft">이력 검색</p>
           </div>
         </Link>
       </div>
@@ -161,7 +161,7 @@ export default function EmployerHome() {
       {/* 새 지원자 */}
       {!statsError && recentApps.length > 0 && (
         <section className="mb-6">
-          <h2 className="text-lg font-semibold mb-3">새 지원자</h2>
+          <h2 className="text-lg font-bold text-ink mb-3">새 지원자</h2>
           <div className="space-y-2">
             {recentApps.map((app) => (
               <Link
@@ -170,21 +170,21 @@ export default function EmployerHome() {
                 className="card flex items-center justify-between gap-3"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-base">
+                  <p className="font-bold text-base text-ink">
                     {app.workerName}
-                    <span className="font-normal text-gray-500">님이 지원했어요</span>
+                    <span className="font-normal text-ink-soft">님이 지원했어요</span>
                   </p>
-                  <p className="text-sm text-gray-500 mt-0.5 truncate">{app.jobTitle}</p>
+                  <p className="text-sm text-ink-soft mt-0.5 truncate">{app.jobTitle}</p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {app.status === 'pending' && (
-                    <span className="text-sm font-medium px-2 py-0.5 bg-yellow-100 text-yellow-600 rounded-full">
+                    <span className="inline-flex items-center text-sm font-semibold px-2.5 py-1 bg-warn-50 text-warn rounded-full whitespace-nowrap">
                       대기중
                     </span>
                   )}
-                  <span className="text-sm text-gray-500">{formatDate(app.createdAt)}</span>
-                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  <span className="text-sm text-ink-soft">{formatDate(app.createdAt)}</span>
+                  <svg className="w-4 h-4 text-ink-soft" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
               </Link>
@@ -196,8 +196,8 @@ export default function EmployerHome() {
       {/*  내 공고 */}
       <section>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold">내 공고</h2>
-          <Link href="/my-jobs" className="text-sm text-primary-500 font-medium py-2 px-1">
+          <h2 className="text-lg font-bold text-ink">내 공고</h2>
+          <Link href="/my-jobs" className="text-sm text-primary-600 font-bold py-2 px-1">
             전체보기
           </Link>
         </div>
@@ -214,10 +214,10 @@ export default function EmployerHome() {
           />
         ) : myJobs.length === 0 ? (
           <div className="card text-center py-8">
-            <p className="text-gray-600 text-base mb-3">아직 올린 공고가 없습니다</p>
+            <p className="text-ink-soft text-base mb-4">아직 올린 공고가 없습니다</p>
             <Link
               href="/jobs/create"
-              className="inline-block py-3 px-5 min-h-[44px] bg-primary-500 text-white text-base font-medium rounded-lg"
+              className="btn-primary inline-block min-h-[44px] text-base"
             >
               첫 공고 작성하기
             </Link>
@@ -225,25 +225,29 @@ export default function EmployerHome() {
         ) : (
           <div className="space-y-3">
             {myJobs.map((job) => (
-              <Link key={job.id} href={`/jobs/${job.id}`} className="card block">
-                <div className="flex items-center justify-between mb-1">
-                  <span className={`text-sm font-medium px-2 py-0.5 rounded-full ${job.status === 'open'
-                      ? 'bg-green-100 text-green-600'
-                      : 'bg-gray-100 text-gray-500'
-                  }`}>
-                    {job.status === 'open' ? '모집중' : job.status === 'closed' ? '마감' : '진행중'}
-                  </span>
-                  <span className="text-sm text-gray-500">{formatDate(job.createdAt)}</span>
+              <Link key={job.id} href={`/jobs/${job.id}`} className="card flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <span className={`inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${job.status === 'open'
+                        ? 'bg-ok-50 text-ok-700'
+                        : 'bg-paper text-ink-soft'
+                    }`}>
+                      {job.status === 'open' ? '모집중' : job.status === 'closed' ? '마감' : '진행중'}
+                    </span>
+                    <span className="cat-tag bg-primary-50 text-primary-700">{job.category}</span>
+                  </div>
+                  <h3 className="font-bold text-base text-ink truncate">{job.title}</h3>
+                  <p className="text-sm text-ink-soft mt-0.5 flex items-center gap-1.5">
+                    <span>{job.numberOfWorkers}명 모집</span>
+                    <span aria-hidden="true">·</span>
+                    <span>{formatDate(job.createdAt)}</span>
+                  </p>
                 </div>
-                <h3 className="font-semibold text-base">{job.title}</h3>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-sm text-gray-500">{job.category}</span>
-                  <span className="text-sm text-gray-500">·</span>
-                  <span className="text-base text-accent-500 font-bold">
+                <div className="text-right flex-shrink-0">
+                  <span className="text-accent-500 font-extrabold text-xl tnum">
                     {formatWon(job.dailyWage)}
                   </span>
-                  <span className="text-sm text-gray-500">·</span>
-                  <span className="text-sm text-gray-500">{job.numberOfWorkers}명</span>
+                  <p className="text-xs text-ink-soft font-semibold">일당</p>
                 </div>
               </Link>
             ))}

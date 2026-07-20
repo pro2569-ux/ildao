@@ -1,3 +1,6 @@
+/* Pretendard(한국어 최적화 가변 폰트) 동적 서브셋 로드 — 지금까지 이름만 있고 로드되지 않아 시스템 폰트로 렌더됐음 */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -5,12 +8,18 @@
 /* 모바일 우선 기본 스타일 */
 @layer base {
   html {
-    font-family: 'Pretendard', system-ui, sans-serif;
+    font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont,
+      'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
     -webkit-tap-highlight-color: transparent;
   }
 
   body {
-    @apply bg-gray-50 text-gray-900 antialiased;
+    @apply text-ink antialiased;
+    /* 따뜻한 종이빛 바탕 + 상단에 옅은 청사진 톤 */
+    background:
+      radial-gradient(130% 70% at 100% 0%, rgba(37, 99, 235, 0.05) 0%, rgba(37, 99, 235, 0) 46%),
+      #f4f2ee;
+    background-attachment: fixed;
     /* 모바일에서 바운스 스크롤 방지 */
     overscroll-behavior: none;
   }
@@ -22,20 +31,49 @@
     @apply pb-20;
   }
 
-  /* 카드 공통 스타일 */
+  /* 카드 공통 스타일 — 따뜻한 경계선 + 층이 있는 부드러운 그림자 */
   .card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-100 p-4;
+    @apply bg-white rounded-2xl border border-line p-4;
+    box-shadow: 0 1px 2px rgba(18, 42, 82, 0.05), 0 4px 14px -6px rgba(18, 42, 82, 0.1);
   }
 
-  /* 버튼 공통 스타일 */
+  /* 버튼 — 큰 터치 영역 + 눌리는 깊이감 */
   .btn-primary {
-    @apply bg-primary-500 text-white font-semibold py-3 px-6 rounded-lg
-           hover:bg-primary-600 active:bg-primary-700 transition-colors;
+    @apply bg-primary-500 text-white font-bold py-3 px-6 rounded-xl transition-all;
+    box-shadow: 0 2px 0 #1b4fd0;
+  }
+  .btn-primary:hover {
+    @apply bg-primary-600;
+  }
+  .btn-primary:active {
+    box-shadow: 0 1px 0 #1b4fd0;
+    transform: translateY(1px);
   }
 
   .btn-accent {
-    @apply bg-accent-500 text-white font-semibold py-3 px-6 rounded-lg
-           hover:bg-accent-600 active:bg-accent-600 transition-colors;
+    @apply bg-accent-500 text-white font-bold py-3 px-6 rounded-xl transition-all;
+    box-shadow: 0 2px 0 #a5440a;
+  }
+  .btn-accent:hover {
+    @apply bg-accent-600;
+  }
+  .btn-accent:active {
+    box-shadow: 0 1px 0 #a5440a;
+    transform: translateY(1px);
+  }
+
+  /* 보조 버튼 — 흰 배경 + 네이비 텍스트 */
+  .btn-ghost {
+    @apply bg-white text-navy font-bold py-3 px-6 rounded-xl border border-line transition-colors;
+    box-shadow: 0 1px 2px rgba(18, 42, 82, 0.05);
+  }
+  .btn-ghost:hover {
+    @apply bg-paper;
+  }
+
+  /* 직종 색 태그 (이모지 대체) */
+  .cat-tag {
+    @apply inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-bold;
   }
 }
 
@@ -53,5 +91,10 @@
 
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  /* 숫자(일당·금액) 정렬용 */
+  .tnum {
+    font-variant-numeric: tabular-nums;
   }
 }

@@ -115,7 +115,7 @@ export default function WorkersPage() {
       {/* 상단 */}
       <div className="flex items-center gap-2 mb-4">
         <BackButton className="-ml-2" />
-        <h1 className="text-xl font-bold">구직자 찾기</h1>
+        <h1 className="text-xl font-bold text-ink">구직자 찾기</h1>
       </div>
 
       {/* 직종 필터 */}
@@ -124,10 +124,10 @@ export default function WorkersPage() {
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
-            className={`flex-shrink-0 py-2.5 px-4 rounded-full text-base font-medium transition-colors ${
+            className={`flex-shrink-0 py-2.5 px-4 rounded-full text-base font-semibold transition-colors ${
               selectedCategory === cat
                 ? 'bg-primary-500 text-white'
-                : 'bg-white border border-gray-200 text-gray-700'
+                : 'bg-white border border-line text-ink-soft'
             }`}
           >
             {cat}
@@ -141,10 +141,10 @@ export default function WorkersPage() {
           <button
             key={region}
             onClick={() => setSelectedRegion(region)}
-            className={`flex-shrink-0 py-2.5 px-4 rounded-full text-base font-medium transition-colors ${
+            className={`flex-shrink-0 py-2.5 px-4 rounded-full text-base font-semibold transition-colors ${
               selectedRegion === region
                 ? 'bg-primary-500 text-white'
-                : 'bg-white border border-gray-200 text-gray-700'
+                : 'bg-white border border-line text-ink-soft'
             }`}
           >
             {region}
@@ -161,7 +161,7 @@ export default function WorkersPage() {
         <ErrorState onRetry={loadWorkers} />
       ) : filteredWorkers.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-600 text-base">
+          <p className="text-ink-soft text-base">
             {selectedCategory === '전체' && selectedRegion === '전국'
               ? '공개된 구직자 프로필이 없습니다'
               : `${selectedRegion !== '전국' ? `${selectedRegion} ` : ''}${
@@ -175,7 +175,7 @@ export default function WorkersPage() {
             <div key={worker.uid} className="card">
               <div className="flex items-start gap-3">
                 {/* 프로필 이미지 */}
-                <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
+                <div className="w-12 h-12 rounded-full bg-primary-50 overflow-hidden flex-shrink-0">
                   {worker.profileImage ? (
                     <img
                       src={worker.profileImage}
@@ -185,7 +185,7 @@ export default function WorkersPage() {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-primary-100">
-                      <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                           d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
@@ -196,9 +196,9 @@ export default function WorkersPage() {
                 {/* 프로필 정보 */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-semibold text-base">{worker.name}</h3>
+                    <h3 className="font-bold text-base text-ink">{worker.name}</h3>
                     {worker.experience && (
-                      <span className="text-sm text-gray-600">경력 {worker.experience}년</span>
+                      <span className="text-sm text-ink-soft">경력 {worker.experience}년</span>
                     )}
                   </div>
                   {/* 보유 기술 태그 */}
@@ -206,19 +206,23 @@ export default function WorkersPage() {
                     {worker.skills?.map((skill) => (
                       <span
                         key={skill}
-                        className="text-sm px-2.5 py-0.5 bg-blue-50 text-primary-600 rounded-full"
+                        className="cat-tag bg-primary-50 text-primary-700"
                       >
                         {skill}
                       </span>
                     ))}
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm text-ink-soft flex items-center gap-1 min-w-0 truncate">
+                      <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" /></svg>
                       {worker.region || '지역 미설정'}
                     </span>
                     {worker.desiredWage && (
-                      <span className="text-lg font-bold text-accent-500">
-                        희망 {formatWon(worker.desiredWage)}
+                      <span className="flex-shrink-0 flex items-baseline gap-1">
+                        <span className="text-xs text-ink-soft font-semibold">희망</span>
+                        <span className="text-accent-500 font-extrabold text-xl tnum">
+                          {formatWon(worker.desiredWage)}
+                        </span>
                       </span>
                     )}
                   </div>
@@ -238,7 +242,7 @@ export default function WorkersPage() {
                   >
                     <svg
                       className={`w-7 h-7 ${
-                        favoriteIds.has(worker.uid) ? 'text-accent-500' : 'text-gray-400'
+                        favoriteIds.has(worker.uid) ? 'text-accent-500' : 'text-ink-soft'
                       }`}
                       fill={favoriteIds.has(worker.uid) ? 'currentColor' : 'none'}
                       stroke="currentColor"
@@ -257,10 +261,10 @@ export default function WorkersPage() {
 
               {/* 전화하기 버튼 — 전화번호 등록된 구직자만 표시 */}
               {worker.phone && (
-                <div className="mt-3 pt-3 border-t border-gray-100">
+                <div className="mt-3 pt-3 border-t border-line">
                   <a
                     href={`tel:${worker.phone}`}
-                    className="flex items-center justify-center gap-2 w-full py-3 bg-primary-500 text-white text-base font-medium rounded-lg"
+                    className="btn-primary flex items-center justify-center gap-2 w-full text-base"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}

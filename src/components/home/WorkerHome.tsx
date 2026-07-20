@@ -157,26 +157,29 @@ export default function WorkerHome() {
     <div className="px-4 pt-6 pb-24">
       {/* 수락 배너 */}
       {banner && (
-        <div className="relative bg-green-50 border border-green-200 rounded-xl p-4 mb-4">
+        <div className="relative bg-ok-50 border border-ok/40 rounded-2xl p-4 mb-4 shadow-sm">
           <button
             onClick={dismissBanner}
             aria-label="배너 닫기"
-            className="absolute top-2 right-2 p-2.5 text-gray-500"
+            className="absolute top-2 right-2 p-2.5 text-ink-soft"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-          <p className="text-base font-bold text-gray-900 pr-10">
+          <p className="text-base font-bold text-ink pr-10">
             {`'${banner.jobTitle}'에 수락됐어요!`}
           </p>
-          <p className="text-sm text-gray-600 mt-1">사장님께 전화로 확인해보세요</p>
+          <p className="text-sm text-ink-soft mt-1">사장님께 전화로 확인해보세요</p>
           {banner.employerPhone && (
             <a
               href={`tel:${banner.employerPhone}`}
-              className="block w-full mt-3 py-3 bg-green-500 text-white text-center text-base font-semibold rounded-lg"
+              className="flex items-center justify-center gap-2 w-full mt-3 min-h-[48px] py-3 bg-ok text-white text-center text-base font-bold rounded-xl"
             >
-              📞 전화하기
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 0 1 2-2h2.4a1 1 0 0 1 1 .76l1 4a1 1 0 0 1-.29.95L7.6 10.6a12 12 0 0 0 5.8 5.8l1.9-1.9a1 1 0 0 1 .95-.29l4 1a1 1 0 0 1 .76 1V19a2 2 0 0 1-2 2A16 16 0 0 1 3 5z" />
+              </svg>
+              전화하기
             </a>
           )}
         </div>
@@ -184,23 +187,23 @@ export default function WorkerHome() {
 
       {/* 상단 인사 */}
       <header className="mb-4">
-        <p className="text-sm text-gray-500">안녕하세요,</p>
-        <h1 className="text-xl font-bold text-gray-900">{userProfile?.name}님</h1>
+        <p className="text-sm text-ink-soft">안녕하세요,</p>
+        <h1 className="text-2xl font-extrabold text-navy">{userProfile?.name}님</h1>
       </header>
 
       {/* 지원 현황 카드 */}
       <div className="flex gap-3 mb-6">
         <Link href="/my-applications?filter=pending" className="flex-1 card text-center min-h-[44px]">
-          <p className="text-3xl font-bold text-primary-500">{pendingCount}</p>
-          <p className="text-sm text-gray-600 mt-1">지원 대기</p>
+          <p className="text-3xl font-extrabold text-primary-600 tnum">{pendingCount}</p>
+          <p className="text-sm text-ink-soft font-semibold mt-1">지원 대기</p>
         </Link>
         <Link href="/my-applications?filter=accepted" className="flex-1 card text-center min-h-[44px]">
-          <p className="text-3xl font-bold text-green-500">{acceptedCount}</p>
-          <p className="text-sm text-gray-600 mt-1">수락됨</p>
+          <p className="text-3xl font-extrabold text-ok tnum">{acceptedCount}</p>
+          <p className="text-sm text-ink-soft font-semibold mt-1">수락됨</p>
         </Link>
         <Link href="/my-applications" className="flex-1 card text-center min-h-[44px]">
-          <p className="text-3xl font-bold text-gray-900">{applications.length}</p>
-          <p className="text-sm text-gray-600 mt-1">전체 지원</p>
+          <p className="text-3xl font-extrabold text-ink tnum">{applications.length}</p>
+          <p className="text-sm text-ink-soft font-semibold mt-1">전체 지원</p>
         </Link>
       </div>
 
@@ -210,13 +213,12 @@ export default function WorkerHome() {
           <button
             key={cat.name}
             onClick={() => setSelectedCategory(cat.name)}
-            className={`flex-shrink-0 flex items-center gap-1.5 py-2.5 px-4 min-h-[44px] rounded-full text-base font-medium transition-colors ${
+            className={`flex-shrink-0 flex items-center py-2.5 px-4 min-h-[44px] rounded-full text-base font-semibold transition-colors ${
               selectedCategory === cat.name
                 ? 'bg-primary-500 text-white'
-                : 'bg-white border border-gray-200 text-gray-600'
+                : 'bg-white border border-line text-ink'
             }`}
           >
-            <span>{cat.icon}</span>
             <span>{cat.name}</span>
           </button>
         ))}
@@ -225,8 +227,8 @@ export default function WorkerHome() {
       {/* 최신 공고 */}
       <section>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold">최신 공고</h2>
-          <Link href="/jobs" className="text-sm text-primary-500 font-medium py-2 px-1">
+          <h2 className="text-lg font-bold text-ink">최신 공고</h2>
+          <Link href="/jobs" className="text-sm text-primary-600 font-semibold py-2 px-1">
             전체보기
           </Link>
         </div>
@@ -243,7 +245,7 @@ export default function WorkerHome() {
           />
         ) : jobs.length === 0 ? (
           <div className="card text-center py-8">
-            <p className="text-gray-600 text-base">
+            <p className="text-ink-soft text-base">
               {selectedCategory === '전체'
                 ? '아직 등록된 공고가 없습니다'
                 : `${selectedCategory} 관련 공고가 없습니다`}
@@ -252,24 +254,22 @@ export default function WorkerHome() {
         ) : (
           <div className="space-y-3">
             {jobs.map((job) => (
-              <Link key={job.id} href={`/jobs/${job.id}`} className="card block">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium px-2 py-0.5 rounded-full bg-blue-100 text-primary-600">
-                    {job.category}
-                  </span>
-                  <span className="text-sm text-gray-500">{formatDate(job.createdAt)}</span>
-                </div>
-                <h3 className="font-semibold text-base">{job.title}</h3>
-                <p className="text-sm text-gray-500 mt-1 truncate">
-                  {job.location.address}
-                </p>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-accent-500 font-bold text-lg">
-                    일당 {formatWon(job.dailyWage)}
-                  </span>
-                  <span className="text-sm text-gray-500">
+              <Link key={job.id} href={`/jobs/${job.id}`} className="card flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <span className="cat-tag bg-primary-50 text-primary-700 mb-1.5">{job.category}</span>
+                  <h3 className="font-bold text-base text-ink truncate">{job.title}</h3>
+                  <p className="text-sm text-ink-soft mt-0.5 truncate flex items-center gap-1">
+                    <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" /></svg>
+                    {job.location.address}
+                  </p>
+                  <p className="text-xs text-ink-soft mt-1 tnum">
                     {job.numberOfWorkers}명 모집 · {formatDate(job.startDate)}~
-                  </span>
+                  </p>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <span className="text-accent-500 font-extrabold text-xl tnum">{formatWon(job.dailyWage)}</span>
+                  <p className="text-xs text-ink-soft font-semibold">일당</p>
+                  <p className="text-xs text-ink-soft mt-1 tnum">{formatDate(job.createdAt)}</p>
                 </div>
               </Link>
             ))}

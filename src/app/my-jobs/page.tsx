@@ -101,11 +101,11 @@ export default function MyJobsPage() {
     <div className="flex items-center justify-between mb-6">
       <div className="flex items-center gap-2">
         <BackButton className="-ml-2" />
-        <h1 className="text-xl font-bold">내 공고</h1>
+        <h1 className="text-xl font-bold text-ink">내 공고</h1>
       </div>
       <Link
         href="/jobs/create"
-        className="inline-flex items-center min-h-[44px] py-2.5 px-4 bg-primary-500 text-white text-base font-medium rounded-lg"
+        className="btn-primary inline-flex items-center min-h-[44px] py-2.5 px-4 text-base"
       >
         + 새 공고
       </Link>
@@ -125,7 +125,7 @@ export default function MyJobsPage() {
     return (
       <div className="px-4 pt-6 pb-24">
         {header}
-        <ErrorState title="공고을 불러오지 못했어요" onRetry={loadJobs} />
+        <ErrorState title="공고를 불러오지 못했어요" onRetry={loadJobs} />
       </div>
     );
   }
@@ -137,10 +137,10 @@ export default function MyJobsPage() {
       {/* 공고 목록 */}
       {jobs.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-500 text-base mb-4">아직 올린 공고이 없습니다</p>
+          <p className="text-ink-soft text-base mb-4">아직 올린 공고가 없습니다</p>
           <Link
             href="/jobs/create"
-            className="inline-block py-3 px-6 bg-primary-500 text-white text-base font-medium rounded-lg"
+            className="btn-primary inline-block text-base"
           >
             첫 공고 작성하기
           </Link>
@@ -152,25 +152,25 @@ export default function MyJobsPage() {
               <Link href={`/jobs/${job.id}`}>
                 <div className="flex items-center justify-between mb-2">
                   <StatusBadge status={job.status} />
-                  <span className="text-sm text-gray-500">{formatDate(job.createdAt)}</span>
+                  <span className="text-sm text-ink-soft">{formatDate(job.createdAt)}</span>
                 </div>
-                <h3 className="font-semibold text-base mb-1">{job.title}</h3>
-                <p className="text-lg font-bold text-accent-600 mb-1">
+                <span className="cat-tag bg-primary-50 text-primary-700 mb-1.5">{job.category}</span>
+                <h3 className="font-bold text-base text-ink truncate">{job.title}</h3>
+                <p className="text-accent-500 font-extrabold text-xl tnum mt-1">
                   {formatWon(job.dailyWage)}
                 </p>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <span>{job.category}</span>
-                  <span>·</span>
-                  <span>{job.location.address}</span>
-                </div>
+                <p className="text-sm text-ink-soft mt-1 flex items-center gap-1">
+                  <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" /></svg>
+                  {job.location.address}
+                </p>
               </Link>
 
               {/* 하단 액션 */}
-              <div className="mt-3 pt-3 border-t border-gray-100">
+              <div className="mt-3 pt-3 border-t border-line">
                 {/* 지원자 목록 보기 */}
                 <Link
                   href={`/my-jobs/${job.id}/applicants`}
-                  className="flex items-center justify-between min-h-[44px] py-2 text-base font-medium text-primary-500"
+                  className="flex items-center justify-between min-h-[44px] py-2 text-base font-semibold text-primary-600"
                 >
                   <span>지원자 {appCounts[job.id] || 0}명 보기</span>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -184,7 +184,7 @@ export default function MyJobsPage() {
                     <>
                       <Link
                         href={`/jobs/create?edit=${job.id}`}
-                        className="flex-1 min-h-[44px] py-3 flex items-center justify-center text-base font-medium border border-gray-200 text-gray-700 rounded-lg"
+                        className="btn-ghost flex-1 min-h-[44px] flex items-center justify-center text-base"
                       >
                         수정
                       </Link>
@@ -193,7 +193,7 @@ export default function MyJobsPage() {
                           setActionError(null);
                           setConfirmTarget({ type: 'close', job });
                         }}
-                        className="flex-1 min-h-[44px] py-3 text-base font-medium border border-gray-200 text-gray-600 rounded-lg"
+                        className="btn-ghost flex-1 min-h-[44px] text-base"
                       >
                         마감
                       </button>
@@ -202,7 +202,7 @@ export default function MyJobsPage() {
                   {job.status === 'closed' && (
                     <Link
                       href={`/jobs/create?copy=${job.id}`}
-                      className="flex-1 min-h-[44px] py-3 flex items-center justify-center text-base font-medium bg-primary-500 text-white rounded-lg"
+                      className="btn-primary flex-1 min-h-[44px] flex items-center justify-center text-base"
                     >
                       다시 올리기
                     </Link>
@@ -212,7 +212,7 @@ export default function MyJobsPage() {
                       setActionError(null);
                       setConfirmTarget({ type: 'delete', job });
                     }}
-                    className="flex-1 min-h-[44px] py-3 text-base font-medium border border-red-300 text-red-600 rounded-lg"
+                    className="flex-1 min-h-[44px] py-3 px-6 text-base font-bold bg-white border border-red-400 text-red-600 rounded-xl"
                   >
                     삭제
                   </button>

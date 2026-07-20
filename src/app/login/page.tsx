@@ -115,15 +115,15 @@ function LoginContent() {
       {/* 로고 & 앱 소개 */}
       <div className="text-center mb-12">
         {/* 로고 아이콘 */}
-        <div className="w-20 h-20 bg-primary-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+        <div className="w-20 h-20 bg-navy rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
           <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
           </svg>
         </div>
 
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">일다오</h1>
-        <p className="text-gray-500 text-sm leading-relaxed">
+        <h1 className="text-4xl font-extrabold text-navy mb-2 tracking-tight">일다오</h1>
+        <p className="text-ink-soft text-base leading-relaxed">
           건설현장 · 일용직 구인구직<br />
           일자리를 빠르게 찾아보세요
         </p>
@@ -135,7 +135,7 @@ function LoginContent() {
         <button
           onClick={handleKakaoSignIn}
           disabled={isSigningIn || kakaoRedirecting}
-          className="w-full flex items-center justify-center gap-3 py-3.5 px-6 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+          className="w-full flex items-center justify-center gap-3 min-h-[52px] py-3.5 px-6 rounded-xl font-bold text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
           style={{ backgroundColor: '#FEE500', color: '#191919' }}
         >
           {kakaoRedirecting ? (
@@ -153,10 +153,10 @@ function LoginContent() {
         <button
           onClick={handleGoogleSignIn}
           disabled={isSigningIn || kakaoRedirecting}
-          className="w-full flex items-center justify-center gap-3 py-3.5 px-6 bg-white border border-gray-300 rounded-xl font-medium text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+          className="w-full flex items-center justify-center gap-3 min-h-[52px] py-3.5 px-6 bg-white border border-line rounded-xl font-bold text-base text-ink hover:bg-primary-50 active:bg-primary-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
         >
           {isSigningIn ? (
-            <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-400 border-t-transparent" />
+            <div className="animate-spin rounded-full h-5 w-5 border-2 border-ink-soft border-t-transparent" />
           ) : (
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
@@ -171,7 +171,7 @@ function LoginContent() {
         {/* 전화번호 로그인 (추후 구현) */}
         <button
           disabled
-          className="w-full flex items-center justify-center gap-3 py-3.5 px-6 bg-gray-100 border border-gray-200 rounded-xl font-medium text-gray-400 cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-3 min-h-[52px] py-3.5 px-6 bg-primary-50 border border-line rounded-xl font-bold text-base text-ink-soft cursor-not-allowed opacity-70"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -183,16 +183,16 @@ function LoginContent() {
 
       {/* 에러 메시지 */}
       {error && (
-        <div className="mt-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg text-center">
+        <div className="mt-4 p-3 bg-red-50 border border-red-100 text-red-700 text-sm font-medium rounded-xl text-center">
           {error}
         </div>
       )}
 
       {/* 하단 안내 — 실제 약관 페이지로 연결 (P3-6) */}
-      <p className="mt-8 text-sm text-gray-500 text-center leading-relaxed">
+      <p className="mt-8 text-sm text-ink-soft text-center leading-relaxed">
         로그인 시 일다오의{' '}
-        <Link href="/terms" className="underline">이용약관</Link>과{' '}
-        <Link href="/privacy" className="underline">개인정보처리방침</Link>에<br />
+        <Link href="/terms" className="text-navy font-semibold underline">이용약관</Link>과{' '}
+        <Link href="/privacy" className="text-navy font-semibold underline">개인정보처리방침</Link>에<br />
         동의하는 것으로 간주됩니다.
       </p>
     </div>

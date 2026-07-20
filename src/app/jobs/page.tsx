@@ -180,12 +180,12 @@ function JobsContent() {
 
   return (
     <div className="px-4 pt-6 pb-24">
-      <h1 className="text-xl font-bold mb-4">구인공고</h1>
+      <h1 className="text-2xl font-bold text-ink mb-4">구인공고</h1>
 
       {/* 현장명/동네 검색 (P3-5) */}
       <div className="relative mb-3">
         <svg
-          className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"
+          className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-soft pointer-events-none"
           fill="none"
           stroke="currentColor"
           strokeWidth={2}
@@ -200,7 +200,7 @@ function JobsContent() {
           onChange={(e) => setSearchInput(e.target.value)}
           placeholder="현장명, 동네 검색"
           aria-label="현장명, 동네 검색"
-          className="w-full h-11 pl-11 pr-4 rounded-xl border border-gray-200 bg-white text-base placeholder:text-gray-400 focus:outline-none focus:border-primary-500"
+          className="w-full h-12 pl-11 pr-4 rounded-xl border border-line bg-white text-base text-ink placeholder:text-ink-soft focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-50"
         />
       </div>
 
@@ -210,10 +210,10 @@ function JobsContent() {
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
-            className={`flex-shrink-0 py-2.5 px-4 rounded-full text-base font-medium transition-colors ${
+            className={`flex-shrink-0 py-2.5 px-4 rounded-full text-base font-semibold transition-colors ${
               selectedCategory === cat
-                ? 'bg-primary-500 text-white'
-                : 'bg-white border border-gray-200 text-gray-700'
+                ? 'bg-primary-500 text-white shadow-sm'
+                : 'bg-white border border-line text-ink'
             }`}
           >
             {cat}
@@ -230,10 +230,10 @@ function JobsContent() {
               setRegionTouched(true);
               setSelectedRegion(region);
             }}
-            className={`flex-shrink-0 py-2.5 px-4 rounded-full text-base font-medium transition-colors ${
+            className={`flex-shrink-0 py-2.5 px-4 rounded-full text-base font-semibold transition-colors ${
               selectedRegion === region
-                ? 'bg-primary-500 text-white'
-                : 'bg-white border border-gray-200 text-gray-700'
+                ? 'bg-primary-500 text-white shadow-sm'
+                : 'bg-white border border-line text-ink'
             }`}
           >
             {region}
@@ -243,7 +243,7 @@ function JobsContent() {
 
       {/* 정렬 옵션 + 새로고침 */}
       <div className="flex items-center justify-between mb-4">
-        <span className="text-base text-gray-600">
+        <span className="text-base text-ink-soft font-medium">
           {loading
             ? '로딩중...'
             : search
@@ -253,17 +253,17 @@ function JobsContent() {
         <div className="flex items-center gap-1">
           <button
             onClick={() => setSortBy('latest')}
-            className={`text-base font-medium py-2.5 px-2 ${
-              sortBy === 'latest' ? 'text-primary-500' : 'text-gray-600'
+            className={`text-base font-semibold py-2.5 px-2 ${
+              sortBy === 'latest' ? 'text-primary-600' : 'text-ink-soft'
             }`}
           >
             최신순
           </button>
-          <span className="w-px h-4 bg-gray-300" aria-hidden="true" />
+          <span className="w-px h-4 bg-line" aria-hidden="true" />
           <button
             onClick={() => setSortBy('highWage')}
-            className={`text-base font-medium py-2.5 px-2 ${
-              sortBy === 'highWage' ? 'text-primary-500' : 'text-gray-600'
+            className={`text-base font-semibold py-2.5 px-2 ${
+              sortBy === 'highWage' ? 'text-primary-600' : 'text-ink-soft'
             }`}
           >
             일당 높은순
@@ -272,7 +272,7 @@ function JobsContent() {
           <button
             onClick={refresh}
             aria-label="공고 새로고침"
-            className="w-11 h-11 flex items-center justify-center text-gray-600 -mr-2"
+            className="w-11 h-11 flex items-center justify-center text-ink-soft -mr-2"
           >
             <svg
               className={`w-5 h-5 ${refreshing || loading ? 'animate-spin' : ''}`}
@@ -301,7 +301,7 @@ function JobsContent() {
         <ErrorState onRetry={loadJobs} />
       ) : visibleJobs.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-600 text-base">
+          <p className="text-ink-soft text-base">
             {search
               ? `'${search}' 검색 결과가 없어요`
               : selectedCategory === '전체' && selectedRegion === '전국'
@@ -316,32 +316,38 @@ function JobsContent() {
           <div className="space-y-3">
             {visibleJobs.map((job) => (
               <Link key={job.id} href={`/jobs/${job.id}`} className="card block">
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-1.5">
-                    <StatusBadge status={job.status} />
-                    {/* 시작일 지난 공고 표시 (P2-16) — 모집중인데 시작일이 지난 죽은 공고 구분 */}
-                    {job.status === 'open' && isPastDay(job.startDate) && (
-                      <span className="text-sm font-medium px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 whitespace-nowrap">
-                        시작일 지남
+                <div className="flex items-start gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center flex-wrap gap-1.5 mb-1.5">
+                      <StatusBadge status={job.status} />
+                      {/* 시작일 지난 공고 표시 (P2-16) — 모집중인데 시작일이 지난 죽은 공고 구분 */}
+                      {job.status === 'open' && isPastDay(job.startDate) && (
+                        <span className="cat-tag bg-warn-50 text-warn whitespace-nowrap">
+                          시작일 지남
+                        </span>
+                      )}
+                      <span className="cat-tag bg-primary-50 text-primary-700">
+                        {job.category}
                       </span>
-                    )}
-                    <span className="text-sm font-medium px-2.5 py-1 rounded-full bg-blue-100 text-primary-600">
-                      {job.category}
-                    </span>
+                    </div>
+                    <h3 className="font-bold text-base text-ink truncate">{job.title}</h3>
+                    <p className="text-sm text-ink-soft mt-0.5 truncate flex items-center gap-1">
+                      <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}>
+                        <path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" />
+                      </svg>
+                      {job.location.address}
+                    </p>
                   </div>
-                  <span className="text-sm text-gray-500">{formatDate(job.createdAt)}</span>
+                  <div className="text-right flex-shrink-0">
+                    <span className="text-accent-500 font-extrabold text-xl tnum">{formatWon(job.dailyWage)}</span>
+                    <p className="text-xs text-ink-soft font-semibold">일당</p>
+                  </div>
                 </div>
-                <h3 className="font-semibold text-base">{job.title}</h3>
-                <p className="text-sm text-gray-600 mt-1 truncate">
-                  {job.location.address}
-                </p>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-accent-500 font-bold text-lg">
-                    일당 {formatWon(job.dailyWage)}
-                  </span>
-                  <span className="text-sm text-gray-600">
+                <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-line">
+                  <span className="text-xs text-ink-soft font-medium">
                     {job.numberOfWorkers}명 모집 · {formatDate(job.startDate)}~
                   </span>
+                  <span className="text-xs text-ink-soft">{formatDate(job.createdAt)}</span>
                 </div>
               </Link>
             ))}
@@ -352,7 +358,7 @@ function JobsContent() {
             <button
               onClick={loadMore}
               disabled={loadingMore}
-              className="w-full h-12 mt-4 rounded-xl bg-white border border-gray-200 text-base font-semibold text-gray-700 flex items-center justify-center gap-2 active:bg-gray-50 disabled:opacity-60"
+              className="w-full h-12 mt-4 rounded-xl bg-white border border-line text-base font-bold text-navy flex items-center justify-center gap-2 active:bg-paper disabled:opacity-60"
             >
               {loadingMore ? (
                 <>
@@ -364,7 +370,7 @@ function JobsContent() {
               )}
             </button>
           ) : (
-            <p className="text-center text-base text-gray-500 py-6">
+            <p className="text-center text-base text-ink-soft py-6">
               마지막 공고까지 봤어요
             </p>
           )}
