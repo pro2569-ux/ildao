@@ -178,6 +178,9 @@ export default function ProfilePage() {
 
   if (!user) return null;
 
+  // 업로드한 프로필 사진(userProfile.profileImage) 우선, 없으면 소셜 계정 사진(user.photoURL)
+  const avatarUrl = userProfile?.profileImage || user.photoURL;
+
   return (
     <div className="px-4 pt-6 pb-24">
       <h1 className="text-xl font-bold mb-6">내 정보</h1>
@@ -187,12 +190,16 @@ export default function ProfilePage() {
         <div className="flex items-center gap-4">
           {/* 프로필 이미지 */}
           <div className="w-16 h-16 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
-            {user.photoURL ? (
+            {avatarUrl ? (
               <img
-                src={user.photoURL}
+                key={avatarUrl}
+                src={avatarUrl}
                 alt="프로필"
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-primary-100">
